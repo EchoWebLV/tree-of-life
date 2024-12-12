@@ -19,6 +19,7 @@ interface Message {
 
 interface AIImageAnalyzerProps {
   onAnalysisComplete?: (persona: Persona) => void;
+  onAnalysisStart?: () => void;
   buttonPosition?: 'fixed' | 'static';
   buttonClassName?: string;
   modalClassName?: string;
@@ -28,6 +29,7 @@ interface AIImageAnalyzerProps {
 
 export default function AIImageAnalyzer({
   onAnalysisComplete,
+  onAnalysisStart,
   buttonPosition = 'fixed',
   modalClassName = '',
   buttonIcon = '🌿',
@@ -53,6 +55,9 @@ export default function AIImageAnalyzer({
     if (!selectedImage) return;
     
     setIsAnalyzing(true);
+    setIsOpen(false); // Hide the window
+    onAnalysisStart?.(); // Start the animation
+    
     try {
       const response = await fetch('/api/analyze-image', {
         method: 'POST',
@@ -65,6 +70,7 @@ export default function AIImageAnalyzer({
       const data = await response.json();
       setPersona(data.persona);
       onAnalysisComplete?.(data.persona);
+      setIsOpen(true); // Show the chat window
     } catch (error) {
       console.error('Error analyzing image:', error);
     } finally {

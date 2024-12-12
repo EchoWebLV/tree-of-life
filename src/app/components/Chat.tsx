@@ -13,6 +13,7 @@ interface ChatProps {
 }
 
 export default function Chat({ persona }: ChatProps) {
+    console.log(persona)
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([
     {
       role: 'assistant',
@@ -22,10 +23,19 @@ export default function Chat({ persona }: ChatProps) {
   const [input, setInput] = useState('');
 
   useEffect(() => {
-    const lastMessage = document.querySelector('[data-message]:last-of-type');
-    if (lastMessage) {
-      lastMessage.scrollIntoView({ behavior: 'smooth' });
-    }
+    const scrollToBottom = () => {
+      const lastMessage = document.querySelector('[data-message]:last-of-type');
+      if (lastMessage) {
+        setTimeout(() => {
+          lastMessage.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'end'
+          });
+        }, 100);
+      }
+    };
+
+    scrollToBottom();
   }, [messages]);
 
   const sendMessage = async () => {
@@ -59,17 +69,17 @@ export default function Chat({ persona }: ChatProps) {
   };
 
   return (
-    <div className="flex flex-col h-[600px] bg-white dark:bg-black rounded-xl p-6 shadow-lg border border-black dark:border-white">
-      <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-black dark:scrollbar-thumb-white">
+    <div className="flex flex-col text-xs h-[40vh] bg-black rounded-xl p-6 shadow-lg border border-white">
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white">
         {messages.map((message, index) => (
           <div
             key={index}
             data-message
             className={`p-4 rounded-xl ${
               message.role === 'user'
-                ? 'bg-black text-white ml-auto'
-                : 'bg-white text-black dark:bg-white dark:text-black'
-            } max-w-[80%] shadow-sm border border-black dark:border-white`}
+                ? 'bg-white text-black ml-auto'
+                : 'bg-black text-white'
+            } max-w-[80%] shadow-sm border border-white`}
           >
             <p className="leading-relaxed whitespace-pre-wrap">
               {message.content}
@@ -77,21 +87,21 @@ export default function Chat({ persona }: ChatProps) {
           </div>
         ))}
       </div>
-      <div className="h-[80px] flex gap-3 pt-4 border-t border-black dark:border-white">
+      <div className="h-[80px] flex gap-3 pt-4 border-t border-white">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-          className="flex-1 p-3 rounded-xl bg-white dark:bg-black border border-black dark:border-white
-            focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white
-            text-black dark:text-white placeholder-black/60 dark:placeholder-white/60"
+          className="flex-1 p-3 rounded-xl bg-black border border-white
+            focus:outline-none focus:ring-2 focus:ring-white
+            text-white placeholder-white/60"
           placeholder="Type your message..."
         />
         <button
           onClick={sendMessage}
-          className="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl 
-            hover:bg-black/90 dark:hover:bg-white/90 transition-colors duration-200 font-medium"
+          className="px-6 py-3 bg-white text-black rounded-xl 
+            hover:bg-white/90 transition-colors duration-200 font-medium"
         >
           Send
         </button>

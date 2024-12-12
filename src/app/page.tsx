@@ -1,31 +1,18 @@
 'use client'
+import { useState } from 'react';
 import AnimatedTree from "./components/AnimatedTree";
 import AIImageAnalyzer from "./components/AIImageAnalyzer";
-import { useEffect, useRef } from 'react';
 
 export default function Home() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = 0.2;
-    }
-  }, []);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   return (
     <>
-      <video 
-        ref={videoRef}
-        className="video-background" 
-        autoPlay 
-        muted 
-        loop 
-        playsInline
-      >
-        <source src="/background.mp4" type="video/mp4" />
-      </video>
-      <AnimatedTree />
-      <AIImageAnalyzer />
+      <AnimatedTree isAnalyzing={isAnalyzing} />
+      <AIImageAnalyzer 
+        onAnalysisStart={() => setIsAnalyzing(true)}
+        onAnalysisComplete={() => setIsAnalyzing(false)}
+      />
     </>
   );
 }
