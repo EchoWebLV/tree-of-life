@@ -20,27 +20,12 @@ body {
   color: var(--foreground);
   font-family: 'Press Start 2P', Arial, Helvetica, sans-serif;
   position: relative;
-  background-image: url('/bg.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-color: black;
   min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
 }
 
-/* Add this media query for mobile devices */
-@media screen and (max-width: 768px) {
-  body {
-    background-attachment: scroll; /* Fix for iOS Safari */
-    -webkit-background-size: cover;
-    -moz-background-size: cover;
-    -o-background-size: cover;
-  }
-}
-
-/* Keep the overlay */
 body::before {
   content: '';
   position: fixed;
@@ -48,8 +33,22 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.65);
+  background-image: url('/bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  opacity: 0.4;
   z-index: -1;
+}
+
+@media screen and (max-width: 768px) {
+  body::before {
+    background-attachment: scroll;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+  }
 }
 
 .snowflake {
