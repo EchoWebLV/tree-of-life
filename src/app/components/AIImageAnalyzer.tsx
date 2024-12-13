@@ -18,7 +18,7 @@ interface Message {
 }
 
 interface AIImageAnalyzerProps {
-  onAnalysisComplete?: (persona: Persona) => void;
+  onAnalysisComplete?: (persona: Persona | null) => void;
   onAnalysisStart?: () => void;
   buttonPosition?: 'fixed' | 'static';
   buttonClassName?: string;
@@ -66,12 +66,19 @@ export default function AIImageAnalyzer({
         body: JSON.stringify({ image: selectedImage }),
       });
       
+      if (!response.ok) {
+        throw new Error('Failed to analyze image');
+      }
+      
       const data = await response.json();
       setPersona(data.persona);
       onAnalysisComplete?.(data.persona);
       setIsOpen(true); // Show the chat window
     } catch (error) {
       console.error('Error analyzing image:', error);
+      setIsOpen(true);
+      setSelectedImage(null);
+      onAnalysisComplete?.(null);
     } finally {
       setIsAnalyzing(false);
     }
