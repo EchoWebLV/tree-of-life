@@ -25,6 +25,19 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Add this media query for mobile devices */
+@media screen and (max-width: 768px) {
+  body {
+    background-attachment: scroll; /* Fix for iOS Safari */
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+  }
 }
 
 /* Keep the overlay */
