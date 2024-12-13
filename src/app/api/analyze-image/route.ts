@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         {
           role: "user",
           content: [
-            { type: "text", text: "Analyze this image and return a JSON object without any markdown formatting or explanation. Only return a JSON object with this exact structure: { name: string, personality: string, background: string }. The name should be a fitting name for the person, character, or object in the image. Make sure the personality reflects a slightly sarcastic character. Give short answers." },
+            { type: "text", text: "Analyze this image and return a JSON object without any markdown formatting or explanation. Only return a JSON object with this exact structure: { name: string, personality: string, background: string }. If the image contains a famous person or character, use their real name and incorporate their actual background while adding a sarcastic twist to their personality. If not, create a fitting name for the person, character, or object in the image. Make sure the personality reflects a slightly sarcastic character in all cases. Give short answers." },
             {
               type: "image_url",
               image_url: image,
