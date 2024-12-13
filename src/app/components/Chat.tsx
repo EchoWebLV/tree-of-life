@@ -14,7 +14,7 @@ interface ChatProps {
 
 export default function Chat({ persona }: ChatProps) {
     console.log(persona)
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([
+  const [messages, setMessages] = useState([
     {
       role: 'assistant',
       content: `Hello! I'm ${persona.name}. How can I help you today?`
@@ -60,11 +60,13 @@ export default function Chat({ persona }: ChatProps) {
           persona: persona,
         }),
       });
-
-      const data = await response.json();
-      setMessages([...newMessages, { role: 'assistant', content: data.response }]);
+      const data: { response: string } = await response.json();
+      setMessages([...newMessages, { 
+        role: 'assistant' as const, 
+        content: data.response 
+      }]);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error:', error);
     }
   };
 

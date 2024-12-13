@@ -93,7 +93,7 @@ export default function AIImageAnalyzer({
         <div className={`fixed inset-0 bg-black/50 z-50 flex items-center justify-center ${modalClassName}`}>
           <div className="bg-background p-6 rounded-lg max-w-lg w-full m-4">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Image Analysis</h2>
+              <h2 className="text-xl font-bold">Upload Image</h2>
               <Button
                 variant="secondary"
                 onClick={() => setIsOpen(false)}
@@ -127,7 +127,7 @@ export default function AIImageAnalyzer({
                 disabled={!selectedImage || isAnalyzing}
                 className="w-full"
               >
-                {isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
+                {isAnalyzing ? 'Bringing To Life...' : 'Bring To Life'}
               </Button>
 
               {persona && (
