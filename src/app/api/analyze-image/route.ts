@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         {
           role: "user",
           content: [
-            { type: "text", text: "Analyze this image and return a JSON object with the following structure: { name: string, personality: string, background: string }. The name should be a fitting name for the person, character, or object in the image. Make sure the personality reflects a slightly sarcastic character. Give short answers." },
+            { type: "text", text: "Analyze this image and return a JSON object without any markdown formatting or explanation. Only return a JSON object with this exact structure: { name: string, personality: string, background: string }. The name should be a fitting name for the person, character, or object in the image. Make sure the personality reflects a slightly sarcastic character. Give short answers." },
             {
               type: "image_url",
               image_url: image,
@@ -27,10 +27,28 @@ export async function POST(request: Request) {
     });
 
     const generatedContent = response.choices[0]?.message?.content || '{}';
-    const cleanedContent = generatedContent
+    let cleanedContent = generatedContent
       .replace(/```json\n?/, '')
       .replace(/```/, '')
       .trim();
+    
+    // Try to fix common issues that might prevent JSON parsing
+    try {
+      JSON.parse(cleanedContent);
+    } catch (e) {
+      // If parsing fails, attempt to extract JSON-like content
+      const jsonMatch = cleanedContent.match(/\{.*\}/s);
+      if (jsonMatch) {
+        cleanedContent = jsonMatch[0];
+      } else {
+        // Fallback response if no valid JSON can be extracted
+        cleanedContent = JSON.stringify({
+          name: "Unknown",
+          personality: "Mysteriously silent",
+          background: "Lost in translation"
+        });
+      }
+    }
     
     const persona = JSON.parse(cleanedContent);
 
