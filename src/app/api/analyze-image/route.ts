@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       JSON.parse(cleanedContent);
     } catch (e) {
       // If parsing fails, attempt to extract JSON-like content
-      const jsonMatch = cleanedContent.match(/\{.*\}/s);
+      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         cleanedContent = jsonMatch[0];
       } else {
