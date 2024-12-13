@@ -15,7 +15,10 @@ export async function POST(request: Request) {
         {
           role: "user",
           content: [
-            { type: "text", text: "Analyze this image and return a JSON object without any markdown formatting or explanation. Only return a JSON object with this exact structure: { name: string, personality: string, background: string }. If the image contains a famous person or character, use their real name and incorporate their actual background while adding a sarcastic twist to their personality. If not, create a fitting name for the person, character, or object in the image. Make sure the personality reflects a slightly sarcastic character in all cases. Give short answers." },
+            { 
+              type: "text", 
+              text: "You are an expert at identifying people in images. Your task:\n\n1. FIRST, carefully analyze if this image contains any famous people, politicians, celebrities, or well-known figures.\n2. If you identify a famous person, you MUST use their actual name (e.g., 'Donald Trump' for Donald Trump, 'Elon Musk' for Elon Musk).\n3. Return ONLY a JSON object with this structure: { name: string, personality: string, background: string }\n4. For famous people: Use their real name, actual background, and add a witty, sarcastic personality description based on their public persona.\n5. For non-famous people: Create a fitting fictional name.\n\nNo explanations or additional text - just the JSON object." 
+            },
             {
               type: "image_url",
               image_url: image,
@@ -24,6 +27,7 @@ export async function POST(request: Request) {
         },
       ],
       max_tokens: 500,
+      temperature: 0.7,
     });
 
     const generatedContent = response.choices[0]?.message?.content || '{}';
