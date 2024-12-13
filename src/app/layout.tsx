@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Snow from '../app/components/Snow';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <video
+          autoPlay
+          muted
+          playsInline
+          className="video-background"
+        >
+          <source src="/bg.mp4" type="video/mp4" />
+        </video>
+        <Snow />
         {children}
       </body>
     </html>

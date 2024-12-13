@@ -30,7 +30,6 @@ interface AIImageAnalyzerProps {
 export default function AIImageAnalyzer({
   onAnalysisComplete,
   onAnalysisStart,
-  buttonPosition = 'fixed',
   modalClassName = '',
   buttonIcon = '🌿',
   buttonText = 'Upload Image'
@@ -80,13 +79,15 @@ export default function AIImageAnalyzer({
 
   return (
     <>
-      <Button
-        icon={buttonIcon}
-        position={buttonPosition}
-        onClick={() => setIsOpen(true)}
-      >
-        {buttonText}
-      </Button>
+      <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
+        <Button
+          icon={buttonIcon}
+          position="static"
+          onClick={() => setIsOpen(true)}
+        >
+          {buttonText}
+        </Button>
+      </div>
 
       {isOpen && (
         <div className={`fixed inset-0 bg-black/50 z-50 flex items-center justify-center ${modalClassName}`}>

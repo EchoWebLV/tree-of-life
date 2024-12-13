@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         {
           role: "user",
           content: [
-            { type: "text", text: "Create a detailed persona based on this image. Include a name, personality traits, and brief background story." },
+            { type: "text", text: "Analyze this image and return a JSON object with the following structure: { name: string, personality: string, background: string }. The name should be a fitting name for the person, character, or object in the image. Make sure the personality reflects a slightly sarcastic character. Give short answers." },
             {
               type: "image_url",
               image_url: image,
@@ -26,16 +26,13 @@ export async function POST(request: Request) {
       max_tokens: 500,
     });
 
-    // Parse the response from OpenAI
-    const generatedContent = response.choices[0]?.message?.content || '';
+    const generatedContent = response.choices[0]?.message?.content || '{}';
+    const cleanedContent = generatedContent
+      .replace(/```json\n?/, '')
+      .replace(/```/, '')
+      .trim();
     
-    // You might want to parse the generated content into structured data
-    // This is a simple example - you might need more sophisticated parsing
-    const persona = {
-      name: "Generated from AI",
-      personality: generatedContent,
-      background: "Generated background",
-    };
+    const persona = JSON.parse(cleanedContent);
 
     return NextResponse.json({ persona });
   } catch (error) {
