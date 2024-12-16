@@ -4,6 +4,7 @@ import Snowfall from 'react-snowfall'
 import AnimatedTree from "./components/AnimatedTree";
 import AIImageAnalyzer from "./components/AIImageAnalyzer";
 import Image from 'next/image';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -104,14 +105,24 @@ export default function Home() {
           }}
         />
       )}
-      <pre className="text-[0.6em] sm:text-[0.8em] md:text-[1em] whitespace-pre overflow-x-auto text-center leading-none opacity-90">
-{`██████╗ ██████╗ ██╗   ██╗██╗██████╗  █████╗ ██╗
+      <AnimatePresence mode="wait">
+        <motion.pre
+          initial={{ opacity: 0, scale: 0.8, y: -50 }}
+          animate={{ opacity: 0.9, scale: 1, y: 0 }}
+          transition={{ 
+            duration: 0.8,
+            ease: [0.21, 1.11, 0.81, 0.99], // Spring-like bounce effect
+          }}
+          className="text-[0.6em] sm:text-[0.8em] md:text-[1em] whitespace-pre overflow-x-auto text-center leading-none"
+        >
+          {`██████╗ ██████╗ ██╗   ██╗██╗██████╗  █████╗ ██╗
 ██╔══██╗██╔══██╗██║   ██║██║██╔══██╗██╔══██╗██║
 ██║  ██║██████╔╝██║   ██║██║██║  ██║███████║██║
 ██║  ██║██╔══██╗██║   ██║██║██║  ██║██╔══██║██║
 ██████╔╝██║  ██║╚██████╔╝██║██████╔╝██║  ██║██║
 ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝`}
-      </pre>
+        </motion.pre>
+      </AnimatePresence>
       <span>[beta]</span>
       <div className="flex flex-row gap-4">
       <Image src="/twitter.png" alt="dex" width={80} height={80} />
