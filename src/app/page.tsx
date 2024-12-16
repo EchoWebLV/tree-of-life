@@ -70,7 +70,7 @@ export default function Home() {
     <>
       <Snowfall 
         color="white"
-        snowflakeCount={200}
+        snowflakeCount={50}
         radius={[2, 5]}
         speed={[0.5, 2]}
         wind={[-0.5, 2]}
