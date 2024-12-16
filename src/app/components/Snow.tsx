@@ -10,9 +10,9 @@ export default function Snow() {
 
       // Random starting position
       snowflake.style.left = Math.random() * 100 + 'vw';
-      snowflake.style.animationDuration = Math.random() * 3 + 2 + 's'; // Between 2-5s
-      snowflake.style.opacity = (Math.random() * 0.6 + 0.4).toString(); // Between 0.4 and 1
-      snowflake.style.transform = `scale(${Math.random() * 0.6 + 0.4})`; // Between 0.4 and 1
+      snowflake.style.animationDuration = Math.random() * 3 + 3 + 's'; // Between 3-6s
+      snowflake.style.opacity = (Math.random() * 0.4 + 0.6).toString(); // Between 0.6 and 1
+      snowflake.style.transform = `scale(${Math.random() * 1 + 0.5})`; // Between 0.5 and 1.5
       
       document.body.appendChild(snowflake);
       
@@ -23,7 +23,8 @@ export default function Snow() {
       }, duration);
     };
 
-    const snowInterval = setInterval(createSnowflake, 100);
+    // Create snowflakes more frequently (every 50ms instead of 100ms)
+    const snowInterval = setInterval(createSnowflake, 50);
 
     return () => clearInterval(snowInterval);
   }, []);

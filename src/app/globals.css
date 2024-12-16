@@ -53,12 +53,10 @@ body::before {
 
 .snowflake {
   position: fixed;
-  width: 4px;
-  height: 4px;
-  background-color: white;
-  color: white;
-  font-size: 1em;
-  text-shadow: 0 0 1px #000;
+  width: 8px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
   pointer-events: none;
   user-select: none;
   z-index: 1000;
@@ -66,7 +64,10 @@ body::before {
 }
 
 @keyframes fall {
+  from {
+    transform: translateY(-10px) rotate(0deg);
+  }
   to {
-    transform: translateY(100vh);
+    transform: translateY(100vh) rotate(360deg);
   }
 }
