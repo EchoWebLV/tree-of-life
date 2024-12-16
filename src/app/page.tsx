@@ -27,11 +27,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (audioRef.current) {
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      // Create audio element if it doesn't exist
+      if (!audioRef.current) {
+        const audio = new Audio('/track.mp3');
+        audio.loop = true;
+        audioRef.current = audio;
+      }
+
       // Try to play the audio
       const playPromise = audioRef.current.play();
       
-      // Handle potential play() promise rejection
       if (playPromise !== undefined) {
         playPromise.catch(error => {
           console.log("Autoplay prevented:", error);
@@ -39,6 +46,14 @@ export default function Home() {
         });
       }
     }
+
+    // Cleanup function
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+    };
   }, []); // Run once when component mounts
 
   const toggleAudio = () => {
