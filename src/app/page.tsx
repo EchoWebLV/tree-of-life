@@ -5,6 +5,7 @@ import AnimatedTree from "./components/AnimatedTree";
 import AIImageAnalyzer from "./components/AIImageAnalyzer";
 import Image from 'next/image';
 
+
 export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [snowflake, setSnowflake] = useState<HTMLCanvasElement | null>(null);
