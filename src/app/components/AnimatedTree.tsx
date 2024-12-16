@@ -23,8 +23,15 @@ export default function AnimatedTree({ isAnalyzing = false }: AnimatedTreeProps)
           src={getImageSrc()}
           alt="Tree Animation"
           fill
-          className="object-cover object-bottom z-3"
+          className="object-cover object-bottom z-[3]"
           priority
+        />
+        <Image 
+          src="/dex.png"
+          alt="Dex"
+          className="absolute bottom-0 z-[4]"
+          width={100}
+          height={100}
         />
       </div>
 
