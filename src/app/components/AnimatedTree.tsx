@@ -17,13 +17,13 @@ export default function AnimatedTree({ isAnalyzing = false }: AnimatedTreeProps)
 
   return (
     <div className="fixed inset-x-0 bottom-0 flex items-end justify-center">
-      <div className="relative w-[100vh] h-[50vh]">
+      <div className="relative w-full max-w-[120vh] h-[60vh]">
         <Image
           ref={imageRef}
           src={getImageSrc()}
           alt="Tree Animation"
           fill
-          className="object-cover object-bottom z-[3]"
+          className="object-contain object-bottom z-[3]"
           priority
         />
       </div>
