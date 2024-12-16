@@ -36,15 +36,31 @@ export default function Home() {
         audioRef.current = audio;
       }
 
-      // Try to play the audio
-      const playPromise = audioRef.current.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.log("Autoplay prevented:", error);
+      // Function to attempt playing
+      const attemptPlay = async () => {
+        try {
+          await audioRef.current?.play();
+        } catch (err) {
+          console.log("Play failed:", err);
           setIsPlaying(false);
-        });
-      }
+        }
+      };
+
+      // Try to play immediately
+      attemptPlay();
+
+      // Also try to play on first user interaction
+      const playOnInteraction = () => {
+        attemptPlay();
+        document.removeEventListener('click', playOnInteraction);
+        document.removeEventListener('touchstart', playOnInteraction);
+      };
+
+      document.addEventListener('click', playOnInteraction);
+      document.addEventListener('touchstart', playOnInteraction);
+
+      // Try playing again after a short delay
+      setTimeout(attemptPlay, 1000);
     }
 
     // Cleanup function
@@ -61,7 +77,12 @@ export default function Home() {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play();
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.log("Play failed:", error);
+          });
+        }
       }
       setIsPlaying(!isPlaying);
     }
@@ -107,6 +128,7 @@ export default function Home() {
         ref={audioRef}
         src="/track.mp3"
         loop
+        preload="auto"
       />
       <button
         onClick={toggleAudio}

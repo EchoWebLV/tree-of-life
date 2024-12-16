@@ -71,13 +71,13 @@ export default function Chat({ persona }: ChatProps) {
   };
 
   return (
-    <div className="flex flex-col text-xs h-[40vh] bg-black rounded-xl p-6 shadow-lg border border-white">
-      <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white">
+    <div className="flex flex-col text-[10px] md:text-xs h-[20vh] md:h-[40vh] bg-black rounded-xl p-3 md:p-6 shadow-lg border border-white">
+      <div className="flex-1 overflow-y-auto space-y-2 md:space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white">
         {messages.map((message, index) => (
           <div
             key={index}
             data-message
-            className={`p-4 rounded-xl ${
+            className={`p-2 md:p-4 rounded-xl ${
               message.role === 'user'
                 ? 'bg-white text-black ml-auto'
                 : 'bg-black text-white'
@@ -89,20 +89,20 @@ export default function Chat({ persona }: ChatProps) {
           </div>
         ))}
       </div>
-      <div className="h-[80px] flex gap-3 pt-4 border-t border-white">
+      <div className="h-[40px] md:h-[80px] flex gap-2 md:gap-3 pt-2 md:pt-4 border-t border-white">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-          className="flex-1 p-3 rounded-xl bg-black border border-white
+          className="flex-1 p-2 md:p-3 rounded-xl bg-black border border-white
             focus:outline-none focus:ring-2 focus:ring-white
             text-white placeholder-white/60"
           placeholder="Type your message..."
         />
         <button
           onClick={sendMessage}
-          className="px-6 py-3 bg-white text-black rounded-xl 
+          className="px-3 md:px-6 py-2 md:py-3 bg-white text-black rounded-xl 
             hover:bg-white/90 transition-colors duration-200 font-medium"
         >
           Send
