@@ -1,42 +1,23 @@
 'use client'
 import { useState, useEffect, useRef } from 'react';
-import Snowfall from 'react-snowfall'
 import AnimatedTree from "./components/AnimatedTree";
 import AIImageAnalyzer from "./components/AIImageAnalyzer";
 import Image from 'next/image';
 
 export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [snowflake, setSnowflake] = useState<HTMLCanvasElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   useEffect(() => {
-    // Create a custom snowflake using canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = 4;
-    canvas.height = 4;
-    
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, 4, 4);  // Draw a 4x4 white square
-    }
-    
-    setSnowflake(canvas);
-  }, []);
-
-  useEffect(() => {
     // Only run on client side
     if (typeof window !== 'undefined') {
-      // Create audio element if it doesn't exist
       if (!audioRef.current) {
         const audio = new Audio('/track.mp3');
         audio.loop = true;
         audioRef.current = audio;
       }
 
-      // Function to attempt playing
       const attemptPlay = async () => {
         try {
           await audioRef.current?.play();
@@ -46,10 +27,8 @@ export default function Home() {
         }
       };
 
-      // Try to play immediately
       attemptPlay();
 
-      // Also try to play on first user interaction
       const playOnInteraction = () => {
         attemptPlay();
         document.removeEventListener('click', playOnInteraction);
@@ -59,18 +38,16 @@ export default function Home() {
       document.addEventListener('click', playOnInteraction);
       document.addEventListener('touchstart', playOnInteraction);
 
-      // Try playing again after a short delay
       setTimeout(attemptPlay, 1000);
     }
 
-    // Cleanup function
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = '';
       }
     };
-  }, []); // Run once when component mounts
+  }, []);
 
   const toggleAudio = () => {
     if (audioRef.current) {
@@ -91,19 +68,6 @@ export default function Home() {
   return (
     <>
     <main className="min-h-screen flex flex-col items-center pt-[20vh]">
-      {snowflake && (
-        <Snowfall 
-          snowflakeCount={200}
-          images={[snowflake]}
-          radius={[2, 4]}
-          style={{
-            position: 'fixed',
-            width: '100vw',
-            height: '100vh',
-            zIndex: 0
-          }}
-        />
-      )}
       <pre
         className="text-[0.6em] sm:text-[0.8em] md:text-[1em] whitespace-pre overflow-x-auto text-center leading-none opacity-90"
       >
