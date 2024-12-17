@@ -1,0 +1,128 @@
+2024-12-17T00:15:59.922282Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo/cookies/10.cookie")}
+2024-12-17T00:15:59.934418Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:15:59.982255Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo/daemon"), AnchoredSystemPathBuf(".turbo/daemon/8b2b1fa8192bf08f-turbo.log.2024-12-17")}
+2024-12-17T00:15:59.982275Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:26:51.298335Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/Untitled design.png")}
+2024-12-17T00:26:51.300155Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:26:57.883096Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/bg.png")}
+2024-12-17T00:26:57.883103Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:27:03.483733Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/Untitled design.png"), AnchoredSystemPathBuf("public/bg.png")}
+2024-12-17T00:27:03.483768Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:48:32.764135Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T00:48:32.766002Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:48:37.054814Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T00:48:37.054822Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:55:11.758232Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T00:55:11.758687Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:55:24.254335Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T00:55:24.254465Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:55:49.062039Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T00:55:49.062086Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:56:22.153937Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T00:56:22.153962Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:56:30.053686Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T00:56:30.053705Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:56:45.456219Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T00:56:45.456272Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:57:06.354567Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T00:57:06.354665Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:57:42.753275Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T00:57:42.753307Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:58:03.353442Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T00:58:03.353467Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:58:08.453578Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T00:58:08.453606Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:58:10.252064Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T00:58:10.252073Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:58:37.354764Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("")}
+2024-12-17T00:58:37.354813Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({}))
+2024-12-17T00:58:37.552652Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T00:58:37.552667Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:59:28.953875Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T00:59:28.953956Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:59:29.552797Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T00:59:29.552811Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T00:59:59.353439Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T00:59:59.353490Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:00:00.152783Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:00:00.152810Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:00:30.257518Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:00:30.258167Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:00:30.852403Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:00:30.852428Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:00:49.953691Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:00:49.953725Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:00:50.252258Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:00:50.252276Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:02:28.452882Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/bg.png")}
+2024-12-17T01:02:28.452908Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:03:24.253070Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:03:24.253124Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:03:25.051888Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:03:25.051908Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:04:00.552440Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:04:00.552477Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:04:01.152214Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:04:01.152231Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:04:20.165783Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:04:20.165799Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:04:20.667071Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:04:20.667083Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:04:55.874564Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T01:04:55.874593Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:05:09.276287Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T01:05:09.276358Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:05:12.375407Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T01:05:12.375432Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:05:20.076256Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T01:05:20.076342Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:05:25.176079Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T01:05:25.176092Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:05:45.676160Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/page.tsx")}
+2024-12-17T01:05:45.676212Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:15:20.478900Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:15:20.478973Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T01:15:24.377214Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("src/app/globals.css")}
+2024-12-17T01:15:24.377227Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:16:11.351764Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/untitled folder")}
+2024-12-17T10:16:11.364331Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:16:15.415193Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors"), AnchoredSystemPathBuf("public/untitled folder")}
+2024-12-17T10:16:15.415242Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:16:16.914537Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/editor")}
+2024-12-17T10:16:16.914552Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:16:17.014113Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/editor")}
+2024-12-17T10:16:17.014132Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:16:17.214130Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/editor/processMarkdownStream.ts"), AnchoredSystemPathBuf("public/editors/editor"), AnchoredSystemPathBuf("public/editors/editor/markdown.ts"), AnchoredSystemPathBuf("public/editors/editor/utils.ts")}
+2024-12-17T10:16:17.214157Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:16:26.515437Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/editor-utils"), AnchoredSystemPathBuf("public/editors/editor")}
+2024-12-17T10:16:26.515585Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:16:41.316168Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/editor")}
+2024-12-17T10:16:41.316211Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:16:41.417386Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/editor")}
+2024-12-17T10:16:41.417467Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:16:41.526684Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/editor/CreatePageFromPrompt/CreatePageFromPromptWordCount.tsx"), AnchoredSystemPathBuf("public/editors/editor/CreatePageFromPrompt/CreatePageFromPromptModal.tsx"), AnchoredSystemPathBuf("public/editors/editor/SlashMenu/useContinuationText.tsx"), AnchoredSystemPathBuf("public/editors/editor/CreatePageFromPrompt/CreatePageFromPromptSelectPageType.tsx"), AnchoredSystemPathBuf("public/editors/editor/EditorTitle.tsx"), AnchoredSystemPathBuf("public/editors/editor/blocks/Autocomplete/AutocompleteContent.tsx"), AnchoredSystemPathBuf("public/editors/editor/blocks"), AnchoredSystemPathBuf("public/editors/editor/EditorToolbar/EditorToolbar.tsx"), AnchoredSystemPathBuf("public/editors/editor/SlashMenu/MenusProps.tsx"), AnchoredSystemPathBuf("public/editors/editor/useDocumentGenerator.tsx"), AnchoredSystemPathBuf("public/editors/editor/CreateNewPageMenu.tsx"), AnchoredSystemPathBuf("public/editors/editor/CreatePageFromPrompt/CreatePageFromPromptForm.tsx"), AnchoredSystemPathBuf("public/editors/editor/CreatePageFromPrompt/CreatePageFromPromptContext.tsx"), AnchoredSystemPathBuf("public/editors/editor/CreatePageFromPrompt"), AnchoredSystemPathBuf("public/editors/editor/SlashMenu"), AnchoredSystemPathBuf("public/editors/editor/EditorToolbar/navigationDirection.ts"), AnchoredSystemPathBuf("public/editors/editor/blocks/Autocomplete/Autocomplete.tsx"), AnchoredSystemPathBuf("public/editors/editor/prompts.ts"), AnchoredSystemPathBuf("public/editors/editor/useDocumentStats.tsx"), AnchoredSystemPathBuf("public/editors/editor/useViewDocument.tsx"), AnchoredSystemPathBuf("public/editors/editor/EditorProvider.tsx"), AnchoredSystemPathBuf("public/editors/editor/EditorToolbar/EditorPromptInput.tsx"), AnchoredSystemPathBuf("public/editors/editor/EditorToolbar/EditorSuggestionHeader.tsx"), AnchoredSystemPathBuf("public/editors/editor/BlockSchema.tsx"), AnchoredSystemPathBuf("public/editors/editor/EditorToolbar"), AnchoredSystemPathBuf("public/editors/editor/EditorToolbar/useCompletionHistory.ts"), AnchoredSystemPathBuf("public/editors/editor/Editor.tsx"), AnchoredSystemPathBuf("public/editors/editor/RenderDocument.tsx"), AnchoredSystemPathBuf("public/editors/editor/SlashMenu/SlashMenuOptions"), AnchoredSystemPathBuf("public/editors/editor/blocks/Alert.tsx"), AnchoredSystemPathBuf("public/editors/editor/DocumentSkeleton.tsx"), AnchoredSystemPathBuf("public/editors/editor/EditorSideMenu.tsx"), AnchoredSystemPathBuf("public/editors/editor/RemoveBlockButton.tsx"), AnchoredSystemPathBuf("public/editors/editor/SlashMenu/SlashMenuOptions/BrainstormIdeasOption.tsx"), AnchoredSystemPathBuf("public/editors/editor/blocks/Autocomplete/useAutocomplete.tsx"), AnchoredSystemPathBuf("public/editors/editor/EditorToolbar/EditorToolbarAiView.tsx"), AnchoredSystemPathBuf("public/editors/editor/EditorToolbar/EditorSuggestionContent.tsx"), AnchoredSystemPathBuf("public/editors/editor/SlashMenu/SlashMenuOptions/WriteFromPromptOptionForm.tsx"), AnchoredSystemPathBuf("public/editors/editor/WordCountBox.tsx"), AnchoredSystemPathBuf("public/editors/editor/blocks/Autocomplete"), AnchoredSystemPathBuf("public/editors/editor/SlashMenu/SlashMenuOptions/ContinueWritingOption.tsx"), AnchoredSystemPathBuf("public/editors/editor/useAutosave.tsx"), AnchoredSystemPathBuf("public/editors/editor/useCreateDocument.tsx"), AnchoredSystemPathBuf("public/editors/editor"), AnchoredSystemPathBuf("public/editors/editor/CreatePageFromPrompt/CreatePageFromPromptActions.tsx"), AnchoredSystemPathBuf("public/editors/editor/SlashMenu/SlashMenuExtended.tsx"), AnchoredSystemPathBuf("public/editors/editor/DocumentStateProvider.tsx"), AnchoredSystemPathBuf("public/editors/editor/EditorToolbar/EditorSuggestionSkeleton.tsx"), AnchoredSystemPathBuf("public/editors/editor/blocks/styles.css"), AnchoredSystemPathBuf("public/editors/editor/EditorToolbar/EditorToolbarFormatView.tsx"), AnchoredSystemPathBuf("public/editors/editor/EditorToolbar/animations.ts"), AnchoredSystemPathBuf("public/editors/editor/hooks"), AnchoredSystemPathBuf("public/editors/editor/inlineSpecs"), AnchoredSystemPathBuf("public/editors/editor/styles.css"), AnchoredSystemPathBuf("public/editors/editor/useEditorContext.tsx"), AnchoredSystemPathBuf("public/editors/editor/useSaveDocument.tsx")}
+2024-12-17T10:16:41.526708Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:31:31.444642Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/untitled folder")}
+2024-12-17T10:31:31.445216Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:31:42.242548Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/eeeee"), AnchoredSystemPathBuf("public/editors/untitled folder")}
+2024-12-17T10:31:42.242565Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:31:43.342853Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/eeeee/useEditorContext.tsx")}
+2024-12-17T10:31:43.342866Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:32:09.843343Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/eeeee/useAutosave.tsx")}
+2024-12-17T10:32:09.843368Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:32:34.643996Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/eeeee/SlashMenuExtended.tsx")}
+2024-12-17T10:32:34.644048Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:32:49.943398Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/eeeee/EditorPromptInput.tsx")}
+2024-12-17T10:32:49.943431Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:33:05.243918Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/eeeee/Editor.tsx")}
+2024-12-17T10:33:05.243993Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:34:20.346212Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/eeeee/Editor.tsx")}
+2024-12-17T10:34:20.346348Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:34:48.245086Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/eeeee/EditorPromptInput.tsx")}
+2024-12-17T10:34:48.245139Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:35:09.444898Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/eeeee/SlashMenuExtended.tsx")}
+2024-12-17T10:35:09.444952Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:35:22.544693Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/eeeee/useAutosave.tsx")}
+2024-12-17T10:35:22.544795Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-12-17T10:35:43.144928Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("public/editors/eeeee/useEditorContext.tsx")}
+2024-12-17T10:35:43.144964Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))

@@ -38,7 +38,7 @@ body::before {
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
-  opacity: 0.4;
+  opacity: 0.5;
   z-index: -1;
 }
 
@@ -70,4 +70,29 @@ body::before {
   to {
     transform: translateY(100vh) rotate(360deg);
   }
+}
+
+@keyframes greenShift {
+  0% { color: #9ab734; }
+  25% { color: #8fa830; }
+  50% { color: #849c2c; }
+  75% { color: #7a9128; }
+  100% { color: #a4c238; }
+}
+
+.animated-char {
+  display: inline;
+  animation: greenShift 2s infinite;
+}
+
+.animated-char:nth-child(3n) {
+  animation-delay: 0.5s;
+}
+
+.animated-char:nth-child(3n+1) {
+  animation-delay: 1s;
+}
+
+.animated-char:nth-child(3n+2) {
+  animation-delay: 1.5s;
 }
