@@ -4,8 +4,10 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const bots = await prisma.bot.findMany({
-      orderBy: { createdAt: 'desc' },
+    const bots = await prisma.$transaction(async (tx) => {
+      return await tx.bot.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
     });
     
     if (!bots) {
@@ -19,8 +21,6 @@ export async function GET() {
       { error: 'Failed to fetch bots', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

@@ -13,8 +13,10 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const deletedBot = await prisma.bot.delete({
-      where: { id },
+    const deletedBot = await prisma.$transaction(async (tx) => {
+      return await tx.bot.delete({
+        where: { id },
+      });
     });
 
     return NextResponse.json(deletedBot);
@@ -24,7 +26,5 @@ export async function DELETE(request: Request) {
       { error: 'Failed to delete bot' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
