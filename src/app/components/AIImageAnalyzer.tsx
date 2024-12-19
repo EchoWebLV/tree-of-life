@@ -38,32 +38,48 @@ export default function AIImageAnalyzer({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [persona, setPersona] = useState<Persona | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setUploadedFile(file);
+      // Create temporary URL for preview
+      const objectUrl = URL.createObjectURL(file);
+      setSelectedImage(objectUrl);
     }
   };
 
   const analyzeImage = async () => {
-    if (!selectedImage) return;
+    if (!uploadedFile || !selectedImage) return;
     
     setIsAnalyzing(true);
     onClose();
     onAnalysisStart?.();
     
     try {
+      // First, upload the image to Vercel Blob
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const { url: blobUrl } = await uploadResponse.json();
+
+      // Now analyze the image using the blob URL
       const response = await fetch('/api/analyze-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ image: selectedImage }),
+        body: JSON.stringify({ image: blobUrl }),
       });
       
       if (!response.ok) {
@@ -76,7 +92,7 @@ export default function AIImageAnalyzer({
         throw new Error('No persona data received');
       }
       
-      // Save bot to database
+      // Save bot to database with blob URL
       const botResponse = await fetch('/api/bots', {
         method: 'POST',
         headers: {
@@ -84,7 +100,7 @@ export default function AIImageAnalyzer({
         },
         body: JSON.stringify({
           name: data.persona.name,
-          imageUrl: selectedImage,
+          imageUrl: blobUrl,
           personality: data.persona.personality,
           background: data.persona.background,
         }),
@@ -145,7 +161,7 @@ export default function AIImageAnalyzer({
                 disabled={!selectedImage || isAnalyzing}
                 className="w-full"
               >
-                {isAnalyzing ? 'Brining To Life...' : 'Bring To Life'}
+                {isAnalyzing ? 'Bringing To Life...' : 'Bring To Life'}
               </Button>
 
               {persona && (
