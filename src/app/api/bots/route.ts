@@ -35,7 +35,6 @@ export async function POST(request: Request) {
 
     const { name, imageUrl, personality, background } = body;
 
-    // Validate required fields
     if (!name || !imageUrl || !personality || !background) {
       return NextResponse.json(
         { error: 'Missing required fields' },
