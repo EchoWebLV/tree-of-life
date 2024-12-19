@@ -4,30 +4,23 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const bots = await prisma.$transaction(async (tx) => {
-      return await tx.bot.findMany({
-        orderBy: { createdAt: 'desc' },
-      });
+    const bots = await prisma.bot.findMany({
+      orderBy: { createdAt: 'desc' },
     });
 
-    console.log(bots);
-    
-    try {
-      return NextResponse.json(bots || []);
-    } catch {
-      return NextResponse.json([]);
-    }
+    return NextResponse.json(bots || []);
   } catch (error) {
     console.error('Error fetching bots:', error);
     return new NextResponse(
-      JSON.stringify({ error: 'Failed to fetch bots', details: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ 
+        error: 'Failed to fetch bots', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      }),
       { 
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
