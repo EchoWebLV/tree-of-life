@@ -1,11 +1,29 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { generateAuthToken } from '@/app/utils/authToken';
 
 const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
-    const { name, imageUrl, personality, background } = await request.json();
+    const body = await request.json();
+    
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const { name, imageUrl, personality, background } = body;
+
+    // Validate required fields
+    if (!name || !imageUrl || !personality || !background) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
     
     const bot = await prisma.bot.create({
       data: {
@@ -13,13 +31,17 @@ export async function POST(request: Request) {
         imageUrl,
         personality,
         background,
+        authToken: generateAuthToken(),
       },
     });
 
     return NextResponse.json(bot);
   } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Failed to create bot' }, { status: 500 });
+    console.error('Error creating bot:', error);
+    return NextResponse.json(
+      { error: 'Failed to create bot' },
+      { status: 500 }
+    );
   }
 }
 
@@ -29,9 +51,18 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
     
+    if (!bots) {
+      return NextResponse.json({ bots: [] });
+    }
+    
     return NextResponse.json(bots);
   } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch bots' }, { status: 500 });
+    console.error('Error fetching bots:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch bots', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
   }
 } 

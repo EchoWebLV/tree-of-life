@@ -70,7 +70,7 @@ export default function Home() {
           throw new Error('Failed to fetch bots');
         }
         const data = await response.json();
-        setBots(data);
+        setBots(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error fetching bots:', error);
         setBots([]); // Set empty array on error
