@@ -5,6 +5,7 @@ import AnimatedTree from "./components/AnimatedTree";
 import AIImageAnalyzer from "./components/AIImageAnalyzer";
 import Image from "next/image";
 import DesktopInterface from "./components/DesktopInterface";
+import type { Persona } from "./components/AIImageAnalyzer";
 
 interface Bot {
   id: string;
@@ -146,7 +147,13 @@ export default function Home() {
           <AIImageAnalyzer
             onAnalysisStart={() => setIsAnalyzing(true)}
             onAnalysisComplete={() => setIsAnalyzing(false)}
-            onBotCreated={handleBotCreated}
+            onBotCreated={(bot: Persona) => {
+              handleBotCreated({
+                ...bot,
+                id: crypto.randomUUID(),
+                imageUrl: bot.imageUrl || ''
+              });
+            }}
           />
         </div>
         <audio ref={audioRef} src="/track.mp3" loop preload="auto" />

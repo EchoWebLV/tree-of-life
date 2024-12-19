@@ -5,11 +5,12 @@ import Image from 'next/image';
 import Chat from './Chat';
 import Button from './Button';
 
-interface Persona {
+export interface Persona {
   name: string;
   personality: string;
   background: string;
   messages?: Message[];
+  imageUrl?: string;
 }
 
 interface Message {
@@ -19,8 +20,8 @@ interface Message {
 
 interface AIImageAnalyzerProps {
   onAnalysisStart: () => void;
-  onAnalysisComplete: (persona: any) => void;
-  onBotCreated?: (bot: any) => void;
+  onAnalysisComplete: (persona: Persona) => void;
+  onBotCreated?: (bot: Persona) => void;
   modalClassName?: string;
   buttonIcon?: string;
   buttonText?: string;
