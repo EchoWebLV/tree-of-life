@@ -9,18 +9,25 @@ export async function GET() {
         orderBy: { createdAt: 'desc' },
       });
     });
+
+    console.log(bots);
     
-    if (!bots) {
-      return NextResponse.json({ bots: [] });
+    try {
+      return NextResponse.json(bots || []);
+    } catch {
+      return NextResponse.json([]);
     }
-    
-    return NextResponse.json(bots);
   } catch (error) {
     console.error('Error fetching bots:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch bots', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+    return new NextResponse(
+      JSON.stringify({ error: 'Failed to fetch bots', details: error instanceof Error ? error.message : 'Unknown error' }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
