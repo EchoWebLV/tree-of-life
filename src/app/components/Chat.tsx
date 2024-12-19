@@ -89,21 +89,21 @@ export default function Chat({ persona }: ChatProps) {
           </div>
         ))}
       </div>
-      <div className="h-[80px] flex gap-3 pt-4 border-t border-white">
+      <div className="h-[60px] flex gap-3 pt-3 border-t border-white">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-          className="flex-1 p-3 rounded-xl bg-black border border-white
+          className="flex-1 p-1 rounded-xl bg-black border border-white
             focus:outline-none focus:ring-2 focus:ring-white
-            text-white placeholder-white/60 text-base"
+            text-white placeholder-white/60 text-xs"
           placeholder="Type your message..."
         />
         <button
           onClick={sendMessage}
-          className="px-6 py-3 bg-white text-black rounded-xl 
-            hover:bg-white/90 transition-colors duration-200 font-medium"
+          className="px-4 py-1 bg-white text-black rounded-xl 
+            hover:bg-white/90 transition-colors duration-200 font-medium text-xs"
         >
           Send
         </button>

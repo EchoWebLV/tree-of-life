@@ -4,11 +4,22 @@ import Snowfall from "react-snowfall";
 import AnimatedTree from "./components/AnimatedTree";
 import AIImageAnalyzer from "./components/AIImageAnalyzer";
 import Image from "next/image";
+import DesktopInterface from "./components/DesktopInterface";
+
+interface Bot {
+  id: string;
+  name: string;
+  imageUrl: string;
+  personality: string;
+  background: string;
+}
 
 export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [bots, setBots] = useState<Bot[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Only run on client side
@@ -50,6 +61,27 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const fetchBots = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/bots');
+        if (!response.ok) {
+          throw new Error('Failed to fetch bots');
+        }
+        const data = await response.json();
+        setBots(data);
+      } catch (error) {
+        console.error('Error fetching bots:', error);
+        setBots([]); // Set empty array on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchBots();
+  }, []);
+
   const toggleAudio = () => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -74,12 +106,20 @@ export default function Home() {
 ██████╔╝██║  ██║╚█████╔╝ ██║██████╔╝    ██║  ██║██║
 ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝╚═════╝     ╚═╝  ╚═╝╚═╝`;
 
+  const handleBotDelete = (botId: string) => {
+    setBots(bots.filter(bot => bot.id !== botId));
+  };
+
+  const handleBotCreated = (newBot: Bot) => {
+    setBots(prevBots => [...prevBots, newBot]);
+  };
+
   return (
     <>
       <Snowfall
         color="white"
-        snowflakeCount={50}
-        radius={[2, 5]}
+        snowflakeCount={35}
+        radius={[1, 3]}
         speed={[0.5, 2]}
         wind={[-0.5, 2]}
       />
@@ -106,6 +146,7 @@ export default function Home() {
           <AIImageAnalyzer
             onAnalysisStart={() => setIsAnalyzing(true)}
             onAnalysisComplete={() => setIsAnalyzing(false)}
+            onBotCreated={handleBotCreated}
           />
         </div>
         <audio ref={audioRef} src="/track.mp3" loop preload="auto" />
@@ -137,6 +178,12 @@ export default function Home() {
             </svg>
           )}
         </button>
+        <DesktopInterface 
+          bots={bots} 
+          onBotClick={() => {}} 
+          onBotDelete={handleBotDelete}
+          isLoading={isLoading}
+        />
       </main>
     </>
   );

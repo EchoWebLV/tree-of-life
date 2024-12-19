@@ -18,10 +18,9 @@ interface Message {
 }
 
 interface AIImageAnalyzerProps {
-  onAnalysisComplete?: (persona: Persona) => void;
-  onAnalysisStart?: () => void;
-  buttonPosition?: 'fixed' | 'static';
-  buttonClassName?: string;
+  onAnalysisStart: () => void;
+  onAnalysisComplete: (persona: any) => void;
+  onBotCreated?: (bot: any) => void;
   modalClassName?: string;
   buttonIcon?: string;
   buttonText?: string;
@@ -30,6 +29,7 @@ interface AIImageAnalyzerProps {
 export default function AIImageAnalyzer({
   onAnalysisComplete,
   onAnalysisStart,
+  onBotCreated,
   modalClassName = '',
   buttonIcon = '🌿',
   buttonText = 'Upload Image'
@@ -54,8 +54,8 @@ export default function AIImageAnalyzer({
     if (!selectedImage) return;
     
     setIsAnalyzing(true);
-    setIsOpen(false); // Hide the window
-    onAnalysisStart?.(); // Start the animation
+    setIsOpen(false);
+    onAnalysisStart?.();
     
     try {
       const response = await fetch('/api/analyze-image', {
@@ -67,9 +67,26 @@ export default function AIImageAnalyzer({
       });
       
       const data = await response.json();
-      setPersona(data.persona);
-      onAnalysisComplete?.(data.persona);
-      setIsOpen(true); // Show the chat window
+      
+      // Save bot to database
+      const botResponse = await fetch('/api/bots', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.persona.name,
+          imageUrl: selectedImage,
+          personality: data.persona.personality,
+          background: data.persona.background,
+        }),
+      });
+      
+      const newBot = await botResponse.json();
+      setPersona(newBot);
+      onAnalysisComplete?.(newBot);
+      onBotCreated?.(newBot);
+      setIsOpen(true);
     } catch (error) {
       console.error('Error analyzing image:', error);
     } finally {
