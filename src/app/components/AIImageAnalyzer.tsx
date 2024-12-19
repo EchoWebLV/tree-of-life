@@ -67,7 +67,15 @@ export default function AIImageAnalyzer({
         body: JSON.stringify({ image: selectedImage }),
       });
       
+      if (!response.ok) {
+        throw new Error('Failed to analyze image');
+      }
+      
       const data = await response.json();
+      
+      if (!data.persona) {
+        throw new Error('No persona data received');
+      }
       
       // Save bot to database
       const botResponse = await fetch('/api/bots', {
@@ -82,6 +90,10 @@ export default function AIImageAnalyzer({
           background: data.persona.background,
         }),
       });
+      
+      if (!botResponse.ok) {
+        throw new Error('Failed to create bot');
+      }
       
       const newBot = await botResponse.json();
       setPersona(newBot);
