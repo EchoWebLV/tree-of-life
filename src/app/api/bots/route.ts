@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    await prisma.$connect();
     const bots = await prisma.bot.findMany({
       orderBy: { createdAt: 'desc' },
     });
@@ -47,7 +46,6 @@ export async function POST(request: Request) {
       );
     }
     
-    await prisma.$connect();
     const bot = await prisma.bot.create({
       data: {
         name,
@@ -65,7 +63,5 @@ export async function POST(request: Request) {
       { error: 'Failed to create bot', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 } 
