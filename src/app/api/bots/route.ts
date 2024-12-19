@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
+    await prisma.$connect();
     const bots = await prisma.bot.findMany({
       orderBy: { createdAt: 'desc' },
     });
@@ -21,6 +22,8 @@ export async function GET() {
         headers: { 'Content-Type': 'application/json' }
       }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
