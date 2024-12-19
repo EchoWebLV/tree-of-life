@@ -22,8 +22,9 @@ export default function Button({
     ${position === 'fixed' ? 'fixed bottom-8 left-8' : ''} 
     ${customPosition || ''}
     z-50 
-    px-6 py-3 
+    px-6 py-2 sm:px-8 sm:py-4
     font-pixel
+    text-sm sm:text-base
     transition-all
     duration-100
     rounded-lg
@@ -38,9 +39,8 @@ export default function Button({
       text-[#E8DAB2] 
       shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]
       hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]
-      hover:translate-x-[2px]
-      hover:translate-y-[2px]
-      ${icon ? `before:content-['${icon}'] before:mr-2` : ''}
+      hover:scale-[0.98]
+      transform-gpu
       [image-rendering:pixelated]
     `,
     secondary: `

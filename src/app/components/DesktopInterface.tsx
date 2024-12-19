@@ -16,9 +16,10 @@ interface DesktopInterfaceProps {
   onBotClick: (bot: Bot) => void;
   onBotDelete: (botId: string) => void;
   isLoading: boolean;
+  onUploadClick: () => void;
 }
 
-export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoading }: DesktopInterfaceProps) {
+export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoading, onUploadClick }: DesktopInterfaceProps) {
   const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
   const [windows, setWindows] = useState<Bot[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -54,9 +55,62 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
   };
 
   return (
-    <div className="fixed inset-0 pointer-events-none">
+    <div className="fixed inset-0 w-screen h-screen pointer-events-none flex items-center justify-center">
       {/* Desktop Icons */}
-      <div className="fixed left-4 top-4 space-y-6 pointer-events-auto w-24">
+      <div className="fixed left-4 top-4 grid grid-flow-col auto-cols-[96px] gap-x-6 pointer-events-auto" 
+           style={{ 
+             gridTemplateRows: 'repeat(5, minmax(min-content, 1fr))',
+             gridAutoFlow: 'column',
+             maxHeight: 'calc(100vh - 2rem)',
+             gap: '1.5rem'
+           }}>
+        {/* Static Images */}
+        <motion.div className="flex flex-col items-center relative group" whileHover={{ scale: 1.05 }}>
+          <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
+            <Image src="/twitter.png" alt="Twitter" fill className="object-cover" />
+          </div>
+          <span className="mt-2 text-xs text-white text-center max-w-full truncate">
+            Twitter
+          </span>
+        </motion.div>
+        
+        <motion.div className="flex flex-col items-center relative group" whileHover={{ scale: 1.05 }}>
+          <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
+            <Image src="/dex.png" alt="Dex" fill className="object-cover" />
+          </div>
+          <span className="mt-2 text-xs text-white text-center max-w-full truncate">
+            Dex
+          </span>
+        </motion.div>
+
+        <motion.div 
+          className="flex flex-col items-center relative group" 
+          whileHover={{ scale: 1.05 }}
+          onClick={onUploadClick}
+        >
+          <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="24" 
+              height="24" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              className="text-white"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </div>
+          <span className="mt-2 text-xs text-white text-center max-w-full truncate">
+            Upload
+          </span>
+        </motion.div>
+
+        {/* Existing bot icons */}
         {isLoading ? (
           <div className="text-white text-xs animate-pulse">
             Loading...
@@ -68,8 +122,8 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
               className="flex flex-col items-center relative group"
               whileHover={{ scale: 1.05 }}
             >
-              <div
-                className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer"
+              <div 
+                className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer z-2"
                 onClick={() => openWindow(bot)}
               >
                 <Image
@@ -95,7 +149,7 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
 
               {/* Delete confirmation modal */}
               {showDeleteConfirm === bot.id && (
-                <div className="absolute top-0 left-0 w-48 bg-black/90 p-3 rounded-lg -translate-y-full">
+                <div className="absolute top-0 left-0 w-48 bg-black/90 p-3 rounded-lg -translate-y-full z-20">
                   <p className="text-xs text-white mb-2">Delete {bot.name}?</p>
                   <div className="flex gap-2">
                     <button
@@ -126,14 +180,8 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
-            className="fixed pointer-events-auto bg-black/80 backdrop-blur-sm rounded-lg overflow-hidden"
-            style={{
-              width: '400px',
-              height: '500px',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)'
-            }}
+            className="pointer-events-auto bg-black/80 backdrop-blur-sm rounded-lg overflow-hidden
+                     w-[400px] h-[500px]"
           >
             <div className="flex items-center justify-between p-2 bg-white/10">
               <div className="flex items-center gap-2">

@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import Snowfall from "react-snowfall";
 import AnimatedTree from "./components/AnimatedTree";
 import AIImageAnalyzer from "./components/AIImageAnalyzer";
-import Image from "next/image";
 import DesktopInterface from "./components/DesktopInterface";
 import type { Persona } from "./components/AIImageAnalyzer";
 
@@ -17,10 +16,11 @@ interface Bot {
 
 export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [bots, setBots] = useState<Bot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAnalyzer, setShowAnalyzer] = useState(false);
 
   useEffect(() => {
     // Only run on client side
@@ -31,27 +31,19 @@ export default function Home() {
         audioRef.current = audio;
       }
 
-      const attemptPlay = async () => {
-        try {
-          await audioRef.current?.play();
-        } catch (err) {
-          console.log("Play failed:", err);
-          setIsPlaying(false);
-        }
-      };
-
-      attemptPlay();
-
       const playOnInteraction = () => {
-        attemptPlay();
+        if (isPlaying) {
+          audioRef.current?.play().catch((err) => {
+            console.log("Play failed:", err);
+            setIsPlaying(false);
+          });
+        }
         document.removeEventListener("click", playOnInteraction);
         document.removeEventListener("touchstart", playOnInteraction);
       };
 
       document.addEventListener("click", playOnInteraction);
       document.addEventListener("touchstart", playOnInteraction);
-
-      setTimeout(attemptPlay, 1000);
     }
 
     return () => {
@@ -60,7 +52,7 @@ export default function Home() {
         audioRef.current.src = "";
       }
     };
-  }, []);
+  }, [isPlaying]);
 
   useEffect(() => {
     const fetchBots = async () => {
@@ -105,7 +97,7 @@ export default function Home() {
 ██║  ██║██████╔╝██║   ██║██║██║  ██║    ███████║██║
 ██║  ██║██╔══██╗██║   ██║██║██║  ██║    ██╔══██║██║
 ██████╔╝██║  ██║╚█████╔╝ ██║██████╔╝    ██║  ██║██║
-╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝╚═════╝     ╚═╝  ╚═╝╚═╝`;
+╚═════╝ ╚═╝  ╚═╝ ╚════╝ ╚═╝╚═════╝     ╚═╝  ╚═╝╚═╝`;
 
   const handleBotDelete = (botId: string) => {
     setBots(bots.filter(bot => bot.id !== botId));
@@ -124,8 +116,8 @@ export default function Home() {
         speed={[0.5, 2]}
         wind={[-0.5, 2]}
       />
-      <main className="min-h-screen flex flex-col items-center pt-[20vh]">
-        <pre className="text-[0.6em] sm:text-[0.8em] md:text-[1em] whitespace-pre overflow-x-auto text-center leading-none opacity-90">
+      <main className="min-h-screen flex flex-col items-center">
+        <pre className="hidden sm:block text-[0.6em] sm:text-[0.8em] md:text-[1em] whitespace-pre overflow-x-auto text-center leading-none opacity-90">
           {asciiArt.split('\n').map((line, lineIndex) => (
             <span key={lineIndex}>
               {line.split('').map((char, charIndex) => (
@@ -137,14 +129,12 @@ export default function Home() {
             </span>
           ))}
         </pre>
-        <span>[beta]</span>
-        <div className="flex flex-row gap-4">
-          <Image src="/twitter.png" alt="dex" width={80} height={80} />
-          <Image src="/dex.png" alt="dex" width={80} height={80} />
-        </div>
+        <span className="hidden sm:block">[beta]</span>
         <div className="mt-8">
           <AnimatedTree isAnalyzing={isAnalyzing} />
           <AIImageAnalyzer
+            isOpen={showAnalyzer}
+            onClose={() => setShowAnalyzer(false)}
             onAnalysisStart={() => setIsAnalyzing(true)}
             onAnalysisComplete={() => setIsAnalyzing(false)}
             onBotCreated={(bot: Persona) => {
@@ -153,6 +143,7 @@ export default function Home() {
                 id: crypto.randomUUID(),
                 imageUrl: bot.imageUrl || ''
               });
+              setShowAnalyzer(false);
             }}
           />
         </div>
@@ -190,6 +181,7 @@ export default function Home() {
           onBotClick={() => {}} 
           onBotDelete={handleBotDelete}
           isLoading={isLoading}
+          onUploadClick={() => setShowAnalyzer(true)}
         />
       </main>
     </>

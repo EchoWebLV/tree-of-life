@@ -19,23 +19,22 @@ interface Message {
 }
 
 interface AIImageAnalyzerProps {
+  isOpen: boolean;
+  onClose: () => void;
   onAnalysisStart: () => void;
   onAnalysisComplete: (persona: Persona) => void;
   onBotCreated?: (bot: Persona) => void;
   modalClassName?: string;
-  buttonIcon?: string;
-  buttonText?: string;
 }
 
 export default function AIImageAnalyzer({
+  isOpen,
+  onClose,
   onAnalysisComplete,
   onAnalysisStart,
   onBotCreated,
   modalClassName = '',
-  buttonIcon = '🌿',
-  buttonText = 'Upload Image'
 }: AIImageAnalyzerProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [persona, setPersona] = useState<Persona | null>(null);
@@ -55,7 +54,7 @@ export default function AIImageAnalyzer({
     if (!selectedImage) return;
     
     setIsAnalyzing(true);
-    setIsOpen(false);
+    onClose();
     onAnalysisStart?.();
     
     try {
@@ -99,7 +98,6 @@ export default function AIImageAnalyzer({
       setPersona(newBot);
       onAnalysisComplete?.(newBot);
       onBotCreated?.(newBot);
-      setIsOpen(true);
     } catch (error) {
       console.error('Error analyzing image:', error);
     } finally {
@@ -109,16 +107,6 @@ export default function AIImageAnalyzer({
 
   return (
     <>
-      <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-        <Button
-          icon={buttonIcon}
-          position="static"
-          onClick={() => setIsOpen(true)}
-        >
-          {buttonText}
-        </Button>
-      </div>
-
       {isOpen && (
         <div className={`fixed inset-0 bg-black/50 z-50 flex items-center justify-center ${modalClassName}`}>
           <div className="bg-background p-6 rounded-lg max-w-lg w-full m-4">
@@ -126,7 +114,7 @@ export default function AIImageAnalyzer({
               <h2 className="text-xl font-bold">Upload Image</h2>
               <Button
                 variant="secondary"
-                onClick={() => setIsOpen(false)}
+                onClick={onClose}
               >
                 ✕
               </Button>
