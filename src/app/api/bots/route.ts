@@ -19,6 +19,8 @@ export async function GET() {
       { error: 'Failed to fetch bots', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
@@ -59,5 +61,7 @@ export async function POST(request: Request) {
       { error: 'Failed to create bot', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 } 
