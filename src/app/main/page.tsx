@@ -6,6 +6,7 @@ import AIImageAnalyzer from "../components/AIImageAnalyzer";
 import DesktopInterface from "../components/DesktopInterface";
 import type { Persona } from "../components/AIImageAnalyzer";
 import React from "react";
+import { getClientToken } from "../utils/clientToken";
 
 interface Bot {
   id: string;
@@ -59,7 +60,8 @@ export default function Home() {
     const fetchBots = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/bots');
+        const clientToken = getClientToken();
+        const response = await fetch(`/api/bots?clientToken=${clientToken}`);
         if (!response.ok) {
           throw new Error('Failed to fetch bots');
         }
@@ -67,7 +69,7 @@ export default function Home() {
         setBots(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error fetching bots:', error);
-        setBots([]); // Set empty array on error
+        setBots([]);
       } finally {
         setIsLoading(false);
       }
@@ -98,7 +100,7 @@ export default function Home() {
 ██║  ██║██████╔╝██║   ██║██║██║  ██║    ███████║██║
 ██║  ██║██╔══██╗██║   ██║██║██║  ██║    ██╔══██║██║
 ██████╔╝██║  ██║╚█████╔╝ ██║██████╔╝    ██║  ██║██║
-╚═════╝ ╚═╝  ╚═╝ ╚════╝ ╚═╝╚═════╝     ╚═╝  ╚═╝╚═╝`;
+╚═════╝ ╚═╝  ╚═╝ ╚════╝ ╚═╝╚═════╝      ╚═╝  ╚═╚═╝`;
 
   const handleBotDelete = (botId: string) => {
     setBots(bots.filter(bot => bot.id !== botId));

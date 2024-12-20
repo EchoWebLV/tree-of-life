@@ -15,6 +15,7 @@ model Bot {
   personality String
   background  String
   authToken   String   @default(uuid())
+  clientToken String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 } 

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Chat from './Chat';
 import Button from './Button';
+import { getClientToken } from '../utils/clientToken';
 
 export interface Persona {
   name: string;
@@ -103,6 +104,7 @@ export default function AIImageAnalyzer({
           imageUrl: blobUrl,
           personality: data.persona.personality,
           background: data.persona.background,
+          clientToken: getClientToken(),
         }),
       });
       

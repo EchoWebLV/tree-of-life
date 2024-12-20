@@ -1,58 +1,48 @@
 import { NextResponse } from 'next/server';
-import { generateAuthToken } from '@/app/utils/authToken';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const clientToken = searchParams.get('clientToken');
+
+  if (!clientToken) {
+    return NextResponse.json({ error: 'No client token provided' }, { status: 401 });
+  }
+
   try {
     const bots = await prisma.bot.findMany({
+      where: {
+        clientToken: clientToken
+      },
       orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json(bots || []);
   } catch (error) {
     console.error('Error fetching bots:', error);
-    return new NextResponse(
-      JSON.stringify({ 
-        error: 'Failed to fetch bots', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
-      }),
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
+    return NextResponse.json(
+      { error: 'Failed to fetch bots' },
+      { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
-    if (!body || typeof body !== 'object') {
+    const { clientToken, ...botData } = body;
+
+    if (!clientToken) {
       return NextResponse.json(
-        { error: 'Invalid request body' },
-        { status: 400 }
+        { error: 'No client token provided' },
+        { status: 401 }
       );
     }
 
-    const { name, imageUrl, personality, background } = body;
-
-    if (!name || !imageUrl || !personality || !background) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
-    
     const bot = await prisma.bot.create({
       data: {
-        name,
-        imageUrl,
-        personality,
-        background,
-        authToken: generateAuthToken(),
+        ...botData,
+        clientToken: clientToken,
       },
     });
 
@@ -60,7 +50,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error creating bot:', error);
     return NextResponse.json(
-      { error: 'Failed to create bot', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to create bot' },
       { status: 500 }
     );
   }
