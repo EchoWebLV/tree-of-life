@@ -112,8 +112,13 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
 
         {/* Existing bot icons */}
         {isLoading ? (
-          <div className="text-white text-xs animate-pulse">
-            Loading...
+          <div className="flex flex-col items-center space-y-2">
+            <div className="flex space-x-1">
+              <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0s' }} />
+              <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.2s' }} />
+              <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.4s' }} />
+            </div>
+            <span className="text-white text-xs">Loading</span>
           </div>
         ) : (
           bots.map((bot) => (

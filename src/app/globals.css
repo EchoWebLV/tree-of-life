@@ -96,3 +96,12 @@ body::before {
 .animated-char:nth-child(3n+2) {
   animation-delay: 1.5s;
 }
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
