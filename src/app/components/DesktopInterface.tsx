@@ -65,7 +65,11 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
              gap: '1.5rem'
            }}>
         {/* Static Images */}
-        <motion.div className="flex flex-col items-center relative group" whileHover={{ scale: 1.05 }}>
+        <motion.div 
+          className="flex flex-col items-center relative group" 
+          whileHover={{ scale: 1.05 }}
+          onClick={() => window.open('https://x.com/DruidAi_APP', '_blank')}
+        >
           <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
             <Image src="/twitter.png" alt="Twitter" fill className="object-cover" />
           </div>
@@ -74,7 +78,11 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
           </span>
         </motion.div>
         
-        <motion.div className="flex flex-col items-center relative group" whileHover={{ scale: 1.05 }}>
+        <motion.div 
+          className="flex flex-col items-center relative group" 
+          whileHover={{ scale: 1.05 }}
+          onClick={() => window.open('https://dexscreener.com', '_blank')}
+        >
           <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
             <Image src="/dex.png" alt="Dex" fill className="object-cover" />
           </div>
@@ -84,6 +92,19 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
         </motion.div>
 
         <motion.div 
+          className="flex flex-col items-center relative group" 
+          whileHover={{ scale: 1.05 }}
+          onClick={() => window.open('https://druid-ai-docs.gitbook.io/start', '_blank')}
+        >
+          <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
+            <Image src="/doc.png" alt="Docs" fill className="object-cover" />
+          </div>
+          <span className="mt-2 text-xs text-white text-center max-w-full truncate">
+            Docs
+          </span>
+        </motion.div>
+
+        <motion.div
           className="flex flex-col items-center relative group" 
           whileHover={{ scale: 1.05 }}
           onClick={onUploadClick}
