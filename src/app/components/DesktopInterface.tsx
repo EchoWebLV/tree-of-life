@@ -88,7 +88,12 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
           whileHover={{ scale: 1.05 }}
           onClick={onUploadClick}
         >
-          <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center">
+          <div 
+            className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer 
+                       bg-white/10 hover:bg-white/20 transition-colors 
+                       flex items-center justify-center
+                       animate-[subtle-glow_2s_ease-in-out_infinite]"
+          >
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
               width="24" 
@@ -106,7 +111,7 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
             </svg>
           </div>
           <span className="mt-2 text-xs text-white text-center max-w-full truncate">
-            Upload
+            Create
           </span>
         </motion.div>
 
