@@ -71,7 +71,7 @@ export default function Chat({ persona }: ChatProps) {
   };
 
   return (
-    <div className="flex flex-col text-xs h-full bg-black rounded-xl p-6 shadow-lg border border-white">
+    <div className="flex flex-col text-xs h-full bg-black rounded-xl p-6 shadow-lg border border-white chat-container">
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white">
         {messages.map((message, index) => (
           <div
@@ -97,7 +97,7 @@ export default function Chat({ persona }: ChatProps) {
           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
           className="w-3/4 p-1 rounded-xl bg-black border border-white
             focus:outline-none focus:ring-2 focus:ring-white
-            text-white placeholder-white/60 text-xs"
+            text-white placeholder-white/60 text-xs chat-input no-select"
           placeholder="Type your message..."
         />
         <button

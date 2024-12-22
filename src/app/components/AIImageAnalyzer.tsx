@@ -207,7 +207,7 @@ export default function AIImageAnalyzer({
                     }`}
                     onClick={() => setUploadType('IMAGE')}
                   >
-                    Image Upload
+                    Image
                   </button>
                   <button
                     className={`px-4 py-2 rounded-t-lg ${
@@ -264,15 +264,9 @@ export default function AIImageAnalyzer({
                       disabled={!nftAddress || isAnalyzing}
                       className="w-full"
                     >
-                      {isAnalyzing ? 'Fetching NFT...' : 'Create from NFT'}
+                      {isAnalyzing ? 'Fetching NFT...' : 'Bring To Life'}
                     </Button>
                   </>
-                )}
-
-                {persona && (
-                  <div className="mt-4">
-                    <Chat persona={persona} />
-                  </div>
                 )}
               </div>
             </div>

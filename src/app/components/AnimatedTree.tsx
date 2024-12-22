@@ -16,7 +16,7 @@ export default function AnimatedTree({ isAnalyzing = false, onAnalyze }: Animate
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const getImageSrc = () => {
-    return isAnalyzing ? '/ui-bottom.gif' : '/ui-bottom.png';
+    return isAnalyzing ? '/ui-bottom.png' : '/ui-bottom-static.png';
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
