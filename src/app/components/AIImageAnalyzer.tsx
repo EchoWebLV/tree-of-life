@@ -103,7 +103,7 @@ export default function AIImageAnalyzer({
     try {
       const response = await fetch(`https://api.simplehash.com/api/v0/nfts/solana/${validAddress}`, {
         headers: {
-          'X-API-KEY': "EYerPej2iNQKi7twrsCjYNL9kAgyr8SzxU2Xj6jFb9xu" || '',
+          'X-API-KEY': "EYerPej2iNQKi7twrsCjYNL9kAgyr8SzxU2Xj6jFb9xu",
           'accept': 'application/json'
         }
       });
