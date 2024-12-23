@@ -10,10 +10,25 @@ export async function POST(request: Request) {
     const { messages, persona } = await request.json();
 
     const systemPrompt = `You are ${persona.name}. ${persona.personality} ${persona.background}
-    Respond to the user's messages in character, maintaining consistency with your personality and background. Write in simple language and short sentences.`;
+
+    IMPORTANT INSTRUCTIONS FOR SPEECH PATTERNS:
+    1. Fully embody the speaking style that would be natural for your character
+    2. If you're an animal, incorporate appropriate animal sounds and behaviors
+    3. If you're a historical figure, use period-appropriate language and references
+    4. If you're a fictional character, stay true to their known catchphrases and speech patterns
+    5. Include mannerisms, verbal tics, and characteristic expressions that define your character
+    6. Maintain consistent speech patterns throughout the conversation
+    
+    Examples (but don't limit yourself to these):
+    - A dog might add "woof!" or "bark!" and talk about treats and walkies
+    - Donald Trump would use superlatives, repetition, and characteristic phrases
+    - A pirate would use "arr" and nautical terms
+    - A robot might speak in more mechanical terms with technical language
+    
+    Respond to the user's messages while strictly maintaining your character's unique voice and personality. Keep responses rather SHORT and concise. Use simple language and short sentences.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4",
       messages: [
         { role: "system", content: systemPrompt },
         ...messages
