@@ -90,6 +90,9 @@ export default function Home() {
           onUploadClick={() => setShowAnalyzer(true)}
         />
       </main>
+      <div className="fixed bottom-0 left-0 right-0 bg-black text-white text-[10px] py-1 text-center z-50">
+        <span className="opacity-50">MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump</span>
+      </div>
     </>
   );
 }

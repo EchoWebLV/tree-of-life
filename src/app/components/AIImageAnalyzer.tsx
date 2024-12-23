@@ -43,7 +43,7 @@ export default function AIImageAnalyzer({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [nftAddress, setNftAddress] = useState<string>('');
+  const [nftAddress, setNftAddress] = useState('');
   const [addressError, setAddressError] = useState<string>('');
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export default function AIImageAnalyzer({
     try {
       const response = await fetch(`https://api.simplehash.com/api/v0/nfts/solana/${validAddress}`, {
         headers: {
-          'X-API-KEY': 'teamgpt_sk_6lpgkucpixnk5pnsay1dv3z2741d5d77',
+          'X-API-KEY': process.env.NEXT_PUBLIC_SIMPLEHASH_API_KEY || '',
           'accept': 'application/json'
         }
       });
@@ -281,7 +281,7 @@ export default function AIImageAnalyzer({
                     <input
                       type="text"
                       placeholder="Enter NFT address or URL"
-                      value={nftAddress}
+                      value={nftAddress || ''}
                       onChange={(e) => {
                         setNftAddress(e.target.value);
                         setAddressError('');

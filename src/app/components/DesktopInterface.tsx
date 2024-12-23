@@ -2,6 +2,9 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import Chat from './Chat';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { PiPillDuotone } from 'react-icons/pi';
+import LoadingDots from './LoadingDots';
 
 interface Bot {
   id: string;
@@ -19,7 +22,7 @@ interface DesktopInterfaceProps {
   onUploadClick: () => void;
 }
 
-export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoading, onUploadClick }: DesktopInterfaceProps) {
+export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploadClick }: DesktopInterfaceProps) {
   const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
   const [windows, setWindows] = useState<Bot[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -141,11 +144,7 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
             whileHover={{ scale: 1.05 }}
           >
             <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer bg-white/10 flex items-center justify-center">
-              <div className="flex space-x-1">
-                <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0s' }} />
-                <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.2s' }} />
-                <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.4s' }} />
-              </div>
+              <LoadingDots />
             </div>
             <span className="mt-2 text-xs text-white text-center max-w-full truncate">
               Loading
@@ -165,11 +164,7 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
                   <Image src={bot.imageUrl} alt={bot.name} fill className="object-cover" />
                   {deletingBotId === bot.id && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-white rounded-full animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0s' }} />
-                        <div className="w-2 h-2 bg-white rounded-full animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.2s' }} />
-                        <div className="w-2 h-2 bg-white rounded-full animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.4s' }} />
-                      </div>
+                      <LoadingDots size="sm" />
                     </div>
                   )}
                 </div>
@@ -236,12 +231,35 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
                 </div>
                 <span className="text-sm">{bot.name}</span>
               </div>
-              <button
-                onClick={() => closeWindow(bot.id)}
-                className="text-white hover:text-red-500"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-2">
+                <Tooltip.Provider>
+                  <Tooltip.Root>
+                    <Tooltip.Trigger asChild>
+                      <button
+                        className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
+                                 text-white rounded-full hover:opacity-90 transition-opacity"
+                      >
+                        <PiPillDuotone className="w-5 h-5" />
+                      </button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Portal>
+                      <Tooltip.Content
+                        className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                        sideOffset={5}
+                      >
+                        Deploy On Pump.Fun (Coming Soon)
+                        <Tooltip.Arrow className="fill-black/90" />
+                      </Tooltip.Content>
+                    </Tooltip.Portal>
+                  </Tooltip.Root>
+                </Tooltip.Provider>
+                <button
+                  onClick={() => closeWindow(bot.id)}
+                  className="text-white hover:text-red-500"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             <div className="p-4 h-[calc(100%-48px)] overflow-y-auto">
               <Chat persona={bot} />
