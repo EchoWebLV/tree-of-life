@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Snowfall from "react-snowfall";
 import AnimatedTree from "../components/AnimatedTree";
 import AIImageAnalyzer from "../components/AIImageAnalyzer";
