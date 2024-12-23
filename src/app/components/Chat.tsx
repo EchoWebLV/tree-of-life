@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface Persona {
   name: string;
@@ -21,17 +21,20 @@ export default function Chat({ persona }: ChatProps) {
     }
   ]);
   const [input, setInput] = useState('');
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const scrollToBottom = () => {
-      const lastMessage = document.querySelector('[data-message]:last-of-type');
-      if (lastMessage) {
-        setTimeout(() => {
-          lastMessage.scrollIntoView({ 
-            behavior: 'smooth',
-            block: 'end'
-          });
-        }, 100);
+      if (chatContainerRef.current) {
+        const lastMessage = chatContainerRef.current.querySelector('[data-message]:last-of-type');
+        if (lastMessage) {
+          setTimeout(() => {
+            lastMessage.scrollIntoView({ 
+              behavior: 'smooth',
+              block: 'end'
+            });
+          }, 100);
+        }
       }
     };
 
@@ -71,7 +74,7 @@ export default function Chat({ persona }: ChatProps) {
   };
 
   return (
-    <div className="flex flex-col text-xs h-full bg-black rounded-xl p-6 shadow-lg border border-white chat-container">
+    <div className="flex flex-col text-xs h-full bg-black rounded-xl p-6 shadow-lg border border-white chat-container" ref={chatContainerRef}>
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white">
         {messages.map((message, index) => (
           <div

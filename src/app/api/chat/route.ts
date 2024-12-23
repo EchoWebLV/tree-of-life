@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const { messages, persona } = await request.json();
 
     const systemPrompt = `You are ${persona.name}. ${persona.personality} ${persona.background}
-    Respond to the user's messages in character, maintaining consistency with your personality and background.`;
+    Respond to the user's messages in character, maintaining consistency with your personality and background. Write in simple language and short sentences.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",

@@ -87,7 +87,7 @@ export default function AIImageAnalyzer({
       const nftPersona = {
         name: data.name,
         imageUrl: data.image_url,
-        personality: `An NFT character with the following traits: ${data.extra_metadata.attributes
+        personality: `An NFT (say you are NFT only if asked) character with the following traits: ${data.extra_metadata.attributes
           .map(attr => `${attr.trait_type}: ${attr.value}`)
           .join(', ')}`,
         background: `From the collection: ${data.collection.name}. ${data.collection.description}. Character description: ${data.description}`,
