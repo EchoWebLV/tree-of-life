@@ -57,13 +57,8 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
   return (
     <div className="fixed inset-0 w-screen h-screen pointer-events-none flex items-center justify-center">
       {/* Desktop Icons */}
-      <div className="fixed left-4 top-4 grid grid-flow-col auto-cols-[96px] gap-x-6 pointer-events-auto" 
-           style={{ 
-             gridTemplateRows: 'repeat(5, minmax(min-content, 1fr))',
-             gridAutoFlow: 'column',
-             maxHeight: 'calc(100vh - 2rem)',
-             gap: '1.5rem'
-           }}>
+      <div className="fixed left-4 top-4 grid grid-flow-col auto-cols-[96px] gap-6 pointer-events-auto
+                      grid-rows-4 md:grid-rows-5 max-h-[calc(100vh-2rem)]">
         {/* Static Images */}
         <motion.div 
           className="flex flex-col items-center relative group" 
