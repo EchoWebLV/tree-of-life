@@ -21,7 +21,7 @@ export default function Home() {
       className="min-h-screen flex flex-col items-center justify-center cursor-pointer"
       onClick={handleClick}
     >
-      <pre className="text-[0.6em] sm:text-[0.8em] md:text-[1em] whitespace-pre text-center leading-none opacity-90">
+      <pre className="text-[0.6em] sm:text-[0.8em] md:text-[1em] whitespace-pre text-center leading-none opacity-90 overflow-hidden">
         {asciiArt.split('\n').map((line, lineIndex) => (
           <span key={lineIndex}>
             {line.split('').map((char, charIndex) => (
