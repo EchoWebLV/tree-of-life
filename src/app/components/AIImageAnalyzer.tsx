@@ -44,6 +44,7 @@ export default function AIImageAnalyzer({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [nftAddress, setNftAddress] = useState<string>('');
+  const [addressError, setAddressError] = useState<string>('');
 
   useEffect(() => {
     if (!isOpen) {
@@ -62,15 +63,45 @@ export default function AIImageAnalyzer({
     }
   };
 
+  const extractAndValidateAddress = (input: string): string | null => {
+    // Base58 regex pattern (Solana addresses are base58)
+    const base58Pattern = /[1-9A-HJ-NP-Za-km-z]{32,44}/;
+    
+    // Direct address check
+    if (base58Pattern.test(input)) {
+      return input;
+    }
+    
+    // URL check (for marketplaces like Magic Eden, etc.)
+    try {
+      const url = new URL(input);
+      const pathParts = url.pathname.split('/');
+      for (const part of pathParts) {
+        if (base58Pattern.test(part)) {
+          return part;
+        }
+      }
+    } catch {
+      // Invalid URL, continue to return null
+    }
+    
+    return null;
+  };
+
   const analyzeNFT = async () => {
-    if (!nftAddress) return;
+    const validAddress = extractAndValidateAddress(nftAddress);
+    if (!validAddress) {
+      setAddressError('Please enter a valid Solana NFT address or URL');
+      return;
+    }
+    setAddressError('');
     
     setIsAnalyzing(true);
     onClose();
     onAnalysisStart?.();
     
     try {
-      const response = await fetch(`https://api.simplehash.com/api/v0/nfts/solana/${nftAddress}`, {
+      const response = await fetch(`https://api.simplehash.com/api/v0/nfts/solana/${validAddress}`, {
         headers: {
           'X-API-KEY': 'teamgpt_sk_6lpgkucpixnk5pnsay1dv3z2741d5d77',
           'accept': 'application/json'
@@ -249,11 +280,17 @@ export default function AIImageAnalyzer({
                   <>
                     <input
                       type="text"
-                      placeholder="Enter NFT address"
+                      placeholder="Enter NFT address or URL"
                       value={nftAddress}
-                      onChange={(e) => setNftAddress(e.target.value)}
+                      onChange={(e) => {
+                        setNftAddress(e.target.value);
+                        setAddressError('');
+                      }}
                       className="w-full p-2 rounded bg-white/10"
                     />
+                    {addressError && (
+                      <p className="text-red-500 text-sm mt-1">{addressError}</p>
+                    )}
                     <Button
                       variant="secondary"
                       onClick={analyzeNFT}

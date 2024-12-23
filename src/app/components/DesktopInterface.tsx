@@ -23,6 +23,7 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
   const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
   const [windows, setWindows] = useState<Bot[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [deletingBotId, setDeletingBotId] = useState<string | null>(null);
 
   const openWindow = (bot: Bot) => {
     if (!windows.find(w => w.id === bot.id)) {
@@ -39,6 +40,7 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
   };
 
   const handleDelete = async (botId: string) => {
+    setDeletingBotId(botId);
     try {
       const response = await fetch(`/api/bots/${botId}`, {
         method: 'DELETE',
@@ -52,6 +54,7 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
       console.error('Error deleting bot:', error);
     }
     setShowDeleteConfirm(null);
+    setDeletingBotId(null);
   };
 
   return (
@@ -106,7 +109,7 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
         >
           <div 
             className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer 
-                       bg-white/10 hover:bg-white/20 transition-colors 
+                       bg-white/40 hover:bg-white/20 transition-colors 
                        flex items-center justify-center
                        animate-[subtle-glow_2s_ease-in-out_infinite]"
           >
@@ -133,49 +136,61 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
 
         {/* Existing bot icons */}
         {isLoading ? (
-          <div className="flex flex-col items-center space-y-2">
-            <div className="flex space-x-1">
-              <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0s' }} />
-              <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.2s' }} />
-              <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.4s' }} />
-            </div>
-            <span className="text-white text-xs">Loading</span>
-          </div>
-        ) : (
-          bots.map((bot) => (
-            <motion.div
-              key={bot.id}
-              className="flex flex-col items-center relative group"
-              whileHover={{ scale: 1.05 }}
-            >
-              <div 
-                className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer z-2"
-                onClick={() => openWindow(bot)}
-              >
-                <Image
-                  src={bot.imageUrl}
-                  alt={bot.name}
-                  fill
-                  className="object-cover"
-                />
+          <motion.div
+            className="flex flex-col items-center relative group"
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer bg-white/10 flex items-center justify-center">
+              <div className="flex space-x-1">
+                <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0s' }} />
+                <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.2s' }} />
+                <div className="w-3 h-3 bg-white rounded-sm animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.4s' }} />
               </div>
-              <span className="mt-2 text-xs text-white text-center max-w-full truncate">
-                {bot.name}
-              </span>
-              
-              {/* Delete button */}
-              <button
-                onClick={() => setShowDeleteConfirm(bot.id)}
-                className="absolute -right-2 -top-2 w-6 h-6 bg-red-500 rounded-full text-white 
-                           opacity-0 group-hover:opacity-100 transition-opacity duration-200
-                           flex items-center justify-center text-xs"
+            </div>
+            <span className="mt-2 text-xs text-white text-center max-w-full truncate">
+              Loading
+            </span>
+          </motion.div>
+        ) : ( 
+          bots.map((bot) => (
+            <div key={bot.id} className="relative">
+              <motion.div
+                className="flex flex-col items-center relative group"
+                whileHover={{ scale: 1.05 }}
               >
-                ×
-              </button>
+                <div 
+                  className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer"
+                  onClick={() => openWindow(bot)}
+                >
+                  <Image src={bot.imageUrl} alt={bot.name} fill className="object-cover" />
+                  {deletingBotId === bot.id && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-white rounded-full animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0s' }} />
+                        <div className="w-2 h-2 bg-white rounded-full animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.2s' }} />
+                        <div className="w-2 h-2 bg-white rounded-full animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0.4s' }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <span className="mt-2 text-xs text-white text-center max-w-full truncate">
+                  {bot.name}
+                </span>
+                
+                {/* Delete button */}
+                <button
+                  onClick={() => setShowDeleteConfirm(bot.id)}
+                  className="absolute -right-2 -top-2 w-6 h-6 bg-red-500 rounded-full text-white 
+                             opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                             flex items-center justify-center text-xs"
+                >
+                  ×
+                </button>
+              </motion.div>
 
-              {/* Delete confirmation modal */}
+              {/* Delete confirmation modal - now a sibling */}
               {showDeleteConfirm === bot.id && (
-                <div className="absolute top-0 left-0 w-48 bg-black/90 p-3 rounded-lg -translate-y-full z-20">
+                <div className="absolute left-full ml-2 top-0 w-48 bg-black/90 p-3 rounded-lg z-50">
                   <p className="text-xs text-white mb-2">Delete {bot.name}?</p>
                   <div className="flex gap-2">
                     <button
@@ -193,7 +208,7 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
                   </div>
                 </div>
               )}
-            </motion.div>
+            </div>
           ))
         )}
       </div>

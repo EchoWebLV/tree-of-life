@@ -7,6 +7,7 @@ import DesktopInterface from "../components/DesktopInterface";
 import type { Persona } from "../components/AIImageAnalyzer";
 import React from "react";
 import { getClientToken } from "../utils/clientToken";
+import Logo from "../components/Logo";
 
 interface Bot {
   id: string;
@@ -44,14 +45,6 @@ export default function Home() {
     fetchBots();
   }, []);
 
-  const asciiArt = `
-██████╗ ██████╗ ██╗   ██╗██╗██████╗      █████╗ ██╗
-██╔══██╗██╔══██╗██║   ██║██║██╔══██╗    ██╔══██╗██║
-██║  ██║██████╔╝██║   ██║██║██║  ██║    ███████║██║
-██║  ██║██╔══██╗██║   ██║██║██║  ██║    ██╔══██║██║
-██████╔╝██║  ██║╚█████╔╝ ██║██████╔╝    ██║  ██║██║
-╚═════╝ ╚═╝  ╚═╝ ╚════╝ ╚═╝╚═════╝      ╚═╝  ╚═╚═╝`;
-
   const handleBotDelete = (botId: string) => {
     setBots(bots.filter(bot => bot.id !== botId));
   };
@@ -70,18 +63,7 @@ export default function Home() {
         wind={[-0.5, 2]}
       />
       <main className="min-h-screen flex flex-col items-center">
-        <pre className="hidden sm:block text-[0.6em] sm:text-[0.8em] md:text-[1em] whitespace-pre overflow-hidden text-center leading-none opacity-90">
-          {asciiArt.split('\n').map((line, lineIndex) => (
-            <span key={lineIndex}>
-              {line.split('').map((char, charIndex) => (
-                <span key={`${lineIndex}-${charIndex}`} className="animated-char">
-                  {char}
-                </span>
-              ))}
-              {lineIndex < asciiArt.split('\n').length - 1 ? '\n' : ''}
-            </span>
-          ))}
-        </pre>
+        <Logo className="hidden sm:block" />
         <span className="hidden sm:block">[beta]</span>
         <div className="mt-8">
           <AnimatedTree isAnalyzing={isAnalyzing} />
