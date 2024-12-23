@@ -42,7 +42,6 @@ export default function AIImageAnalyzer({
   const [uploadType, setUploadType] = useState<UploadType>('IMAGE');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [persona, setPersona] = useState<Persona | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [nftAddress, setNftAddress] = useState<string>('');
 
@@ -51,7 +50,6 @@ export default function AIImageAnalyzer({
       setSelectedImage(null);
       setUploadedFile(null);
       setNftAddress('');
-      setPersona(null);
     }
   }, [isOpen]);
 
@@ -112,7 +110,6 @@ export default function AIImageAnalyzer({
       }
 
       const newBot = await botResponse.json();
-      setPersona(newBot);
       onAnalysisComplete?.(newBot);
       onBotCreated?.(newBot);
     } catch (error) {
@@ -183,7 +180,6 @@ export default function AIImageAnalyzer({
       }
       
       const newBot = await botResponse.json();
-      setPersona(newBot);
       onAnalysisComplete?.(newBot);
       onBotCreated?.(newBot);
     } catch (error) {
