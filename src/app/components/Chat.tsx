@@ -97,8 +97,9 @@ export default function Chat({ persona }: ChatProps) {
           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
           className="w-3/4 p-1 rounded-xl bg-black border border-white
             focus:outline-none focus:ring-2 focus:ring-white
-            text-white placeholder-white/60 text-xs chat-input no-select"
+            text-white placeholder-white/60 text-base md:text-xs chat-input no-select"
           placeholder="Type your message..."
+          style={{ fontSize: '16px' }}
         />
         <button
           onClick={sendMessage}
