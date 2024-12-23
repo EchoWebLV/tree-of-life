@@ -109,7 +109,7 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
         >
           <div 
             className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer 
-                       bg-white/40 hover:bg-white/20 transition-colors 
+                       bg-yellow-300/40 hover:bg-yellow-300/20 transition-colors 
                        flex items-center justify-center
                        animate-[subtle-glow_2s_ease-in-out_infinite]"
           >
@@ -123,13 +123,13 @@ export default function DesktopInterface({ bots, onBotClick, onBotDelete, isLoad
               strokeWidth="2" 
               strokeLinecap="round" 
               strokeLinejoin="round" 
-              className="text-white"
+              className="text-yellow-100"
             >
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
           </div>
-          <span className="mt-2 text-xs text-white text-center max-w-full truncate">
+          <span className="mt-2 text-xs text-yellow-100 text-center max-w-full truncate">
             Create
           </span>
         </motion.div>
