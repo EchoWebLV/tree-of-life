@@ -99,11 +99,6 @@ export default function AnimatedTree({ isAnalyzing = false, onAnalyze }: Animate
         onAnalysisStart={() => {}} 
         onAnalysisComplete={() => {}} 
       />
-      <div className="absolute bottom-[0.25rem] left-0 flex justify-center z-20">
-        <div className="bg-background p-2 rounded-lg">
-          <h2 className="text-[8px] text-gray-500">CA:xXxXxXXXxXXXXXXXXxXXXxxXXxXxXxXxXXXxxXX</h2>
-        </div>
-      </div>
     </div>
   );
 }
