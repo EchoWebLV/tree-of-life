@@ -97,7 +97,9 @@ export async function POST(request: Request) {
           },
         });
 
-        await recordDeployment(clientToken);
+        if (result.success) {
+            await recordDeployment(clientToken);
+        }
 
         return NextResponse.json({
           success: result.success,
