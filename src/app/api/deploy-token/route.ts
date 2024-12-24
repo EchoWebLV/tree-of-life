@@ -31,25 +31,23 @@ export async function POST(request: Request) {
     const connection = new Connection(
       "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
       {
-        commitment: "finalized",
+        commitment: "processed",
         wsEndpoint: "wss://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
-        confirmTransactionInitialTimeout: 60000,
+        confirmTransactionInitialTimeout: 90000,
       }
     );
     const wallet = new NodeWallet(new Keypair());
     const provider = new AnchorProvider(connection, wallet, {
-      commitment: "finalized",
-      preflightCommitment: "finalized",
+      commitment: "processed",
+      preflightCommitment: "processed",
       skipPreflight: true,
     });
     const sdk = new PumpFunSDK(provider);
 
-    // Create wallet from environment variable
     const payerKeypair = Keypair.fromSecretKey(
       bs58.decode(process.env.PAYER_PRIVATE_KEY || "")
     );
 
-    // Download image and convert to Blob
     const imageResponse = await fetch(bot.imageUrl);
     if (!imageResponse.ok) {
       throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
@@ -59,9 +57,8 @@ export async function POST(request: Request) {
     const mint = Keypair.generate();
     let retryCount = 0;
     const maxRetries = 3;
-    const baseDelay = 500;
+    const baseDelay = 200;
 
-    // Create token metadata
     const metadata = {
       name: bot.name,
       symbol: bot.name.slice(0, 4).toUpperCase(),
@@ -79,14 +76,13 @@ export async function POST(request: Request) {
           BigInt(0),
           BigInt(10000),
           {
-            unitLimit: 350000,
-            unitPrice: 500000,
+            unitLimit: 1000000,
+            unitPrice: 1000000,
           }
         );
 
         const tokenAddress = mint.publicKey.toBase58();
 
-        // Create landing page record
         await prisma.landingPage.create({
           data: {
             tokenAddress,
@@ -99,7 +95,7 @@ export async function POST(request: Request) {
         });
 
         if (result.success) {
-            await recordDeployment(clientToken);
+          await recordDeployment(clientToken);
         }
 
         return NextResponse.json({
@@ -109,10 +105,10 @@ export async function POST(request: Request) {
           message: "Token deployed successfully",
         });
       } catch (err) {
+        console.error(`Attempt ${retryCount + 1} failed:`, err);
         if (retryCount === maxRetries - 1) throw err;
         retryCount++;
-        const delay = baseDelay * Math.pow(2, retryCount - 1);
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, baseDelay * retryCount));
       }
     }
   } catch (error) {
