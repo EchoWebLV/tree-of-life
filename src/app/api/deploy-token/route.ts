@@ -1,3 +1,4 @@
+export const maxDuration = 100;
 import { NextResponse } from "next/server";
 import { PumpFunSDK } from "pumpdotfun-sdk";
 import { Connection, Keypair } from "@solana/web3.js";
@@ -78,8 +79,8 @@ export async function POST(request: Request) {
           BigInt(0),
           BigInt(10000),
         {
-          unitLimit: 250000,
-          unitPrice: 250000,
+          unitLimit: 150000,
+          unitPrice: 150000,
         }
         );
 
