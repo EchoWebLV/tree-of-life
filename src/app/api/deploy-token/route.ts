@@ -79,8 +79,8 @@ export async function POST(request: Request) {
           BigInt(0),
           BigInt(10000),
         {
-          unitLimit: 150000,
-          unitPrice: 150000,
+          unitLimit: 250000,
+          unitPrice: 250000,
         }
         );
 
