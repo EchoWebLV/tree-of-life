@@ -1,22 +1,43 @@
-import { prisma } from '@/lib/prisma';
+'use client';
+
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Logo from './components/Logo';
 
-async function getLatestTokens() {
-  console.log('Fetching latest tokens...');
-  const tokens = await prisma.landingPage.findMany({
-    take: 12,
-    orderBy: {
-      createdAt: 'desc'
-    }
-  });
-  console.log('Found tokens:', tokens);
-  return tokens;
+interface Token {
+  id: string;
+  tokenAddress: string;
+  name: string;
+  imageUrl: string;
+  createdAt: string;
 }
 
-export default async function Home() {
-  const latestTokens = await getLatestTokens();
+export default function Home() {
+  const [latestTokens, setLatestTokens] = useState<Token[]>([]);
+
+  const fetchLatestTokens = async () => {
+    try {
+      const response = await fetch('/api/latest-tokens');
+      if (!response.ok) {
+        throw new Error('Failed to fetch tokens');
+      }
+      const data = await response.json();
+      setLatestTokens(data);
+    } catch (error) {
+      console.error('Error fetching tokens:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchLatestTokens();
+    
+    // Set up polling interval
+    const interval = setInterval(fetchLatestTokens, 10000);
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <main className="min-h-screen flex flex-col items-center p-4 bg-black text-white">
