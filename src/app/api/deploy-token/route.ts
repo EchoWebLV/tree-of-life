@@ -78,10 +78,10 @@ export async function POST(request: Request) {
           metadata,
           BigInt(0),
           BigInt(10000),
-        {
-          unitLimit: 350000,
-          unitPrice: 350000,
-        }
+          {
+            unitLimit: 350000,
+            unitPrice: 500000,
+          }
         );
 
         const tokenAddress = mint.publicKey.toBase58();
