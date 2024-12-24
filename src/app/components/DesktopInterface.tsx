@@ -88,7 +88,7 @@ export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploa
         <motion.div 
           className="flex flex-col items-center relative group" 
           whileHover={{ scale: 1.05 }}
-          onClick={() => window.open('https://dexscreener.com', '_blank')}
+          onClick={() => window.open('https://dexscreener.com/solana/MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump', '_blank')}
         >
           <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
             <Image src="/dex.png" alt="Dex" fill className="object-cover" />
@@ -343,19 +343,24 @@ export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploa
                     {deploymentModal.tokenAddress}
                   </p>
                 </div>
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => window.open(`${window.location.origin}${deploymentModal.landingPageUrl}`, '_blank')}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                  >
-                    View Landing Page
-                  </button>
-                  <button
-                    onClick={() => setDeploymentModal({ isOpen: false })}
-                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                  >
-                    Close
-                  </button>
+                <div className="flex flex-col gap-3">
+                  <p className="text-gray-500 text-sm italic">
+                    Token creation may take up to 2 minutes to appear in pump.fun
+                  </p>
+                  <div className="flex justify-end gap-3">
+                    <button
+                      onClick={() => window.open(`${window.location.origin}${deploymentModal.landingPageUrl}`, '_blank')}
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                    >
+                      View Landing Page
+                    </button>
+                    <button
+                      onClick={() => setDeploymentModal({ isOpen: false })}
+                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
