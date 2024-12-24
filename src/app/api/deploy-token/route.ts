@@ -132,6 +132,10 @@ async function deployToken(bot: Bot, mint: Keypair, tokenAddress: string, client
 
         if (result.success) {
           await recordDeployment(clientToken);
+          await prisma.landingPage.update({
+            where: { tokenAddress },
+            data: { status: 'completed' }
+          });
         }
         
         return;
