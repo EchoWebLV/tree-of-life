@@ -1,4 +1,4 @@
-export const maxDuration = 100;
+export const maxDuration = 200;
 import { NextResponse } from "next/server";
 import { PumpFunSDK } from "pumpdotfun-sdk";
 import { Connection, Keypair } from "@solana/web3.js";
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       {
         commitment: "finalized",
         wsEndpoint: "wss://morning-fragrant-sunset.solana-mainnet.quiknode.pro/aa3b44d9e34ec9c32482881ae0b50fd3ffb79229/",
-        confirmTransactionInitialTimeout: 30000,
+        confirmTransactionInitialTimeout: 60000,
       }
     );
     const wallet = new NodeWallet(new Keypair());
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     const mint = Keypair.generate();
     let retryCount = 0;
     const maxRetries = 3;
-    const baseDelay = 500; // Reduced delay
+    const baseDelay = 500;
 
     // Create token metadata
     const metadata = {
@@ -79,8 +79,8 @@ export async function POST(request: Request) {
           BigInt(0),
           BigInt(10000),
         {
-          unitLimit: 250000,
-          unitPrice: 250000,
+          unitLimit: 350000,
+          unitPrice: 350000,
         }
         );
 
