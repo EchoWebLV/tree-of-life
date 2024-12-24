@@ -18,4 +18,24 @@ model Bot {
   clientToken String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-} 
+}
+
+model LandingPage {
+  id           String   @id @default(cuid())
+  tokenAddress String   @unique
+  botId        String
+  name         String
+  imageUrl     String
+  personality  String
+  background   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model TokenDeployment {
+  id          String   @id @default(cuid())
+  clientToken String
+  createdAt   DateTime @default(now())
+
+  @@index([clientToken, createdAt])
+}

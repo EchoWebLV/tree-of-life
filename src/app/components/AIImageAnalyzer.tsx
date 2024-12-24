@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Chat from './Chat';
 import Button from './Button';
 import { getClientToken } from '../utils/clientToken';
 import type { NFTResponse } from '../types/nft';
