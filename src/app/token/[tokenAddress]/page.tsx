@@ -3,9 +3,15 @@ import Image from 'next/image';
 import Chat from '@/app/components/Chat';
 import { PiPillDuotone } from 'react-icons/pi';
 
-export default async function TokenLandingPage({ params }: { params: { tokenAddress: string } }) {
+interface PageProps {
+  params: Promise<{ tokenAddress: string }>;
+}
+
+export default async function TokenLandingPage({ params }: PageProps) {
+  const { tokenAddress } = await params;
+  
   const landingPage = await prisma.landingPage.findUnique({
-    where: { tokenAddress: params.tokenAddress }
+    where: { tokenAddress }
   });
 
   if (!landingPage) {

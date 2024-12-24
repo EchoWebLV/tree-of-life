@@ -2,9 +2,16 @@ import { prisma } from '@/lib/prisma';
 import Image from 'next/image';
 import Chat from '@/app/components/Chat';
 
-export default async function BotLandingPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function BotLandingPage({ params }: PageProps) {
+  const { id } = await params;
+  
   const landingPage = await prisma.landingPage.findUnique({
-    where: { id: params.id }
+    where: { id }
   });
 
   if (!landingPage) {
