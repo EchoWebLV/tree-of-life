@@ -45,7 +45,7 @@ export default async function Home() {
               <Link
                 key={token.id}
                 href={`/token/${token.tokenAddress}`}
-                className="block bg-white/5 rounded-lg p-6 hover:bg-white/10 transition-colors flex-col h-full"
+                className="flex bg-white/5 rounded-lg p-6 hover:bg-white/10 transition-colors flex-col h-full"
               >
                 <div className="relative w-full aspect-square mb-4">
                   <Image
@@ -56,11 +56,11 @@ export default async function Home() {
                   />
                 </div>
                 <h2 className="text-lg font-bold mb-2">{token.name}</h2>
-                <div className="flex flex-col items-center justify-between text-sm text-gray-400 mt-auto">
-                  <div>
+                <div className="flex flex-col gap-2 mt-auto">
+                  <div className="text-sm text-gray-400">
                     {new Date(token.createdAt).toLocaleDateString()}
                   </div>
-                  <div className="text-[10px] bg-white/10 px-2 py-1 rounded-full">
+                  <div className="text-[10px] bg-white/10 px-2 py-1 rounded-full text-center">
                     View Agent
                   </div>
                 </div>
