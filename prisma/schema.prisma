@@ -30,4 +30,12 @@ model LandingPage {
   background   String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-} 
+}
+
+model TokenDeployment {
+  id          String   @id @default(cuid())
+  clientToken String
+  createdAt   DateTime @default(now())
+
+  @@index([clientToken, createdAt])
+}

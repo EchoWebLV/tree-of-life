@@ -245,16 +245,23 @@ export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploa
                         onClick={async () => {
                           try {
                             setIsDeploying(bot.id);
+                            const clientToken = localStorage.getItem('clientToken') || '';
                             const response = await fetch('/api/deploy-token', {
                               method: 'POST',
                               headers: {
                                 'Content-Type': 'application/json',
                               },
-                              body: JSON.stringify({ bot }),
+                              body: JSON.stringify({ bot, clientToken }),
                             });
 
                             if (!response.ok) {
-                              throw new Error('Failed to deploy token');
+                              const data = await response.json();
+                              if (response.status === 429) {
+                                alert('Daily deployment limit reached. Try again tomorrow.');
+                              } else {
+                                throw new Error(data.error || 'Failed to deploy token');
+                              }
+                              return;
                             }
 
                             const data = await response.json();

@@ -58,14 +58,6 @@ export default async function TokenLandingPage({ params }: PageProps) {
                 <PiPillDuotone className="w-5 h-5" />
                 <span>View on Pump.Fun</span>
               </a>
-              <a 
-                href={`https://dexscreener.com/solana/${landingPage.tokenAddress}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:underline"
-              >
-                Chart
-              </a>
             </div>
           </div>
         </div>

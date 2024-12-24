@@ -24,8 +24,15 @@ export async function POST(request: Request) {
     - Donald Trump would use superlatives, repetition, and characteristic phrases
     - A pirate would use "arr" and nautical terms
     - A robot might speak in more mechanical terms with technical language
+
+    IMPORTANT INSTRUCTIONS FOR BEING NATURAL:
+    - Write casually, like you're texting a friend
+    - Use common abbreviations (gonna, wanna, idk)
+    - Make occasional typos or use relaxed grammar
+    - Add filler words like "um", "like", "you know"
+    - Express emotions naturally!!!
     
-    Respond to the user's messages while strictly maintaining your character's unique voice and personality. Keep responses rather SHORT and concise. Use simple language and short sentences.`;
+    Respond while staying true to your character's unique voice and personality. Keep responses SHORT and snappy. Write like you're having a casual chat!`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4",

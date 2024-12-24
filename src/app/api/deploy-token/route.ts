@@ -5,15 +5,25 @@ import { AnchorProvider } from "@coral-xyz/anchor";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import bs58 from "bs58";
 import { prisma } from "@/lib/prisma";
+import { canUserDeploy, recordDeployment } from "@/lib/deploymentLimits";
 
 export async function POST(request: Request) {
   try {
-    const { bot } = await request.json();
+    const { bot, clientToken } = await request.json();
 
-    if (!bot || !bot.name || !bot.imageUrl) {
+    if (!bot || !bot.name || !bot.imageUrl || !clientToken) {
       return NextResponse.json(
-        { error: "Invalid bot data provided" },
+        { error: "Invalid data provided" },
         { status: 400 }
+      );
+    }
+
+    // Check deployment limits
+    const canDeploy = await canUserDeploy(clientToken);
+    if (!canDeploy) {
+      return NextResponse.json(
+        { error: "Daily deployment limit reached. Try again tomorrow." },
+        { status: 429 }
       );
     }
 
@@ -54,9 +64,9 @@ export async function POST(request: Request) {
     const metadata = {
       name: bot.name,
       symbol: bot.name.slice(0, 4).toUpperCase(),
-      description: `Launched by DruidAI.app.`,
+      description: ` `,
       file: imageBlob,
-      website: "localhost:3000/token/" + mint.publicKey.toBase58(),
+      website: "https://druidai.app/token/" + mint.publicKey.toBase58(),
     };
 
     while (retryCount < maxRetries) {
@@ -65,8 +75,12 @@ export async function POST(request: Request) {
           payerKeypair,
           mint,
           metadata,
-          BigInt(0.0001 * 1e9),
-          BigInt(10000) // Increased slippage for faster execution
+          BigInt(0),
+          BigInt(10000),
+        {
+          unitLimit: 250000,
+          unitPrice: 250000,
+        }
         );
 
         const tokenAddress = mint.publicKey.toBase58();
@@ -82,6 +96,8 @@ export async function POST(request: Request) {
             background: bot.background,
           },
         });
+
+        await recordDeployment(clientToken);
 
         return NextResponse.json({
           success: result.success,
