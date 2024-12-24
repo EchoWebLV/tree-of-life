@@ -8,6 +8,14 @@ import bs58 from "bs58";
 import { prisma } from "@/lib/prisma";
 import { canUserDeploy, recordDeployment } from "@/lib/deploymentLimits";
 
+interface Bot {
+  id: string;
+  name: string;
+  imageUrl: string;
+  personality: string;
+  background: string;
+}
+
 export async function POST(request: Request) {
   try {
     const { bot, clientToken } = await request.json();
@@ -28,6 +36,48 @@ export async function POST(request: Request) {
       );
     }
 
+    const mint = Keypair.generate();
+    const tokenAddress = mint.publicKey.toBase58();
+
+    // Create landing page first
+    await prisma.landingPage.create({
+      data: {
+        tokenAddress,
+        botId: bot.id,
+        name: bot.name,
+        imageUrl: bot.imageUrl,
+        personality: bot.personality,
+        background: bot.background,
+      },
+    });
+
+    // Return the landing page URL immediately
+    const response = NextResponse.json({
+      success: true,
+      tokenAddress,
+      landingPageUrl: `/token/${tokenAddress}`,
+      message: "Token deployment initiated",
+    });
+
+    // Handle token deployment asynchronously
+    deployToken(bot, mint, tokenAddress, clientToken).catch(console.error);
+
+    return response;
+
+  } catch (error) {
+    console.error("Error creating landing page:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to create landing page",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+async function deployToken(bot: Bot, mint: Keypair, tokenAddress: string, clientToken: string) {
+  try {
     const connection = new Connection(
       "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
       {
@@ -54,7 +104,6 @@ export async function POST(request: Request) {
     }
     const imageBlob = await imageResponse.blob();
 
-    const mint = Keypair.generate();
     let retryCount = 0;
     const maxRetries = 3;
     const baseDelay = 200;
@@ -64,7 +113,7 @@ export async function POST(request: Request) {
       symbol: bot.name.slice(0, 4).toUpperCase(),
       description: ` `,
       file: imageBlob,
-      website: "https://druidai.app/token/" + mint.publicKey.toBase58(),
+      website: "https://druidai.app/token/" + tokenAddress,
     };
 
     while (retryCount < maxRetries) {
@@ -81,29 +130,11 @@ export async function POST(request: Request) {
           }
         );
 
-        const tokenAddress = mint.publicKey.toBase58();
-
-        await prisma.landingPage.create({
-          data: {
-            tokenAddress,
-            botId: bot.id,
-            name: bot.name,
-            imageUrl: bot.imageUrl,
-            personality: bot.personality,
-            background: bot.background,
-          },
-        });
-
         if (result.success) {
           await recordDeployment(clientToken);
         }
-
-        return NextResponse.json({
-          success: result.success,
-          tokenAddress,
-          landingPageUrl: `/token/${tokenAddress}`,
-          message: "Token deployed successfully",
-        });
+        
+        return;
       } catch (err) {
         console.error(`Attempt ${retryCount + 1} failed:`, err);
         if (retryCount === maxRetries - 1) throw err;
@@ -113,12 +144,5 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error("Error deploying token:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to deploy token",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
   }
 }

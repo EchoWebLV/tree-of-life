@@ -28,6 +28,7 @@ model LandingPage {
   imageUrl     String
   personality  String
   background   String
+  status       String  @default("pending")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
