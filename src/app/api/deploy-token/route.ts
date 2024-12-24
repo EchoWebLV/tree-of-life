@@ -29,10 +29,10 @@ export async function POST(request: Request) {
     }
 
     const connection = new Connection(
-      "https://morning-fragrant-sunset.solana-mainnet.quiknode.pro/aa3b44d9e34ec9c32482881ae0b50fd3ffb79229/",
+      "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
       {
         commitment: "finalized",
-        wsEndpoint: "wss://morning-fragrant-sunset.solana-mainnet.quiknode.pro/aa3b44d9e34ec9c32482881ae0b50fd3ffb79229/",
+        wsEndpoint: "wss://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
         confirmTransactionInitialTimeout: 60000,
       }
     );
