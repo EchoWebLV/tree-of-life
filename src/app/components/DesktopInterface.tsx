@@ -27,6 +27,12 @@ export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploa
   const [windows, setWindows] = useState<Bot[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [deletingBotId, setDeletingBotId] = useState<string | null>(null);
+  const [deploymentModal, setDeploymentModal] = useState<{
+    isOpen: boolean;
+    tokenAddress?: string;
+    landingPageUrl?: string;
+  }>({ isOpen: false });
+  const [isDeploying, setIsDeploying] = useState<string | null>(null);
 
   const openWindow = (bot: Bot) => {
     if (!windows.find(w => w.id === bot.id)) {
@@ -236,10 +242,50 @@ export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploa
                   <Tooltip.Root>
                     <Tooltip.Trigger asChild>
                       <button
+                        onClick={async () => {
+                          try {
+                            setIsDeploying(bot.id);
+                            const response = await fetch('/api/deploy-token', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({ bot }),
+                            });
+
+                            if (!response.ok) {
+                              throw new Error('Failed to deploy token');
+                            }
+
+                            const data = await response.json();
+                            if (data.success) {
+                              setDeploymentModal({
+                                isOpen: true,
+                                tokenAddress: data.tokenAddress,
+                                landingPageUrl: data.landingPageUrl,
+                              });
+                            } else {
+                              throw new Error(data.error || 'Failed to deploy token');
+                            }
+                          } catch (error) {
+                            console.error('Error:', error);
+                            alert('Failed to deploy token. Please try again.');
+                          } finally {
+                            setIsDeploying(null);
+                          }
+                        }}
                         className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
-                                 text-white rounded-full hover:opacity-90 transition-opacity"
+                                 text-white rounded-full hover:opacity-90 transition-opacity 
+                                 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isDeploying === bot.id}
                       >
-                        <PiPillDuotone className="w-5 h-5" />
+                        {isDeploying === bot.id ? (
+                          <div className="w-5 h-5 flex items-center justify-center">
+                            <LoadingDots size="sm" />
+                          </div>
+                        ) : (
+                          <PiPillDuotone className="w-5 h-5" />
+                        )}
                       </button>
                     </Tooltip.Trigger>
                     <Tooltip.Portal>
@@ -247,7 +293,7 @@ export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploa
                         className="bg-black/90 text-white text-xs py-1 px-2 rounded"
                         sideOffset={5}
                       >
-                        Deploy On Pump.Fun (Coming Soon)
+                        {isDeploying === bot.id ? 'Deploying...' : 'Deploy On Pump.Fun'}
                         <Tooltip.Arrow className="fill-black/90" />
                       </Tooltip.Content>
                     </Tooltip.Portal>
@@ -266,6 +312,48 @@ export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploa
             </div>
           </motion.div>
         ))}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deploymentModal.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] pointer-events-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4"
+            >
+              <h3 className="text-xl font-semibold mb-4 text-white">Token Deployed Successfully! 🎉</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">Token Address:</p>
+                  <p className="text-white bg-gray-800 p-2 rounded text-sm font-mono break-all">
+                    {deploymentModal.tokenAddress}
+                  </p>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => window.open(`${window.location.origin}${deploymentModal.landingPageUrl}`, '_blank')}
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                  >
+                    View Landing Page
+                  </button>
+                  <button
+                    onClick={() => setDeploymentModal({ isOpen: false })}
+                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
