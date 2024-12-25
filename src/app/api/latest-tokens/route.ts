@@ -7,12 +7,20 @@ export async function GET() {
       take: 12,
       orderBy: {
         createdAt: 'desc'
+      },
+      select: {
+        id: true,
+        tokenAddress: true,
+        name: true,
+        imageUrl: true,
+        createdAt: true
       }
     });
     
-    return NextResponse.json(tokens);
+    // Ensure we always return an array, even if empty
+    return NextResponse.json(tokens || []);
   } catch (error) {
     console.error('Error fetching latest tokens:', error);
-    return NextResponse.json({ error: 'Failed to fetch tokens' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch tokens', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 } 
