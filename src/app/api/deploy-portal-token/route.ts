@@ -86,7 +86,11 @@ export async function POST(request: Request) {
 
     // Handle token deployment asynchronously
     deployToken(bot, mint, tokenAddress, clientToken, controller.signal).catch((error) => {
-      console.error('Deployment failed:', error);
+      console.error('Deployment failed:', error instanceof Error ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      } : error);
       clearTimeout(timeout);
     });
 
@@ -231,10 +235,15 @@ async function deployToken(
 
     console.log("Token deployed successfully");
   } catch (error) {
-    console.error("Error deploying token:", error);
+    console.error("Error deploying token:", error instanceof Error ? {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      cause: error.cause
+    } : error);
     await prisma.landingPage.update({
       where: { tokenAddress },
-      data: { status: "failed" },
+      data: { status: "failed", error: error instanceof Error ? error.message : String(error) },
     });
     throw error;
   }

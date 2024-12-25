@@ -69,10 +69,9 @@ export async function POST(request: Request) {
 async function deployToken(bot: Bot, mint: Keypair, tokenAddress: string, clientToken: string) {
   try {
     const connection = new Connection(
-      "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
+      "https://api.mainnet-beta.solana.com",
       {
         commitment: "processed",
-        wsEndpoint: "wss://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
         confirmTransactionInitialTimeout: 90000,
       }
     );
