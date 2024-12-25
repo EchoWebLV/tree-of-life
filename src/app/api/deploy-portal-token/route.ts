@@ -12,7 +12,7 @@ interface Bot {
   background: string;
 }
 
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 // Helper function to fetch with timeout
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number) {
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     console.warn('Starting deployment request');
     
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 290000);
+    const timeout = setTimeout(() => controller.abort(), 360000);
 
     const { bot, clientToken } = await request.json();
     console.warn('Received payload:', { botId: bot.id, hasClientToken: !!clientToken });
@@ -152,17 +152,33 @@ async function deployToken(
 
     // Prepare image data
     console.warn(`[${tokenAddress}] Fetching image from ${bot.imageUrl}`);
-    const imageResponse = await fetchWithTimeout(bot.imageUrl, {
-      signal
-    }, 30000);
+    let imageResponse;
+    try {
+      imageResponse = await fetchWithTimeout(bot.imageUrl, {
+        signal
+      }, 45000);
+      console.warn(`[${tokenAddress}] Image fetch status: ${imageResponse.status}`);
+    } catch (error) {
+      console.error(`[${tokenAddress}] Image fetch failed:`, error);
+      throw new Error(`Image fetch failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
     
-    console.warn(`[${tokenAddress}] Image fetch status: ${imageResponse.status}`);
     if (!imageResponse.ok) {
+      console.error(`[${tokenAddress}] Image fetch returned status ${imageResponse.status}`);
       throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
     }
     
-    const imageBlob = await imageResponse.blob();
-    console.warn(`[${tokenAddress}] Image blob size: ${imageBlob.size}`);
+    let imageBlob;
+    try {
+      imageBlob = await imageResponse.blob();
+      console.warn(`[${tokenAddress}] Image blob size: ${imageBlob.size}`);
+      if (imageBlob.size === 0) {
+        throw new Error('Image blob is empty');
+      }
+    } catch (error) {
+      console.error(`[${tokenAddress}] Image blob creation failed:`, error);
+      throw new Error(`Failed to process image: ${error instanceof Error ? error.message : String(error)}`);
+    }
 
     // Create form data for IPFS upload
     console.warn(`[${tokenAddress}] Preparing IPFS upload`);
