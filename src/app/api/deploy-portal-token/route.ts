@@ -16,9 +16,23 @@ export const maxDuration = 300; // 5 minutes
 
 export async function POST(request: Request) {
   try {
+    console.log('Starting deployment request');
+    
     const { bot, clientToken } = await request.json();
+    console.log('Received payload:', { botId: bot.id, hasClientToken: !!clientToken });
 
+    // Validate environment
+    if (!process.env.PAYER_PRIVATE_KEY) {
+      console.error('Missing PAYER_PRIVATE_KEY');
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+
+    // Add request validation
     if (!bot || !bot.name || !bot.imageUrl || !clientToken) {
+      console.error('Invalid request data:', { bot, hasClientToken: !!clientToken });
       return NextResponse.json(
         { error: "Invalid data provided" },
         { status: 400 }
@@ -53,7 +67,12 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    console.error("Error creating landing page:", error);
+    console.error('Deployment error:', {
+      error,
+      timestamp: new Date().toISOString(),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
     return NextResponse.json(
       {
         error: "Failed to create landing page",
