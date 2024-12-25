@@ -1,20 +1,19 @@
-import { NextResponse } from 'next/server';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: any
 ) {
   try {
-    const id = params.id;
-    const body = await request.json();
-
+    const data = await request.json();
     const updatedBot = await prisma.bot.update({
-      where: { id },
+      where: { id: context.params.id },
       data: {
-        name: body.name,
-        personality: body.personality,
-        background: body.background,
+        name: data.name,
+        personality: data.personality,
+        background: data.background,
       },
     });
 
@@ -29,14 +28,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: any
 ) {
   try {
-    const id = params.id;
-    await prisma.bot.delete({
-      where: { id },
-    });
+    await prisma.bot.delete({ where: { id: params.id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting bot:', error);
