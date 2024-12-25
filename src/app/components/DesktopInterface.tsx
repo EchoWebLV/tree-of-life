@@ -52,7 +52,7 @@ export default function DesktopInterface({
   const [hasEnoughTokens, setHasEnoughTokens] = useState<boolean>(false);
 
   const wallet = useWallet();
-  const PAYMENT_AMOUNT = 0.01 * LAMPORTS_PER_SOL; // 0.01 SOL in lamports
+  const PAYMENT_AMOUNT = 0.03 * LAMPORTS_PER_SOL; // 0.01 SOL in lamports
   const TREASURY_ADDRESS = new PublicKey('DruiDHCxP8pAVkST7pxBZokL9UkXj5393K5as3Kj9hi1'); // Replace with your treasury wallet
 
   useEffect(() => {
