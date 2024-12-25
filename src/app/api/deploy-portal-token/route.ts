@@ -62,37 +62,35 @@ export async function POST(request: Request) {
     const mint = Keypair.generate();
     const tokenAddress = mint.publicKey.toBase58();
 
-    // Create landing page first
-    await prisma.landingPage.create({
-      data: {
-        tokenAddress,
-        botId: bot.id,
-        name: bot.name,
-        imageUrl: bot.imageUrl,
-        personality: bot.personality,
-        background: bot.background,
-      },
-    });
-
-    // Return the landing page URL immediately
-    const response = NextResponse.json({
-      success: true,
-      tokenAddress,
-      landingPageUrl: `/token/${tokenAddress}`,
-      message: "Token deployment initiated",
-    });
-
     // Handle token deployment asynchronously
-    deployToken(bot, mint, tokenAddress, clientToken, controller.signal).catch((error) => {
-      console.error('Deployment failed:', error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      } : error);
-      clearTimeout(timeout);
-    });
+    try {
+      // Wait for token deployment to complete
+      await deployToken(bot, mint, tokenAddress, clientToken, controller.signal);
+      
+      // Create landing page after successful deployment
+      await prisma.landingPage.create({
+        data: {
+          tokenAddress,
+          botId: bot.id,
+          name: bot.name,
+          imageUrl: bot.imageUrl,
+          personality: bot.personality,
+          background: bot.background,
+          status: "completed"  // Can set this directly since we know deployment succeeded
+        },
+      });
 
-    return response;
+      // Return response after everything is complete
+      return NextResponse.json({
+        success: true,
+        tokenAddress,
+        landingPageUrl: `/token/${tokenAddress}`,
+        message: "Token deployment completed",
+      });
+
+    } finally {
+      clearTimeout(timeout);
+    }
   } catch (error) {
     console.error('Deployment error:', {
       error,
