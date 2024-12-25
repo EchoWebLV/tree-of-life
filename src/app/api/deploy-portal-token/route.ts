@@ -168,7 +168,7 @@ async function deployToken(
     while (retries > 0) {
       try {
         createResponse = await fetchWithTimeout(
-          `https://pumpportal.fun/api/trade-local`,
+          `https://pumpportal.fun/api/trade`,
           {
             method: "POST",
             headers: {
