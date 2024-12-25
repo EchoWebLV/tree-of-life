@@ -410,7 +410,8 @@ export default function DesktopInterface({
                         className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                  text-white rounded-full hover:opacity-90 transition-opacity 
                                  disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isDeploying === bot.id}
+                        // disabled={isDeploying === bot.id}
+                        disabled={true}
                       >
                         {isDeploying === bot.id ? (
                           <div className="w-5 h-5 flex items-center justify-center">
