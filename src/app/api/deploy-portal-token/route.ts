@@ -171,49 +171,49 @@ async function deployToken(
     );
 
     // Directly GET the image (no HEAD request)
-    console.warn(`[${tokenAddress}] Attempting to fetch image from: ${bot.imageUrl}`);
-    const imageResponse = await fetchWithTimeout(
-      bot.imageUrl,
-      {
-        headers: {
-          "Accept": "image/*",
-          "User-Agent": "Vercel/Deployment-Bot",
-        },
-        method: "GET",
-        cache: "no-store",
-      },
-      10000, // 10-second timeout
-      2      // Retry up to 2 times
-    );
+    // console.warn(`[${tokenAddress}] Attempting to fetch image from: ${bot.imageUrl}`);
+    // const imageResponse = await fetchWithTimeout(
+    //   bot.imageUrl,
+    //   {
+    //     headers: {
+    //       "Accept": "image/*",
+    //       "User-Agent": "Vercel/Deployment-Bot",
+    //     },
+    //     method: "GET",
+    //     cache: "no-store",
+    //   },
+    //   10000, // 10-second timeout
+    //   2      // Retry up to 2 times
+    // );
 
-    if (!imageResponse.ok) {
-      const errorText = await imageResponse.text().catch(() => "No error text");
-      console.error(
-        `[${tokenAddress}] Image fetch failed with status ${imageResponse.status}:`,
-        errorText
-      );
-      throw new Error(
-        `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`
-      );
-    }
+    // if (!imageResponse.ok) {
+    //   const errorText = await imageResponse.text().catch(() => "No error text");
+    //   console.error(
+    //     `[${tokenAddress}] Image fetch failed with status ${imageResponse.status}:`,
+    //     errorText
+    //   );
+    //   throw new Error(
+    //     `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`
+    //   );
+    // }
 
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const contentType =
-      imageResponse.headers.get("content-type") || "image/jpeg";
+    // const imageBuffer = await imageResponse.arrayBuffer();
+    // const contentType =
+    //   imageResponse.headers.get("content-type") || "image/jpeg";
 
-    console.warn(`[${tokenAddress}] Image fetch successful:`, {
-      contentType,
-      dataSize: imageBuffer.byteLength,
-    });
+    // console.warn(`[${tokenAddress}] Image fetch successful:`, {
+    //   contentType,
+    //   dataSize: imageBuffer.byteLength,
+    // });
 
-    // For testing: Use a tiny base64 1x1 pixel transparent PNG
-    const testImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
-    const testImageBuffer = Buffer.from(testImageBase64, 'base64');
-    
+    // Use a small base64 image instead
+    const base64Image = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD/4QAYRXhpZgAATU0AKgAAAAgAAkAAAAMAAAABAAEAAKAA...";
+    const contentType = "image/jpeg";
+    const imageBuffer = Buffer.from(base64Image.split(",")[1], "base64");
+
     // Prepare IPFS upload
     const formData = new FormData();
-    const blob = new Blob([testImageBuffer], { type: 'image/png' }); // Use test image instead of imageBuffer
-
+    const blob = new Blob([imageBuffer], { type: contentType });
     formData.append("file", blob, "image.jpg");
     formData.append("name", bot.name);
     formData.append("symbol", bot.name.slice(0, 4).toUpperCase());
