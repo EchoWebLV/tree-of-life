@@ -103,30 +103,15 @@ export async function POST(request: Request) {
 
     console.warn(`Landing page created, starting deployment for ${tokenAddress}`);
 
-    // Kick off the async deployment
-    deployToken(bot, mint, tokenAddress, clientToken).catch(async (error) => {
-      console.error("Deployment failed:", error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-        timestamp: new Date().toISOString(),
-      } : error);
+    // Wait for deployment to complete instead of running it in background
+    await deployToken(bot, mint, tokenAddress, clientToken);
 
-      await prisma.landingPage.update({
-        where: { tokenAddress },
-        data: {
-          status: "failed",
-          error: error instanceof Error ? error.message : String(error),
-        },
-      });
-    });
-
-    // Return the landing page URL immediately
+    // Return the landing page URL after deployment is complete
     return NextResponse.json({
       success: true,
       tokenAddress,
       landingPageUrl: `/token/${tokenAddress}`,
-      message: "Token deployment initiated",
+      message: "Token deployment completed",
     });
   } catch (error) {
     console.error("Deployment error:", error);
