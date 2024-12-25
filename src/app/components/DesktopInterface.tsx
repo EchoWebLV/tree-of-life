@@ -372,7 +372,7 @@ export default function DesktopInterface({
                     <Tooltip.Trigger asChild>
                       <button
                         onClick={() => setEditModal({ isOpen: true, bot })}
-                        className="p-1.5 bg-gradient-to-r from-blue-500 to-blue-600 
+                        className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                  text-white rounded-full hover:opacity-90 transition-opacity"
                       >
                         <svg
