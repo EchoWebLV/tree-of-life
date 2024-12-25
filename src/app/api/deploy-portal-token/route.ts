@@ -127,12 +127,7 @@ async function deployToken(
     }
 
     const connection = new Connection(
-      process.env.SOLANA_RPC_URL || "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
-      {
-        commitment: "confirmed",
-        confirmTransactionInitialTimeout: 60000,
-        wsEndpoint: process.env.SOLANA_WS_URL
-      }
+      "https://api.mainnet-beta.solana.com"
     );
 
     const payerKeypair = Keypair.fromSecretKey(

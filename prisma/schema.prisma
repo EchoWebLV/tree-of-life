@@ -29,6 +29,7 @@ model LandingPage {
   personality  String
   background   String
   status       String  @default("pending")
+  error        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
