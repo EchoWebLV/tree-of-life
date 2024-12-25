@@ -5,6 +5,8 @@ import Chat from './Chat';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { PiPillDuotone } from 'react-icons/pi';
 import LoadingDots from './LoadingDots';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 interface Bot {
   id: string;
@@ -44,6 +46,88 @@ export default function DesktopInterface({
     isOpen: boolean;
     bot?: Bot;
   }>({ isOpen: false });
+
+  const wallet = useWallet();
+  const PAYMENT_AMOUNT = 0.01 * LAMPORTS_PER_SOL; // 0.01 SOL in lamports
+  const TREASURY_ADDRESS = new PublicKey('DruiDHCxP8pAVkST7pxBZokL9UkXj5393K5as3Kj9hi1'); // Replace with your treasury wallet
+
+  const handleDeploy = async (bot: Bot) => {
+    if (!wallet || !wallet.signTransaction) {
+      alert('Wallet not properly connected');
+      return;
+    }
+
+    if (!wallet.publicKey) {
+      alert('Wallet not found');
+      return;
+    }
+
+    try {
+      setIsDeploying(bot.id);
+      
+      // Create connection
+      const connection = new Connection(
+        "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
+      );
+
+      // Create payment transaction
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: wallet.publicKey,
+          toPubkey: TREASURY_ADDRESS,
+          lamports: PAYMENT_AMOUNT,
+        })
+      );
+
+      // Get latest blockhash
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = wallet.publicKey;
+
+      // Request signature from user
+      const signed = await wallet.signTransaction(transaction);
+      
+      // Send transaction
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(signature);
+
+      // Continue with token deployment
+      const clientToken = localStorage.getItem('clientToken') || '';
+      const response = await fetch('/api/deploy-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bot, clientToken }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        if (response.status === 429) {
+          alert('Daily deployment limit reached. Try again tomorrow.');
+        } else {
+          throw new Error(data.error || 'Failed to deploy token');
+        }
+        return;
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setDeploymentModal({
+          isOpen: true,
+          tokenAddress: data.tokenAddress,
+          landingPageUrl: data.landingPageUrl,
+        });
+      } else {
+        throw new Error(data.error || 'Failed to deploy token');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to deploy token. Please try again.');
+    } finally {
+      setIsDeploying(null);
+    }
+  };
 
   const openWindow = (bot: Bot) => {
     if (!windows.find(w => w.id === bot.id)) {
@@ -322,45 +406,7 @@ export default function DesktopInterface({
                   <Tooltip.Root>
                     <Tooltip.Trigger asChild>
                       <button
-                        onClick={async () => {
-                          try {
-                            setIsDeploying(bot.id);
-                            const clientToken = localStorage.getItem('clientToken') || '';
-                            const response = await fetch('/api/deploy-token', {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json',
-                              },
-                              body: JSON.stringify({ bot, clientToken }),
-                            });
-
-                            if (!response.ok) {
-                              const data = await response.json();
-                              if (response.status === 429) {
-                                alert('Daily deployment limit reached. Try again tomorrow.');
-                              } else {
-                                throw new Error(data.error || 'Failed to deploy token');
-                              }
-                              return;
-                            }
-
-                            const data = await response.json();
-                            if (data.success) {
-                              setDeploymentModal({
-                                isOpen: true,
-                                tokenAddress: data.tokenAddress,
-                                landingPageUrl: data.landingPageUrl,
-                              });
-                            } else {
-                              throw new Error(data.error || 'Failed to deploy token');
-                            }
-                          } catch (error) {
-                            console.error('Error:', error);
-                            alert('Failed to deploy token. Please try again.');
-                          } finally {
-                            setIsDeploying(null);
-                          }
-                        }}
+                        onClick={() => handleDeploy(bot)}
                         className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                  text-white rounded-full hover:opacity-90 transition-opacity 
                                  disabled:opacity-50 disabled:cursor-not-allowed"
@@ -380,7 +426,7 @@ export default function DesktopInterface({
                         className="bg-black/90 text-white text-xs py-1 px-2 rounded"
                         sideOffset={5}
                       >
-                        {isDeploying === bot.id ? 'Deploying...' : 'Deploy On Pump.Fun'}
+                        {isDeploying === bot.id ? 'Deploying...' : 'Deploy On Pump.Fun (0.01 SOL)'}
                         <Tooltip.Arrow className="fill-black/90" />
                       </Tooltip.Content>
                     </Tooltip.Portal>
