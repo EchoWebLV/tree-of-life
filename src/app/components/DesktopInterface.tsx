@@ -20,9 +20,16 @@ interface DesktopInterfaceProps {
   onBotDelete: (botId: string) => void;
   isLoading: boolean;
   onUploadClick: () => void;
+  setBots: (bots: Bot[]) => void;
 }
 
-export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploadClick }: DesktopInterfaceProps) {
+export default function DesktopInterface({ 
+  bots, 
+  onBotDelete, 
+  isLoading, 
+  onUploadClick,
+  setBots 
+}: DesktopInterfaceProps) {
   const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
   const [windows, setWindows] = useState<Bot[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -33,6 +40,10 @@ export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploa
     landingPageUrl?: string;
   }>({ isOpen: false });
   const [isDeploying, setIsDeploying] = useState<string | null>(null);
+  const [editModal, setEditModal] = useState<{
+    isOpen: boolean;
+    bot?: Bot;
+  }>({ isOpen: false });
 
   const openWindow = (bot: Bot) => {
     if (!windows.find(w => w.id === bot.id)) {
@@ -64,6 +75,40 @@ export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploa
     }
     setShowDeleteConfirm(null);
     setDeletingBotId(null);
+  };
+
+  const handleBotUpdate = async (updatedBot: Bot) => {
+    try {
+      const response = await fetch(`/api/bots/${updatedBot.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedBot),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update bot');
+      }
+
+      // Update local state
+      setBots(bots.map(bot => bot.id === updatedBot.id ? updatedBot : bot));
+      
+      // Update windows state to reflect changes immediately
+      setWindows(windows.map(window => 
+        window.id === updatedBot.id ? updatedBot : window
+      ));
+      
+      // Update selected bot if it's the one being edited
+      if (selectedBot?.id === updatedBot.id) {
+        setSelectedBot(updatedBot);
+      }
+      
+      setEditModal({ isOpen: false });
+    } catch (error) {
+      console.error('Error updating bot:', error);
+      alert('Failed to update bot settings');
+    }
   };
 
   return (
@@ -242,6 +287,41 @@ export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploa
                   <Tooltip.Root>
                     <Tooltip.Trigger asChild>
                       <button
+                        onClick={() => setEditModal({ isOpen: true, bot })}
+                        className="p-1.5 bg-gradient-to-r from-blue-500 to-blue-600 
+                                 text-white rounded-full hover:opacity-90 transition-opacity"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                      </button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Portal>
+                      <Tooltip.Content
+                        className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                        sideOffset={5}
+                      >
+                        Edit Bot Settings
+                        <Tooltip.Arrow className="fill-black/90" />
+                      </Tooltip.Content>
+                    </Tooltip.Portal>
+                  </Tooltip.Root>
+                </Tooltip.Provider>
+                <Tooltip.Provider>
+                  <Tooltip.Root>
+                    <Tooltip.Trigger asChild>
+                      <button
                         onClick={async () => {
                           try {
                             setIsDeploying(bot.id);
@@ -363,6 +443,81 @@ export default function DesktopInterface({ bots, onBotDelete, isLoading, onUploa
                   </div>
                 </div>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Bot Modal */}
+      <AnimatePresence>
+        {editModal.isOpen && editModal.bot && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] pointer-events-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4"
+            >
+              <h3 className="text-xl font-semibold mb-4 text-white">Edit Bot Settings</h3>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  const updatedBot = {
+                    ...editModal.bot!,
+                    name: formData.get('name') as string,
+                    personality: formData.get('personality') as string,
+                    background: formData.get('background') as string,
+                  };
+                  handleBotUpdate(updatedBot);
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
+                  <input
+                    name="name"
+                    defaultValue={editModal.bot.name}
+                    className="w-full bg-gray-800 rounded p-2 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Personality</label>
+                  <textarea
+                    name="personality"
+                    defaultValue={editModal.bot.personality}
+                    className="w-full bg-gray-800 rounded p-2 text-white h-24"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Background</label>
+                  <textarea
+                    name="background"
+                    defaultValue={editModal.bot.background}
+                    className="w-full bg-gray-800 rounded p-2 text-white h-24"
+                  />
+                </div>
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setEditModal({ isOpen: false })}
+                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </motion.div>
         )}

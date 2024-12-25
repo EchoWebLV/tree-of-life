@@ -70,7 +70,7 @@ export default function Home() {
             <WalletButton />
           </div>
           <Logo className="hidden sm:block" />
-          <span className="hidden sm:block">[beta]</span>
+          <span className="hidden sm:block">[v1.3.0]</span>
           <div className="mt-8">
             <AnimatedTree isAnalyzing={isAnalyzing} />
             <AIImageAnalyzer
@@ -94,9 +94,10 @@ export default function Home() {
             onBotDelete={handleBotDelete}
             isLoading={isLoading}
             onUploadClick={() => setShowAnalyzer(true)}
+            setBots={setBots}
           />
         </main>
-        <div className="fixed bottom-0 left-0 right-0 bg-black text-white text-[10px] py-1 text-center z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-black text-white text-[9px] py-1 text-center z-50">
           <span className="opacity-50">MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump</span>
         </div>
       </>
