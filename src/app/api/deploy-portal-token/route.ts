@@ -12,24 +12,38 @@ interface Bot {
   background: string;
 }
 
-export const maxDuration = 180;
+export const maxDuration = 300;
 
 // Helper function to fetch with timeout
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    return response;
-  } catch (error) {
-    clearTimeout(timeout);
-    throw error;
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+      controller.abort();
+      console.warn(`[Attempt ${attempt}/${retries}] Fetch timeout after ${timeoutMs}ms for URL: ${url}`);
+    }, timeoutMs);
+    
+    try {
+      console.warn(`[Attempt ${attempt}/${retries}] Starting fetch for URL: ${url}`);
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      console.warn(`[Attempt ${attempt}/${retries}] Fetch completed with status: ${response.status}`);
+      return response;
+    } catch (error) {
+      clearTimeout(timeout);
+      console.error(`[Attempt ${attempt}/${retries}] Fetch failed for URL: ${url}`, error);
+      
+      if (attempt === retries) {
+        throw error;
+      }
+      // Wait before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempt), 10000)));
+    }
   }
+  throw new Error(`Failed after ${retries} attempts`);
 }
 
 export async function POST(request: Request) {
@@ -143,14 +157,20 @@ async function deployToken(
     // Test image fetch first
     console.warn(`[${tokenAddress}] Testing image fetch...`);
     try {
+      console.warn(`[${tokenAddress}] Attempting to fetch image from: ${bot.imageUrl}`);
       const imageResponse = await fetchWithTimeout(bot.imageUrl, {
         headers: {
-          'Accept': 'image/*'
-        }
-      }, 5000);
+          'Accept': 'image/*',
+          'User-Agent': 'Vercel/Deployment-Bot',
+        },
+        cache: 'no-store', // Bypass cache
+        method: 'GET',
+      }, 30000, 3); // 30 second timeout, 3 retries
 
       if (!imageResponse.ok) {
-        throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+        const errorText = await imageResponse.text().catch(() => 'No error text available');
+        console.error(`[${tokenAddress}] Image fetch failed with status ${imageResponse.status}:`, errorText);
+        throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`);
       }
 
       const imageBuffer = await imageResponse.arrayBuffer();
