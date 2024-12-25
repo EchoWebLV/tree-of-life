@@ -25,8 +25,9 @@ interface DesktopInterfaceProps {
   setBots: (bots: Bot[]) => void;
 }
 
-const REQUIRED_TOKEN_AMOUNT = 50000;
-const DRUID_TOKEN_ADDRESS = new PublicKey('MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump');
+// Comment out or remove this constant
+// const REQUIRED_TOKEN_AMOUNT = 50000;
+// const DRUID_TOKEN_ADDRESS = new PublicKey('MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump');
 
 export default function DesktopInterface({ 
   bots, 
@@ -62,6 +63,10 @@ export default function DesktopInterface({
         return;
       }
 
+      // Always set to true since we're removing the token requirement
+      setHasEnoughTokens(true);
+
+      /* Comment out the token balance check
       try {
         const connection = new Connection(
           "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
@@ -82,6 +87,7 @@ export default function DesktopInterface({
         console.error('Error checking token balance:', error);
         setHasEnoughTokens(false);
       }
+      */
     };
 
     checkTokenBalance();
@@ -101,12 +107,12 @@ export default function DesktopInterface({
     try {
       setIsDeploying(bot.id);
       
-      // Create connection
+      /* Comment out token balance check
+      // Check token balance
       const connection = new Connection(
         "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
       );
 
-      // Check token balance
       const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
         wallet.publicKey,
         { mint: DRUID_TOKEN_ADDRESS }
@@ -122,8 +128,15 @@ export default function DesktopInterface({
         setIsDeploying(null);
         return;
       }
+      */
 
-      // Create payment transaction
+      // Create connection
+      const connection = new Connection(
+        "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
+      );
+
+      // Get latest blockhash
+      const { blockhash } = await connection.getLatestBlockhash();
       const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: wallet.publicKey,
@@ -131,9 +144,6 @@ export default function DesktopInterface({
           lamports: PAYMENT_AMOUNT,
         })
       );
-
-      // Get latest blockhash
-      const { blockhash } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = wallet.publicKey;
 
@@ -246,7 +256,7 @@ export default function DesktopInterface({
   const getDeployTooltipContent = () => {
     if (isDeploying) return 'Deploying...';
     if (!wallet.publicKey) return 'Connect wallet first';
-    if (!hasEnoughTokens) return `Need ${REQUIRED_TOKEN_AMOUNT} DRUID tokens`;
+    // Remove token requirement message
     return 'Deploy On Pump.Fun (0.01 SOL)';
   };
 
@@ -465,7 +475,7 @@ export default function DesktopInterface({
                         className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                  text-white rounded-full hover:opacity-90 transition-opacity 
                                  disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isDeploying === bot.id || !hasEnoughTokens || !wallet.publicKey}
+                        disabled={isDeploying === bot.id || !wallet.publicKey}
                       >
                         {isDeploying === bot.id ? (
                           <div className="w-5 h-5 flex items-center justify-center">
