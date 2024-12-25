@@ -12,8 +12,6 @@ interface Bot {
   background: string;
 }
 
-export const maxDuration = 120;
-
 // Helper function to fetch with timeout
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number) {
   const controller = new AbortController();
@@ -127,7 +125,7 @@ async function deployToken(
     }
 
     const connection = new Connection(
-      "https://api.mainnet-beta.solana.com"
+      "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
     );
 
     const payerKeypair = Keypair.fromSecretKey(
