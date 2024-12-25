@@ -36,9 +36,8 @@ export async function POST(request: Request) {
   try {
     console.log('Starting deployment request');
     
-    // Add request timeout handling
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 290000); // 290 seconds
+    const timeout = setTimeout(() => controller.abort(), 290000);
 
     const { bot, clientToken } = await request.json();
     console.log('Received payload:', { botId: bot.id, hasClientToken: !!clientToken });
@@ -64,7 +63,7 @@ export async function POST(request: Request) {
     const mint = Keypair.generate();
     const tokenAddress = mint.publicKey.toBase58();
 
-    // Create landing page first
+    // Update initial status
     await prisma.landingPage.create({
       data: {
         tokenAddress,
@@ -73,6 +72,7 @@ export async function POST(request: Request) {
         imageUrl: bot.imageUrl,
         personality: bot.personality,
         background: bot.background,
+        status: "deploying" // Set initial status to deploying
       },
     });
 
@@ -84,29 +84,35 @@ export async function POST(request: Request) {
       message: "Token deployment initiated",
     });
 
-    // Handle token deployment asynchronously
-    deployToken(bot, mint, tokenAddress, clientToken, controller.signal).catch((error) => {
-      console.error('Deployment failed:', error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      } : error);
-      clearTimeout(timeout);
-    });
+    // Handle token deployment asynchronously with better error tracking
+    setTimeout(() => {
+      deployToken(bot, mint, tokenAddress, clientToken, controller.signal)
+        .catch(async (error) => {
+          console.error('Deployment failed:', error instanceof Error ? {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          } : error);
+
+          // Update status on failure
+          await prisma.landingPage.update({
+            where: { tokenAddress },
+            data: { 
+              status: "failed",
+              error: error instanceof Error ? error.message : String(error)
+            },
+          });
+        })
+        .finally(() => {
+          clearTimeout(timeout);
+        });
+    }, 0);
 
     return response;
   } catch (error) {
-    console.error('Deployment error:', {
-      error,
-      timestamp: new Date().toISOString(),
-      stack: error instanceof Error ? error.stack : undefined
-    });
-    
+    console.error('Deployment error:', error);
     return NextResponse.json(
-      {
-        error: "Failed to create landing page",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to create landing page" },
       { status: 500 }
     );
   }
@@ -120,28 +126,46 @@ async function deployToken(
   signal: AbortSignal
 ) {
   try {
-    console.log(`Starting token deployment for ${tokenAddress}`);
+    console.log(`[${tokenAddress}] Starting token deployment process`);
+    console.log(`[${tokenAddress}] Bot data:`, {
+      name: bot.name,
+      imageUrl: bot.imageUrl
+    });
 
     if (!process.env.PAYER_PRIVATE_KEY) {
       throw new Error("PAYER_PRIVATE_KEY not found in environment variables");
     }
 
-    const connection = new Connection(
-      "https://api.mainnet-beta.solana.com"
-    );
+    console.log(`[${tokenAddress}] Initializing connection`);
+    const rpcEndpoint = "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/";
+    const wsEndpoint = rpcEndpoint.replace('https://', 'wss://');
+    
+    const connection = new Connection(rpcEndpoint, {
+      wsEndpoint,
+      commitment: 'confirmed'
+    });
 
+    console.log(`[${tokenAddress}] Creating payer keypair`);
     const payerKeypair = Keypair.fromSecretKey(
       bs58.decode(process.env.PAYER_PRIVATE_KEY)
     );
 
     // Prepare image data
-    const imageResponse = await fetchWithTimeout(bot.imageUrl, {}, 30000);
+    console.log(`[${tokenAddress}] Fetching image from ${bot.imageUrl}`);
+    const imageResponse = await fetchWithTimeout(bot.imageUrl, {
+      signal
+    }, 30000);
+    
+    console.log(`[${tokenAddress}] Image fetch status: ${imageResponse.status}`);
     if (!imageResponse.ok) {
       throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
     }
+    
     const imageBlob = await imageResponse.blob();
+    console.log(`[${tokenAddress}] Image blob size: ${imageBlob.size}`);
 
     // Create form data for IPFS upload
+    console.log(`[${tokenAddress}] Preparing IPFS upload`);
     const formData = new FormData();
     formData.append("file", imageBlob);
     formData.append("name", bot.name);
@@ -151,24 +175,30 @@ async function deployToken(
     formData.append("showName", "true");
 
     // Upload to IPFS
+    console.log(`[${tokenAddress}] Uploading to IPFS`);
     const metadataResponse = await fetchWithTimeout("https://pump.fun/api/ipfs", {
       method: "POST",
       body: formData,
+      signal
     }, 30000);
 
+    console.log(`[${tokenAddress}] IPFS upload status: ${metadataResponse.status}`);
     if (!metadataResponse.ok) {
-      throw new Error("Failed to upload metadata to IPFS");
+      const errorText = await metadataResponse.text();
+      throw new Error(`Failed to upload metadata to IPFS: ${errorText}`);
     }
 
     const metadataResponseJSON = await metadataResponse.json();
+    console.log(`[${tokenAddress}] IPFS metadata:`, metadataResponseJSON);
 
     // Get the create transaction
+    console.log(`[${tokenAddress}] Creating transaction`);
     let createResponse: Response | undefined;
     let retries = 3;
     while (retries > 0) {
       try {
         createResponse = await fetchWithTimeout(
-          `https://portal.pump.fun/api/trade-local`,
+          `https://pumpportal.fun/api/trade-local`,
           {
             method: "POST",
             headers: {
@@ -189,12 +219,19 @@ async function deployToken(
               priorityFee: 0.001,
               pool: "pump",
             }),
+            signal
           },
           30000
         );
+        console.log(`[${tokenAddress}] Create transaction response status: ${createResponse.status}`);
         if (createResponse.ok) break;
         retries--;
+        if (retries > 0) {
+          console.log(`[${tokenAddress}] Retrying create transaction, ${retries} attempts left`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
       } catch (error) {
+        console.error(`[${tokenAddress}] Create transaction attempt failed:`, error);
         if (retries === 0) throw error;
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
@@ -243,3 +280,4 @@ async function deployToken(
     throw error;
   }
 }
+
