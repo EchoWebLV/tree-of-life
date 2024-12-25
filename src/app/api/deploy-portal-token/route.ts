@@ -64,23 +64,10 @@ export async function POST(request: Request) {
     const mint = Keypair.generate();
     const tokenAddress = mint.publicKey.toBase58();
 
-    // Create landing page first
-    await prisma.landingPage.create({
-      data: {
-        tokenAddress,
-        botId: bot.id,
-        name: bot.name,
-        imageUrl: bot.imageUrl,
-        personality: bot.personality,
-        background: bot.background,
-      },
-    });
-
-    // Return the landing page URL immediately
+    // Return the token address immediately
     const response = NextResponse.json({
       success: true,
       tokenAddress,
-      landingPageUrl: `/token/${tokenAddress}`,
       message: "Token deployment initiated",
     });
 
@@ -219,14 +206,21 @@ async function deployToken(
 
     console.log("Transaction sent:", signature);
 
+    // Create landing page after successful deployment
+    await prisma.landingPage.create({
+      data: {
+        tokenAddress,
+        botId: bot.id,
+        name: bot.name,
+        imageUrl: bot.imageUrl,
+        personality: bot.personality,
+        background: bot.background,
+        status: "completed"  // Set status as completed immediately
+      },
+    });
+
     // Record successful deployment
     await recordDeployment(clientToken);
-
-    // Update landing page status
-    await prisma.landingPage.update({
-      where: { tokenAddress },
-      data: { status: "completed" },
-    });
 
     console.log("Token deployed successfully");
   } catch (error) {
@@ -236,10 +230,21 @@ async function deployToken(
       name: error.name,
       cause: error.cause
     } : error);
-    await prisma.landingPage.update({
-      where: { tokenAddress },
-      data: { status: "failed", error: error instanceof Error ? error.message : String(error) },
+    
+    // Create failed landing page entry to track the failure
+    await prisma.landingPage.create({
+      data: {
+        tokenAddress,
+        botId: bot.id,
+        name: bot.name,
+        imageUrl: bot.imageUrl,
+        personality: bot.personality,
+        background: bot.background,
+        status: "failed",
+        error: error instanceof Error ? error.message : String(error)
+      },
     });
+    
     throw error;
   }
 }
