@@ -12,6 +12,8 @@ interface Bot {
   background: string;
 }
 
+export const maxDuration = 120;
+
 // Helper function to fetch with timeout
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number) {
   const controller = new AbortController();
@@ -62,35 +64,37 @@ export async function POST(request: Request) {
     const mint = Keypair.generate();
     const tokenAddress = mint.publicKey.toBase58();
 
-    // Handle token deployment asynchronously
-    try {
-      // Wait for token deployment to complete
-      await deployToken(bot, mint, tokenAddress, clientToken, controller.signal);
-      
-      // Create landing page after successful deployment
-      await prisma.landingPage.create({
-        data: {
-          tokenAddress,
-          botId: bot.id,
-          name: bot.name,
-          imageUrl: bot.imageUrl,
-          personality: bot.personality,
-          background: bot.background,
-          status: "completed"  // Can set this directly since we know deployment succeeded
-        },
-      });
-
-      // Return response after everything is complete
-      return NextResponse.json({
-        success: true,
+    // Create landing page first
+    await prisma.landingPage.create({
+      data: {
         tokenAddress,
-        landingPageUrl: `/token/${tokenAddress}`,
-        message: "Token deployment completed",
-      });
+        botId: bot.id,
+        name: bot.name,
+        imageUrl: bot.imageUrl,
+        personality: bot.personality,
+        background: bot.background,
+      },
+    });
 
-    } finally {
+    // Return the landing page URL immediately
+    const response = NextResponse.json({
+      success: true,
+      tokenAddress,
+      landingPageUrl: `/token/${tokenAddress}`,
+      message: "Token deployment initiated",
+    });
+
+    // Handle token deployment asynchronously
+    deployToken(bot, mint, tokenAddress, clientToken, controller.signal).catch((error) => {
+      console.error('Deployment failed:', error instanceof Error ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      } : error);
       clearTimeout(timeout);
-    }
+    });
+
+    return response;
   } catch (error) {
     console.error('Deployment error:', {
       error,
@@ -123,7 +127,7 @@ async function deployToken(
     }
 
     const connection = new Connection(
-      "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
+      "https://api.mainnet-beta.solana.com"
     );
 
     const payerKeypair = Keypair.fromSecretKey(
