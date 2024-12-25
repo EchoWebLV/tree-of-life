@@ -12,7 +12,7 @@ interface Bot {
   background: string;
 }
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 // Helper function to fetch with timeout
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number) {
@@ -168,7 +168,7 @@ async function deployToken(
     while (retries > 0) {
       try {
         createResponse = await fetchWithTimeout(
-          `https://pumpportal.fun/api/trade`,
+          `https://portal.pump.fun/api/trade-local`,
           {
             method: "POST",
             headers: {
