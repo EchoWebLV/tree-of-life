@@ -104,32 +104,11 @@ export default function DesktopInterface({
       return;
     }
 
+    let txSignature: string | null = null;
+
     try {
       setIsDeploying(bot.id);
       
-      /* Comment out token balance check
-      // Check token balance
-      const connection = new Connection(
-        "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
-      );
-
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-        wallet.publicKey,
-        { mint: DRUID_TOKEN_ADDRESS }
-      );
-
-      let tokenBalance = 0;
-      if (tokenAccounts.value.length > 0) {
-        tokenBalance = Number(tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount);
-      }
-
-      if (tokenBalance < REQUIRED_TOKEN_AMOUNT) {
-        alert(`You need at least ${REQUIRED_TOKEN_AMOUNT} DRUID tokens to deploy. Current balance: ${tokenBalance}`);
-        setIsDeploying(null);
-        return;
-      }
-      */
-
       // Create connection
       const connection = new Connection(
         "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
@@ -150,9 +129,9 @@ export default function DesktopInterface({
       // Request signature from user
       const signed = await wallet.signTransaction(transaction);
       
-      // Send transaction
-      const signature = await connection.sendRawTransaction(signed.serialize());
-      await connection.confirmTransaction(signature);
+      // Send transaction and store signature
+      txSignature = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(txSignature);
 
       // Continue with token deployment
       const clientToken = localStorage.getItem('clientToken') || '';
@@ -181,7 +160,38 @@ export default function DesktopInterface({
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Failed to deploy token. Please try again.');
+      
+      // If we have a transaction signature and deployment failed, attempt refund
+      if (txSignature) {
+        try {
+          const connection = new Connection(
+            "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
+          );
+          
+          // Create refund transaction
+          const { blockhash } = await connection.getLatestBlockhash();
+          const refundTx = new Transaction().add(
+            SystemProgram.transfer({
+              fromPubkey: TREASURY_ADDRESS,
+              toPubkey: wallet.publicKey,
+              lamports: PAYMENT_AMOUNT,
+            })
+          );
+          refundTx.recentBlockhash = blockhash;
+          refundTx.feePayer = TREASURY_ADDRESS;
+
+          // Send refund transaction
+          const refundSignature = await connection.sendTransaction(refundTx, []);
+          await connection.confirmTransaction(refundSignature);
+          
+          alert('Token deployment failed. Your payment has been refunded.');
+        } catch (refundError) {
+          console.error('Refund failed:', refundError);
+          alert('Token deployment failed. Please contact support for a refund.');
+        }
+      } else {
+        alert('Failed to deploy token. Please try again.');
+      }
     } finally {
       setIsDeploying(null);
     }
