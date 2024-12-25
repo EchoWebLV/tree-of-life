@@ -3,6 +3,7 @@ import { VersionedTransaction, Connection, Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
 import { prisma } from "@/lib/prisma";
 import { recordDeployment } from "@/lib/deploymentLimits";
+import { head } from '@vercel/blob';
 
 interface Bot {
   id: string;
@@ -158,14 +159,26 @@ async function deployToken(
     console.warn(`[${tokenAddress}] Testing image fetch...`);
     try {
       console.warn(`[${tokenAddress}] Attempting to fetch image from: ${bot.imageUrl}`);
-      const imageResponse = await fetchWithTimeout(bot.imageUrl, {
-        headers: {
-          'Accept': 'image/*',
-          'User-Agent': 'Vercel/Deployment-Bot',
-        },
-        cache: 'no-store', // Bypass cache
-        method: 'GET',
-      }, 30000, 3); // 30 second timeout, 3 retries
+      
+      let imageResponse;
+      if (bot.imageUrl.includes('vercel-storage.com')) {
+        const blobHead = await head(bot.imageUrl);
+        imageResponse = await fetchWithTimeout(blobHead.url, {
+          headers: {
+            'Accept': 'image/*',
+            'User-Agent': 'Vercel/Deployment-Bot',
+          },
+          cache: 'no-store',
+          method: 'GET',
+        }, 30000, 3);
+      } else {
+        imageResponse = await fetchWithTimeout(bot.imageUrl, {
+          headers: {
+            'Accept': 'image/*'
+          },
+          method: 'GET',
+        }, 30000, 3);
+      }
 
       if (!imageResponse.ok) {
         const errorText = await imageResponse.text().catch(() => 'No error text available');
@@ -178,9 +191,7 @@ async function deployToken(
 
       console.warn(`[${tokenAddress}] Image fetch successful:`, {
         contentType,
-        contentLength: imageResponse.headers.get('content-length'),
-        dataSize: imageBuffer.byteLength,
-        status: imageResponse.status
+        dataSize: imageBuffer.byteLength
       });
 
       // Create form data
