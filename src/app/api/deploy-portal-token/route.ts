@@ -171,49 +171,51 @@ async function deployToken(
     );
 
     // Directly GET the image (no HEAD request)
-    // console.warn(`[${tokenAddress}] Attempting to fetch image from: ${bot.imageUrl}`);
-    // const imageResponse = await fetchWithTimeout(
-    //   bot.imageUrl,
-    //   {
-    //     headers: {
-    //       "Accept": "image/*",
-    //       "User-Agent": "Vercel/Deployment-Bot",
-    //     },
-    //     method: "GET",
-    //     cache: "no-store",
-    //   },
-    //   10000, // 10-second timeout
-    //   2      // Retry up to 2 times
-    // );
+    console.warn(`[${tokenAddress}] Attempting to fetch image from: ${bot.imageUrl}`);
+    const imageResponse = await fetchWithTimeout(
+      bot.imageUrl,
+      {
+        headers: {
+          "Accept": "image/*",
+          "User-Agent": "Vercel/Deployment-Bot",
+        },
+        method: "GET",
+        cache: "no-store",
+      },
+      10000, // 10-second timeout
+      2      // Retry up to 2 times
+    );
 
-    // if (!imageResponse.ok) {
-    //   const errorText = await imageResponse.text().catch(() => "No error text");
-    //   console.error(
-    //     `[${tokenAddress}] Image fetch failed with status ${imageResponse.status}:`,
-    //     errorText
-    //   );
-    //   throw new Error(
-    //     `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`
-    //   );
-    // }
+    if (!imageResponse.ok) {
+      const errorText = await imageResponse.text().catch(() => "No error text");
+      console.error(
+        `[${tokenAddress}] Image fetch failed with status ${imageResponse.status}:`,
+        errorText
+      );
+      throw new Error(
+        `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`
+      );
+    }
 
-    // const imageBuffer = await imageResponse.arrayBuffer();
-    // const contentType =
-    //   imageResponse.headers.get("content-type") || "image/jpeg";
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const contentType =
+      imageResponse.headers.get("content-type") || "image/jpeg";
 
-    // console.warn(`[${tokenAddress}] Image fetch successful:`, {
-    //   contentType,
-    //   dataSize: imageBuffer.byteLength,
-    // });
+    console.warn(`[${tokenAddress}] Image fetch successful:`, {
+      contentType,
+      dataSize: imageBuffer.byteLength,
+    });
 
-    // Use a small base64 image instead
-    const base64Image = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD/4QAYRXhpZgAATU0AKgAAAAgAAkAAAAMAAAABAAEAAKAA...";
-    const contentType = "image/jpeg";
-    const imageBuffer = Buffer.from(base64Image.split(",")[1], "base64");
+    // Prepare IPFS upload with better error handling
+    console.warn(`[${tokenAddress}] Preparing IPFS upload with metadata:`, {
+      name: bot.name,
+      symbol: bot.name.slice(0, 4).toUpperCase(),
+      imageSize: imageBuffer.byteLength,
+    });
 
-    // Prepare IPFS upload
     const formData = new FormData();
     const blob = new Blob([imageBuffer], { type: contentType });
+
     formData.append("file", blob, "image.jpg");
     formData.append("name", bot.name);
     formData.append("symbol", bot.name.slice(0, 4).toUpperCase());
@@ -224,17 +226,43 @@ async function deployToken(
     formData.append("website", `https://druidai.app/token/${tokenAddress}`);
     formData.append("showName", "true");
 
+    // Use fetchWithTimeout for IPFS upload with retries
     console.warn(`[${tokenAddress}] Uploading to IPFS`);
-    const metadataResponse = await fetch("https://pump.fun/api/ipfs", {
-      method: "POST",
-      body: formData,
-    });
+    const metadataResponse = await fetchWithTimeout(
+      "https://pump.fun/api/ipfs",
+      {
+        method: "POST",
+        body: formData,
+      },
+      30000, // 30-second timeout for IPFS
+      3      // 3 retries for IPFS upload
+    );
+
     if (!metadataResponse.ok) {
-      throw new Error(`IPFS upload failed: ${metadataResponse.statusText}`);
+      const errorText = await metadataResponse.text().catch(() => "No error text");
+      console.error(`[${tokenAddress}] IPFS upload failed:`, {
+        status: metadataResponse.status,
+        statusText: metadataResponse.statusText,
+        errorText,
+      });
+      throw new Error(`IPFS upload failed: ${metadataResponse.status} ${metadataResponse.statusText}`);
     }
 
-    const metadataData = await metadataResponse.json();
-    console.warn(`[${tokenAddress}] IPFS response:`, metadataData);
+    const metadataData = await metadataResponse.json().catch(error => {
+      console.error(`[${tokenAddress}] Failed to parse IPFS response:`, error);
+      throw new Error('Invalid IPFS response format');
+    });
+
+    if (!metadataData.metadataUri) {
+      console.error(`[${tokenAddress}] Missing metadataUri in IPFS response:`, metadataData);
+      throw new Error('Invalid IPFS response: missing metadataUri');
+    }
+
+    console.warn(`[${tokenAddress}] IPFS upload successful:`, {
+      metadataUri: metadataData.metadataUri,
+      name: metadataData.metadata?.name,
+      symbol: metadataData.metadata?.symbol,
+    });
 
     // Create transaction (with retries if needed)
     console.warn(`[${tokenAddress}] Creating transaction`);
