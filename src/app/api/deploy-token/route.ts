@@ -68,8 +68,6 @@ export async function POST(request: Request) {
 
 async function deployToken(bot: Bot, mint: Keypair, tokenAddress: string, clientToken: string) {
   try {
-    console.log(`Starting token deployment for ${tokenAddress}`);
-    
     const connection = new Connection(
       "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
       {
@@ -78,9 +76,6 @@ async function deployToken(bot: Bot, mint: Keypair, tokenAddress: string, client
         confirmTransactionInitialTimeout: 90000,
       }
     );
-
-    console.log("Connection established");
-
     const wallet = new NodeWallet(new Keypair());
     const provider = new AnchorProvider(connection, wallet, {
       commitment: "processed",
@@ -89,25 +84,15 @@ async function deployToken(bot: Bot, mint: Keypair, tokenAddress: string, client
     });
     const sdk = new PumpFunSDK(provider);
 
-    console.log("SDK initialized");
-
-    if (!process.env.PAYER_PRIVATE_KEY) {
-      throw new Error("PAYER_PRIVATE_KEY not found in environment variables");
-    }
-
     const payerKeypair = Keypair.fromSecretKey(
-      bs58.decode(process.env.PAYER_PRIVATE_KEY)
+      bs58.decode(process.env.PAYER_PRIVATE_KEY || "")
     );
-
-    console.log("Payer keypair loaded");
 
     const imageResponse = await fetch(bot.imageUrl);
     if (!imageResponse.ok) {
       throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
     }
     const imageBlob = await imageResponse.blob();
-
-    console.log("Image fetched successfully");
 
     let retryCount = 0;
     const maxRetries = 3;
@@ -123,8 +108,6 @@ async function deployToken(bot: Bot, mint: Keypair, tokenAddress: string, client
 
     while (retryCount < maxRetries) {
       try {
-        console.log(`Attempt ${retryCount + 1} to create and buy token`);
-        
         const result = await sdk.createAndBuy(
           payerKeypair,
           mint,
@@ -138,15 +121,13 @@ async function deployToken(bot: Bot, mint: Keypair, tokenAddress: string, client
         );
 
         if (result.success) {
-          console.log("Token deployed successfully");
           await prisma.landingPage.update({
             where: { tokenAddress },
             data: { status: 'completed' }
           });
-          return;
         }
         
-        throw new Error("Token creation failed without error");
+        return;
       } catch (err) {
         console.error(`Attempt ${retryCount + 1} failed:`, err);
         if (retryCount === maxRetries - 1) throw err;
@@ -156,6 +137,5 @@ async function deployToken(bot: Bot, mint: Keypair, tokenAddress: string, client
     }
   } catch (error) {
     console.error("Error deploying token:", error);
-    throw error; // Re-throw the error to be caught by the caller
   }
 }

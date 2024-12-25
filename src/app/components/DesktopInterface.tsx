@@ -146,7 +146,7 @@ export default function DesktopInterface({
 
       // Continue with token deployment
       const clientToken = localStorage.getItem('clientToken') || '';
-      const response = await fetch('/api/deploy-token', {
+      const response = await fetch('/api/deploy-portal-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,12 +156,7 @@ export default function DesktopInterface({
 
       if (!response.ok) {
         const data = await response.json();
-        if (response.status === 429) {
-          alert('Daily deployment limit reached. Try again tomorrow.');
-        } else {
-          throw new Error(data.error || 'Failed to deploy token');
-        }
-        return;
+        throw new Error(data.error || 'Failed to deploy token');
       }
 
       const data = await response.json();
