@@ -34,13 +34,13 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
 
 export async function POST(request: Request) {
   try {
-    console.log('Starting deployment request');
+    console.warn('Starting deployment request');
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 290000);
 
     const { bot, clientToken } = await request.json();
-    console.log('Received payload:', { botId: bot.id, hasClientToken: !!clientToken });
+    console.warn('Received payload:', { botId: bot.id, hasClientToken: !!clientToken });
 
     // Validate environment
     if (!process.env.PAYER_PRIVATE_KEY) {
@@ -126,8 +126,8 @@ async function deployToken(
   signal: AbortSignal
 ) {
   try {
-    console.log(`[${tokenAddress}] Starting token deployment process`);
-    console.log(`[${tokenAddress}] Bot data:`, {
+    console.warn(`[${tokenAddress}] Starting token deployment process`);
+    console.warn(`[${tokenAddress}] Bot data:`, {
       name: bot.name,
       imageUrl: bot.imageUrl
     });
@@ -136,7 +136,7 @@ async function deployToken(
       throw new Error("PAYER_PRIVATE_KEY not found in environment variables");
     }
 
-    console.log(`[${tokenAddress}] Initializing connection`);
+    console.warn(`[${tokenAddress}] Initializing connection`);
     const rpcEndpoint = "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/";
     const wsEndpoint = rpcEndpoint.replace('https://', 'wss://');
     
@@ -145,27 +145,27 @@ async function deployToken(
       commitment: 'confirmed'
     });
 
-    console.log(`[${tokenAddress}] Creating payer keypair`);
+    console.warn(`[${tokenAddress}] Creating payer keypair`);
     const payerKeypair = Keypair.fromSecretKey(
       bs58.decode(process.env.PAYER_PRIVATE_KEY)
     );
 
     // Prepare image data
-    console.log(`[${tokenAddress}] Fetching image from ${bot.imageUrl}`);
+    console.warn(`[${tokenAddress}] Fetching image from ${bot.imageUrl}`);
     const imageResponse = await fetchWithTimeout(bot.imageUrl, {
       signal
     }, 30000);
     
-    console.log(`[${tokenAddress}] Image fetch status: ${imageResponse.status}`);
+    console.warn(`[${tokenAddress}] Image fetch status: ${imageResponse.status}`);
     if (!imageResponse.ok) {
       throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
     }
     
     const imageBlob = await imageResponse.blob();
-    console.log(`[${tokenAddress}] Image blob size: ${imageBlob.size}`);
+    console.warn(`[${tokenAddress}] Image blob size: ${imageBlob.size}`);
 
     // Create form data for IPFS upload
-    console.log(`[${tokenAddress}] Preparing IPFS upload`);
+    console.warn(`[${tokenAddress}] Preparing IPFS upload`);
     const formData = new FormData();
     formData.append("file", imageBlob);
     formData.append("name", bot.name);
@@ -175,24 +175,24 @@ async function deployToken(
     formData.append("showName", "true");
 
     // Upload to IPFS
-    console.log(`[${tokenAddress}] Uploading to IPFS`);
+    console.warn(`[${tokenAddress}] Uploading to IPFS`);
     const metadataResponse = await fetchWithTimeout("https://pump.fun/api/ipfs", {
       method: "POST",
       body: formData,
       signal
     }, 30000);
 
-    console.log(`[${tokenAddress}] IPFS upload status: ${metadataResponse.status}`);
+    console.warn(`[${tokenAddress}] IPFS upload status: ${metadataResponse.status}`);
     if (!metadataResponse.ok) {
       const errorText = await metadataResponse.text();
       throw new Error(`Failed to upload metadata to IPFS: ${errorText}`);
     }
 
     const metadataResponseJSON = await metadataResponse.json();
-    console.log(`[${tokenAddress}] IPFS metadata:`, metadataResponseJSON);
+    console.warn(`[${tokenAddress}] IPFS metadata:`, metadataResponseJSON);
 
     // Get the create transaction
-    console.log(`[${tokenAddress}] Creating transaction`);
+    console.warn(`[${tokenAddress}] Creating transaction`);
     let createResponse: Response | undefined;
     let retries = 3;
     while (retries > 0) {
@@ -223,11 +223,11 @@ async function deployToken(
           },
           30000
         );
-        console.log(`[${tokenAddress}] Create transaction response status: ${createResponse.status}`);
+        console.warn(`[${tokenAddress}] Create transaction response status: ${createResponse.status}`);
         if (createResponse.ok) break;
         retries--;
         if (retries > 0) {
-          console.log(`[${tokenAddress}] Retrying create transaction, ${retries} attempts left`);
+          console.warn(`[${tokenAddress}] Retrying create transaction, ${retries} attempts left`);
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
       } catch (error) {
@@ -254,7 +254,7 @@ async function deployToken(
       throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
     }
 
-    console.log("Transaction sent:", signature);
+    console.warn("Transaction sent:", signature);
 
     // Record successful deployment
     await recordDeployment(clientToken);
@@ -265,7 +265,7 @@ async function deployToken(
       data: { status: "completed" },
     });
 
-    console.log("Token deployed successfully");
+    console.warn("Token deployed successfully");
   } catch (error) {
     console.error("Error deploying token:", error instanceof Error ? {
       message: error.message,
