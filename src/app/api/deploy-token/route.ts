@@ -1,4 +1,3 @@
-export const maxDuration = 200;
 import { NextResponse } from "next/server";
 import { PumpFunSDK } from "pumpdotfun-sdk";
 import { Connection, Keypair } from "@solana/web3.js";
