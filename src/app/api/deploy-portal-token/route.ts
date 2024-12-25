@@ -164,7 +164,7 @@ async function deployToken(
     const metadataResponseJSON = await metadataResponse.json();
 
     // Get the create transaction
-    let createResponse;
+    let createResponse: Response | undefined;
     let retries = 3;
     while (retries > 0) {
       try {
@@ -201,9 +201,9 @@ async function deployToken(
       }
     }
 
-    if (createResponse.status !== 200) {
+    if (!createResponse || createResponse.status !== 200) {
       throw new Error(
-        `Failed to create transaction: ${createResponse.statusText}`
+        `Failed to create transaction: ${createResponse?.statusText ?? 'No response after retries'}`
       );
     }
 
