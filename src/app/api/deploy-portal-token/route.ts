@@ -143,6 +143,8 @@ async function deployToken(
   tokenAddress: string,
   clientToken: string
 ) {
+  const startTime = Date.now();
+  
   try {
     console.warn(`[${tokenAddress}] Starting token deployment process`);
     console.warn(`[${tokenAddress}] Bot data:`, {
@@ -346,6 +348,15 @@ async function deployToken(
     // Record successful deployment usage
     await recordDeployment(clientToken);
 
+    // After all operations are complete, ensure we've waited at least 40 seconds
+    const elapsedTime = Date.now() - startTime;
+    const remainingTime = Math.max(40000 - elapsedTime, 0);
+    
+    if (remainingTime > 0) {
+      console.warn(`[${tokenAddress}] Waiting additional ${remainingTime}ms to meet minimum duration`);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+    }
+
     // Update landing page status
     await prisma.landingPage.update({
       where: { tokenAddress },
@@ -354,6 +365,15 @@ async function deployToken(
 
     console.warn(`[${tokenAddress}] Token deployed successfully`);
   } catch (error) {
+    // Ensure minimum duration even on error
+    const elapsedTime = Date.now() - startTime;
+    const remainingTime = Math.max(40000 - elapsedTime, 0);
+    
+    if (remainingTime > 0) {
+      console.warn(`[${tokenAddress}] Waiting additional ${remainingTime}ms to meet minimum duration`);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+    }
+
     console.error(`[${tokenAddress}] Deployment failed:`, error);
     await prisma.landingPage.update({
       where: { tokenAddress },
