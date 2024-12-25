@@ -51,8 +51,21 @@ export default function Home() {
     setBots(bots.filter(bot => bot.id !== botId));
   };
 
-  const handleBotCreated = (newBot: Bot) => {
-    setBots(prevBots => [...prevBots, newBot]);
+  const handleBotCreated = async (newBot: Bot) => {
+    // Fetch all bots again to ensure we have the latest data
+    try {
+      const clientToken = getClientToken();
+      const response = await fetch(`/api/bots?clientToken=${clientToken}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch bots');
+      }
+      const data = await response.json();
+      setBots(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching bots:', error);
+      // Fallback to just adding the new bot if fetch fails
+      setBots(prevBots => [...prevBots, newBot]);
+    }
   };
   
   return (
