@@ -206,9 +206,13 @@ async function deployToken(
       dataSize: imageBuffer.byteLength,
     });
 
+    // For testing: Use a tiny base64 1x1 pixel transparent PNG
+    const testImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    const testImageBuffer = Buffer.from(testImageBase64, 'base64');
+    
     // Prepare IPFS upload
     const formData = new FormData();
-    const blob = new Blob([imageBuffer], { type: contentType });
+    const blob = new Blob([testImageBuffer], { type: 'image/png' }); // Use test image instead of imageBuffer
 
     formData.append("file", blob, "image.jpg");
     formData.append("name", bot.name);
