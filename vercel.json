@@ -1,6 +1,6 @@
 {
     "functions": {
-      "api/deploy-portal-token/route.ts": {
+      "src/app/api/deploy-portal-token/route.ts": {
         "memory": 3008,
         "maxDuration": 300
       }
