@@ -162,7 +162,7 @@ async function deployToken(
       throw new Error(`Failed to fetch image: ${imageResponse?.statusText}`);
     }
 
-    let imageBlob = await imageResponse.blob();
+    const imageBlob = await imageResponse.blob();
     console.warn(`[${tokenAddress}] Image blob size: ${imageBlob.size}`);
     if (imageBlob.size === 0) {
       throw new Error('Image blob is empty');
@@ -231,8 +231,7 @@ async function deployToken(
               slippage: 50,
               priorityFee: 0.001,
               pool: "pump",
-            }),
-            signal
+            })
           },
           30000
         );
