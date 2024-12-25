@@ -36,11 +36,12 @@ export async function POST(request: Request) {
   try {
     console.warn('Starting deployment request');
     
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 360000);
-
     const { bot, clientToken } = await request.json();
-    console.warn('Received payload:', { botId: bot.id, hasClientToken: !!clientToken });
+    console.warn('Received payload:', { 
+      botId: bot.id, 
+      hasClientToken: !!clientToken,
+      timestamp: new Date().toISOString() 
+    });
 
     // Validate environment
     if (!process.env.PAYER_PRIVATE_KEY) {
@@ -51,18 +52,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Add request validation
-    if (!bot || !bot.name || !bot.imageUrl || !clientToken) {
-      console.error('Invalid request data:', { bot, hasClientToken: !!clientToken });
-      return NextResponse.json(
-        { error: "Invalid data provided" },
-        { status: 400 }
-      );
-    }
-
     const mint = Keypair.generate();
     const tokenAddress = mint.publicKey.toBase58();
 
+    console.warn(`Creating landing page for token ${tokenAddress}`);
+    
     // Update initial status
     await prisma.landingPage.create({
       data: {
@@ -72,43 +66,39 @@ export async function POST(request: Request) {
         imageUrl: bot.imageUrl,
         personality: bot.personality,
         background: bot.background,
-        status: "deploying" // Set initial status to deploying
+        status: "deploying"
       },
     });
 
-    // Return the landing page URL immediately
-    const response = NextResponse.json({
+    console.warn(`Landing page created, starting deployment for ${tokenAddress}`);
+
+    // Start deployment immediately
+    deployToken(bot, mint, tokenAddress, clientToken)
+      .catch(async (error) => {
+        console.error('Deployment failed:', error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+          timestamp: new Date().toISOString()
+        } : error);
+
+        await prisma.landingPage.update({
+          where: { tokenAddress },
+          data: { 
+            status: "failed",
+            error: error instanceof Error ? error.message : String(error)
+          },
+        });
+      });
+
+    // Return the landing page URL
+    return NextResponse.json({
       success: true,
       tokenAddress,
       landingPageUrl: `/token/${tokenAddress}`,
       message: "Token deployment initiated",
     });
 
-    // Handle token deployment asynchronously with better error tracking
-    setTimeout(() => {
-      deployToken(bot, mint, tokenAddress, clientToken, controller.signal)
-        .catch(async (error) => {
-          console.error('Deployment failed:', error instanceof Error ? {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-          } : error);
-
-          // Update status on failure
-          await prisma.landingPage.update({
-            where: { tokenAddress },
-            data: { 
-              status: "failed",
-              error: error instanceof Error ? error.message : String(error)
-            },
-          });
-        })
-        .finally(() => {
-          clearTimeout(timeout);
-        });
-    }, 0);
-
-    return response;
   } catch (error) {
     console.error('Deployment error:', error);
     return NextResponse.json(
@@ -123,8 +113,10 @@ async function deployToken(
   mint: Keypair,
   tokenAddress: string,
   clientToken: string,
-  signal: AbortSignal
 ) {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 2000;
+
   try {
     console.warn(`[${tokenAddress}] Starting token deployment process`);
     console.warn(`[${tokenAddress}] Bot data:`, {
@@ -150,34 +142,30 @@ async function deployToken(
       bs58.decode(process.env.PAYER_PRIVATE_KEY)
     );
 
-    // Prepare image data
+    // Prepare image data with retries
     console.warn(`[${tokenAddress}] Fetching image from ${bot.imageUrl}`);
     let imageResponse;
-    try {
-      imageResponse = await fetchWithTimeout(bot.imageUrl, {
-        signal
-      }, 45000);
-      console.warn(`[${tokenAddress}] Image fetch status: ${imageResponse.status}`);
-    } catch (error) {
-      console.error(`[${tokenAddress}] Image fetch failed:`, error);
-      throw new Error(`Image fetch failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-    
-    if (!imageResponse.ok) {
-      console.error(`[${tokenAddress}] Image fetch returned status ${imageResponse.status}`);
-      throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
-    }
-    
-    let imageBlob;
-    try {
-      imageBlob = await imageResponse.blob();
-      console.warn(`[${tokenAddress}] Image blob size: ${imageBlob.size}`);
-      if (imageBlob.size === 0) {
-        throw new Error('Image blob is empty');
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        imageResponse = await fetch(bot.imageUrl);
+        if (imageResponse.ok) break;
+        console.warn(`[${tokenAddress}] Image fetch attempt ${attempt} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      } catch (error) {
+        if (attempt === MAX_RETRIES) throw error;
+        console.warn(`[${tokenAddress}] Image fetch attempt ${attempt} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
       }
-    } catch (error) {
-      console.error(`[${tokenAddress}] Image blob creation failed:`, error);
-      throw new Error(`Failed to process image: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    if (!imageResponse?.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse?.statusText}`);
+    }
+
+    let imageBlob = await imageResponse.blob();
+    console.warn(`[${tokenAddress}] Image blob size: ${imageBlob.size}`);
+    if (imageBlob.size === 0) {
+      throw new Error('Image blob is empty');
     }
 
     // Create form data for IPFS upload
@@ -190,18 +178,27 @@ async function deployToken(
     formData.append("website", `https://druidai.app/token/${tokenAddress}`);
     formData.append("showName", "true");
 
-    // Upload to IPFS
+    // Upload to IPFS with retries
     console.warn(`[${tokenAddress}] Uploading to IPFS`);
-    const metadataResponse = await fetchWithTimeout("https://pump.fun/api/ipfs", {
-      method: "POST",
-      body: formData,
-      signal
-    }, 30000);
+    let metadataResponse;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        metadataResponse = await fetch("https://pump.fun/api/ipfs", {
+          method: "POST",
+          body: formData,
+        });
+        if (metadataResponse.ok) break;
+        console.warn(`[${tokenAddress}] IPFS upload attempt ${attempt} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      } catch (error) {
+        if (attempt === MAX_RETRIES) throw error;
+        console.warn(`[${tokenAddress}] IPFS upload attempt ${attempt} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      }
+    }
 
-    console.warn(`[${tokenAddress}] IPFS upload status: ${metadataResponse.status}`);
-    if (!metadataResponse.ok) {
-      const errorText = await metadataResponse.text();
-      throw new Error(`Failed to upload metadata to IPFS: ${errorText}`);
+    if (!metadataResponse?.ok) {
+      throw new Error(`Failed to upload metadata to IPFS: ${metadataResponse?.statusText}`);
     }
 
     const metadataResponseJSON = await metadataResponse.json();
@@ -281,9 +278,9 @@ async function deployToken(
       data: { status: "completed" },
     });
 
-    console.warn("Token deployed successfully");
+    console.warn(`[${tokenAddress}] Token deployed successfully`);
   } catch (error) {
-    console.error("Error deploying token:", error instanceof Error ? {
+    console.error(`[${tokenAddress}] Error deploying token:`, error instanceof Error ? {
       message: error.message,
       stack: error.stack,
       name: error.name,
