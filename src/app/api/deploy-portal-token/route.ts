@@ -12,12 +12,34 @@ interface Bot {
   background: string;
 }
 
-export const maxDuration = 300; // 5 minutes
+export const maxDuration = 60;
+
+// Helper function to fetch with timeout
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    return response;
+  } catch (error) {
+    clearTimeout(timeout);
+    throw error;
+  }
+}
 
 export async function POST(request: Request) {
   try {
     console.log('Starting deployment request');
     
+    // Add request timeout handling
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 290000); // 290 seconds
+
     const { bot, clientToken } = await request.json();
     console.log('Received payload:', { botId: bot.id, hasClientToken: !!clientToken });
 
@@ -63,7 +85,10 @@ export async function POST(request: Request) {
     });
 
     // Handle token deployment asynchronously
-    deployToken(bot, mint, tokenAddress, clientToken).catch(console.error);
+    deployToken(bot, mint, tokenAddress, clientToken, controller.signal).catch((error) => {
+      console.error('Deployment failed:', error);
+      clearTimeout(timeout);
+    });
 
     return response;
   } catch (error) {
@@ -87,7 +112,8 @@ async function deployToken(
   bot: Bot,
   mint: Keypair,
   tokenAddress: string,
-  clientToken: string
+  clientToken: string,
+  signal: AbortSignal
 ) {
   try {
     console.log(`Starting token deployment for ${tokenAddress}`);
@@ -97,8 +123,12 @@ async function deployToken(
     }
 
     const connection = new Connection(
-      "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
-      "confirmed"
+      process.env.SOLANA_RPC_URL || "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
+      {
+        commitment: "confirmed",
+        confirmTransactionInitialTimeout: 60000,
+        wsEndpoint: process.env.SOLANA_WS_URL
+      }
     );
 
     const payerKeypair = Keypair.fromSecretKey(
@@ -106,7 +136,7 @@ async function deployToken(
     );
 
     // Prepare image data
-    const imageResponse = await fetch(bot.imageUrl);
+    const imageResponse = await fetchWithTimeout(bot.imageUrl, {}, 30000);
     if (!imageResponse.ok) {
       throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
     }
@@ -118,14 +148,14 @@ async function deployToken(
     formData.append("name", bot.name);
     formData.append("symbol", bot.name.slice(0, 4).toUpperCase());
     formData.append("description", `${bot.personality}\n\n${bot.background}`);
-    formData.append("website", `https://yourapp.com/token/${tokenAddress}`);
+    formData.append("website", `https://druidai.app/token/${tokenAddress}`);
     formData.append("showName", "true");
 
     // Upload to IPFS
-    const metadataResponse = await fetch("https://pump.fun/api/ipfs", {
+    const metadataResponse = await fetchWithTimeout("https://pump.fun/api/ipfs", {
       method: "POST",
       body: formData,
-    });
+    }, 30000);
 
     if (!metadataResponse.ok) {
       throw new Error("Failed to upload metadata to IPFS");
@@ -134,30 +164,42 @@ async function deployToken(
     const metadataResponseJSON = await metadataResponse.json();
 
     // Get the create transaction
-    const createResponse = await fetch(
-      `https://pumpportal.fun/api/trade-local`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          publicKey: payerKeypair.publicKey.toBase58(),
-          action: "create",
-          tokenMetadata: {
-            name: metadataResponseJSON.metadata.name,
-            symbol: metadataResponseJSON.metadata.symbol,
-            uri: metadataResponseJSON.metadataUri,
+    let createResponse;
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        createResponse = await fetchWithTimeout(
+          `https://pumpportal.fun/api/trade-local`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              publicKey: payerKeypair.publicKey.toBase58(),
+              action: "create",
+              tokenMetadata: {
+                name: metadataResponseJSON.metadata.name,
+                symbol: metadataResponseJSON.metadata.symbol,
+                uri: metadataResponseJSON.metadataUri,
+              },
+              mint: mint.publicKey.toBase58(),
+              denominatedInSol: "true",
+              amount: 0,
+              slippage: 50,
+              priorityFee: 0.001,
+              pool: "pump",
+            }),
           },
-          mint: mint.publicKey.toBase58(),
-          denominatedInSol: "true",
-          amount: 0,
-          slippage: 50,
-          priorityFee: 0.0005,
-          pool: "pump",
-        }),
+          30000
+        );
+        if (createResponse.ok) break;
+        retries--;
+      } catch (error) {
+        if (retries === 0) throw error;
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
-    );
+    }
 
     if (createResponse.status !== 200) {
       throw new Error(
@@ -170,6 +212,12 @@ async function deployToken(
     tx.sign([mint, payerKeypair]);
 
     const signature = await connection.sendTransaction(tx);
+    const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+    
+    if (confirmation.value.err) {
+      throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+    }
+
     console.log("Transaction sent:", signature);
 
     // Record successful deployment
