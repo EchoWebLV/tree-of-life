@@ -6,7 +6,6 @@ import { AnchorProvider } from "@coral-xyz/anchor";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import bs58 from "bs58";
 import { prisma } from "@/lib/prisma";
-import { canUserDeploy, recordDeployment } from "@/lib/deploymentLimits";
 
 interface Bot {
   id: string;
@@ -24,15 +23,6 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Invalid data provided" },
         { status: 400 }
-      );
-    }
-
-    // Check deployment limits
-    const canDeploy = await canUserDeploy(clientToken);
-    if (!canDeploy) {
-      return NextResponse.json(
-        { error: "Daily deployment limit reached. Try again tomorrow." },
-        { status: 429 }
       );
     }
 
@@ -131,7 +121,6 @@ async function deployToken(bot: Bot, mint: Keypair, tokenAddress: string, client
         );
 
         if (result.success) {
-          await recordDeployment(clientToken);
           await prisma.landingPage.update({
             where: { tokenAddress },
             data: { status: 'completed' }

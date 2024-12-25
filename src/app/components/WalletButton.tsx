@@ -19,49 +19,83 @@ export default function WalletButton() {
       <WalletMultiButton className={`wallet-button ${connected ? 'connected' : ''}`} />
       <style jsx global>{`
         .wallet-button {
-          background-color: rgba(255, 255, 255, 0.1) !important;
-          border: 1px solid rgba(255, 255, 255, 0.2) !important;
-          color: white !important;
+          background-color: #2A5E1C !important;
+          background-image: linear-gradient(to bottom, #4a934c, #2A5E1C) !important;
+          border: 2px solid #2A5E1C !important;
+          color: #E8DAB2 !important;
           height: 40px !important;
           border-radius: 8px !important;
-          font-family: inherit !important;
+          font-family: 'Press Start 2P', Arial, Helvetica, sans-serif !important;
           cursor: pointer !important;
           z-index: 50 !important;
+          image-rendering: pixelated !important;
+          box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.3) !important;
+          transition: all 0.2s ease !important;
+          font-size: 12px !important;
+          padding: 0 16px !important;
         }
-        .wallet-button.connected {
-          background-color: rgba(0, 255, 0, 0.1) !important;
-          border-color: rgba(0, 255, 0, 0.2) !important;
-        }
+        
         .wallet-button:hover {
-          background-color: rgba(255, 255, 255, 0.2) !important;
+          box-shadow: 2px 2px 0px 0px rgba(0,0,0,0.3) !important;
+          transform: scale(0.98) !important;
         }
+
+        .wallet-button.connected {
+          background-color: #4a934c !important;
+          border-color: #2A5E1C !important;
+        }
+
         .wallet-adapter-dropdown-list {
-          background-color: #1a1a1a !important;
-          z-index: 51 !important;
-        }
-        .wallet-adapter-dropdown-list-item {
-          color: white !important;
-          cursor: pointer !important;
-          background-color: #1a1a1a !important;
+          background-color: #2A5E1C !important;
+          border: 2px solid #4a934c !important;
           border-radius: 8px !important;
+          box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.3) !important;
+          image-rendering: pixelated !important;
+          z-index: 51 !important;
+          overflow: hidden !important;
+        }
+
+        .wallet-adapter-dropdown-list-item {
+          color: #E8DAB2 !important;
+          cursor: pointer !important;
+          font-family: 'Press Start 2P', Arial, Helvetica, sans-serif !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
           padding: 8px 16px !important;
-          font-size: 14px !important;
+          font-size: 12px !important;
+          border-bottom: 2px solid #4a934c !important;
         }
+
+        .wallet-adapter-dropdown-list-item:last-child {
+          border-bottom: none !important;
+        }
+
         .wallet-adapter-dropdown-list-item:hover {
-          background-color: rgba(255, 255, 255, 0.1) !important;
+          background-color: #4a934c !important;
         }
+
         .wallet-adapter-modal-wrapper {
-          background-color: #1a1a1a !important;
+          background-color: #2A5E1C !important;
+          border: 2px solid #4a934c !important;
+          border-radius: 8px !important;
+          font-family: 'Press Start 2P', Arial, Helvetica, sans-serif !important;
+          image-rendering: pixelated !important;
         }
+
         .wallet-adapter-button {
-          color: white !important;
+          color: #E8DAB2 !important;
+          font-family: 'Press Start 2P', Arial, Helvetica, sans-serif !important;
         }
+
         .wallet-adapter-modal-title {
-          color: white !important;
+          color: #E8DAB2 !important;
+          font-family: 'Press Start 2P', Arial, Helvetica, sans-serif !important;
         }
+
         .wallet-adapter-modal-list {
           margin: 0 0 4px !important;
         }
+
         .wallet-adapter-modal-list li:not(:first-of-type) {
           margin-top: 4px !important;
         }

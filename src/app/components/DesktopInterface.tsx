@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import Chat from './Chat';
@@ -25,6 +25,9 @@ interface DesktopInterfaceProps {
   setBots: (bots: Bot[]) => void;
 }
 
+const REQUIRED_TOKEN_AMOUNT = 50000;
+const DRUID_TOKEN_ADDRESS = new PublicKey('MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump');
+
 export default function DesktopInterface({ 
   bots, 
   onBotDelete, 
@@ -46,10 +49,43 @@ export default function DesktopInterface({
     isOpen: boolean;
     bot?: Bot;
   }>({ isOpen: false });
+  const [hasEnoughTokens, setHasEnoughTokens] = useState<boolean>(false);
 
   const wallet = useWallet();
   const PAYMENT_AMOUNT = 0.01 * LAMPORTS_PER_SOL; // 0.01 SOL in lamports
   const TREASURY_ADDRESS = new PublicKey('DruiDHCxP8pAVkST7pxBZokL9UkXj5393K5as3Kj9hi1'); // Replace with your treasury wallet
+
+  useEffect(() => {
+    const checkTokenBalance = async () => {
+      if (!wallet.publicKey) {
+        setHasEnoughTokens(false);
+        return;
+      }
+
+      try {
+        const connection = new Connection(
+          "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
+        );
+
+        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+          wallet.publicKey,
+          { mint: DRUID_TOKEN_ADDRESS }
+        );
+
+        let tokenBalance = 0;
+        if (tokenAccounts.value.length > 0) {
+          tokenBalance = Number(tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount);
+        }
+
+        setHasEnoughTokens(tokenBalance >= REQUIRED_TOKEN_AMOUNT);
+      } catch (error) {
+        console.error('Error checking token balance:', error);
+        setHasEnoughTokens(false);
+      }
+    };
+
+    checkTokenBalance();
+  }, [wallet.publicKey]);
 
   const handleDeploy = async (bot: Bot) => {
     if (!wallet || !wallet.signTransaction) {
@@ -69,6 +105,23 @@ export default function DesktopInterface({
       const connection = new Connection(
         "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
       );
+
+      // Check token balance
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+        wallet.publicKey,
+        { mint: DRUID_TOKEN_ADDRESS }
+      );
+
+      let tokenBalance = 0;
+      if (tokenAccounts.value.length > 0) {
+        tokenBalance = Number(tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount);
+      }
+
+      if (tokenBalance < REQUIRED_TOKEN_AMOUNT) {
+        alert(`You need at least ${REQUIRED_TOKEN_AMOUNT} DRUID tokens to deploy. Current balance: ${tokenBalance}`);
+        setIsDeploying(null);
+        return;
+      }
 
       // Create payment transaction
       const transaction = new Transaction().add(
@@ -193,6 +246,13 @@ export default function DesktopInterface({
       console.error('Error updating bot:', error);
       alert('Failed to update bot settings');
     }
+  };
+
+  const getDeployTooltipContent = () => {
+    if (isDeploying) return 'Deploying...';
+    if (!wallet.publicKey) return 'Connect wallet first';
+    if (!hasEnoughTokens) return `Need ${REQUIRED_TOKEN_AMOUNT} DRUID tokens`;
+    return 'Deploy On Pump.Fun (0.01 SOL)';
   };
 
   return (
@@ -410,8 +470,7 @@ export default function DesktopInterface({
                         className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                  text-white rounded-full hover:opacity-90 transition-opacity 
                                  disabled:opacity-50 disabled:cursor-not-allowed"
-                        // disabled={isDeploying === bot.id}
-                        disabled={true}
+                        disabled={isDeploying === bot.id || !hasEnoughTokens || !wallet.publicKey}
                       >
                         {isDeploying === bot.id ? (
                           <div className="w-5 h-5 flex items-center justify-center">
@@ -427,7 +486,7 @@ export default function DesktopInterface({
                         className="bg-black/90 text-white text-xs py-1 px-2 rounded"
                         sideOffset={5}
                       >
-                        {isDeploying === bot.id ? 'Deploying...' : 'Deploy On Pump.Fun (0.01 SOL)'}
+                        {getDeployTooltipContent()}
                         <Tooltip.Arrow className="fill-black/90" />
                       </Tooltip.Content>
                     </Tooltip.Portal>

@@ -116,3 +116,10 @@ body::before {
                 0 0 30px rgba(255, 255, 255, 0.2);
   }
 }
+
+.wallet-adapter-button {
+  font-size: 10px !important;
+  height: 30px !important;
+  padding: 0 16px !important;
+  background-color: #2A5E1C !important;
+}
