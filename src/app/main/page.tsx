@@ -108,6 +108,7 @@ export default function Home() {
             isLoading={isLoading}
             onUploadClick={() => setShowAnalyzer(true)}
             setBots={setBots}
+            isCreating={isAnalyzing}
           />
         </main>
         <div className="fixed bottom-0 left-0 right-0 bg-black text-white text-[9px] py-1 text-center z-50">

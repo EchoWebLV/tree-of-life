@@ -23,18 +23,198 @@ interface DesktopInterfaceProps {
   isLoading: boolean;
   onUploadClick: () => void;
   setBots: (bots: Bot[]) => void;
+  isCreating?: boolean;
 }
 
 // Comment out or remove this constant
 // const REQUIRED_TOKEN_AMOUNT = 50000;
 // const DRUID_TOKEN_ADDRESS = new PublicKey('MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump');
 
+// New component for static desktop icons
+const StaticDesktopIcon = ({ 
+  src, 
+  alt, 
+  href, 
+  onClick 
+}: { 
+  src: string; 
+  alt: string; 
+  href: string; 
+  onClick?: () => void 
+}) => (
+  <motion.div 
+    className="flex flex-col items-center relative group" 
+    whileHover={{ scale: 1.05 }}
+    onClick={onClick || (() => window.open(href, '_blank'))}
+  >
+    <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
+      <Image 
+        src={src} 
+        alt={alt} 
+        fill 
+        className="object-cover transition-all duration-200" 
+      />
+    </div>
+    <span className="mt-2 text-xs text-white text-center max-w-full truncate">
+      {alt}
+    </span>
+  </motion.div>
+);
+
+// New component for the deployment modal
+const DeploymentModal = ({ 
+  isOpen, 
+  tokenAddress, 
+  landingPageUrl, 
+  onClose 
+}: { 
+  isOpen: boolean; 
+  tokenAddress?: string; 
+  landingPageUrl?: string; 
+  onClose: () => void;
+}) => (
+  <AnimatePresence>
+    {isOpen && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] pointer-events-auto"
+      >
+        <motion.div
+          initial={{ scale: 0.95 }}
+          animate={{ scale: 1 }}
+          exit={{ scale: 0.95 }}
+          className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4"
+        >
+          <h3 className="text-xl font-semibold mb-4 text-white">Token Deployed Successfully! 🎉</h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-gray-400 text-sm mb-1">Token Address:</p>
+              <p className="text-white bg-gray-800 p-2 rounded text-sm font-mono break-all">
+                {tokenAddress}
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <p className="text-gray-500 text-sm italic">
+                Token creation may take up to 2 minutes to appear in pump.fun
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => window.open(`${window.location.origin}${landingPageUrl}`, '_blank')}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                >
+                  View Landing Page
+                </button>
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+// New component for the edit modal
+const EditBotModal = ({ 
+  isOpen, 
+  bot, 
+  onClose, 
+  onSubmit 
+}: { 
+  isOpen: boolean; 
+  bot?: Bot; 
+  onClose: () => void;
+  onSubmit: (bot: Bot) => void;
+}) => (
+  <AnimatePresence>
+    {isOpen && bot && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] pointer-events-auto"
+      >
+        <motion.div
+          initial={{ scale: 0.95 }}
+          animate={{ scale: 1 }}
+          exit={{ scale: 0.95 }}
+          className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4"
+        >
+          <h3 className="text-xl font-semibold mb-4 text-white">Edit Bot Settings</h3>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const updatedBot = {
+                ...bot!,
+                name: formData.get('name') as string,
+                personality: formData.get('personality') as string,
+                background: formData.get('background') as string,
+              };
+              onSubmit(updatedBot);
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
+              <input
+                name="name"
+                defaultValue={bot.name}
+                className="w-full bg-gray-800 rounded p-2 text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Personality</label>
+              <textarea
+                name="personality"
+                defaultValue={bot.personality}
+                className="w-full bg-gray-800 rounded p-2 text-white h-24"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Background</label>
+              <textarea
+                name="background"
+                defaultValue={bot.background}
+                className="w-full bg-gray-800 rounded p-2 text-white h-24"
+              />
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
 export default function DesktopInterface({ 
   bots, 
   onBotDelete, 
   isLoading, 
   onUploadClick,
-  setBots 
+  setBots,
+  isCreating = false
 }: DesktopInterfaceProps) {
   const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
   const [windows, setWindows] = useState<Bot[]>([]);
@@ -50,48 +230,10 @@ export default function DesktopInterface({
     isOpen: boolean;
     bot?: Bot;
   }>({ isOpen: false });
-  const [hasEnoughTokens, setHasEnoughTokens] = useState<boolean>(false);
 
   const wallet = useWallet();
   const PAYMENT_AMOUNT = 0.03 * LAMPORTS_PER_SOL; // 0.01 SOL in lamports
   const TREASURY_ADDRESS = new PublicKey('DruiDHCxP8pAVkST7pxBZokL9UkXj5393K5as3Kj9hi1'); // Replace with your treasury wallet
-
-  useEffect(() => {
-    const checkTokenBalance = async () => {
-      if (!wallet.publicKey) {
-        setHasEnoughTokens(false);
-        return;
-      }
-
-      // Always set to true since we're removing the token requirement
-      setHasEnoughTokens(true);
-
-      /* Comment out the token balance check
-      try {
-        const connection = new Connection(
-          "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
-        );
-
-        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-          wallet.publicKey,
-          { mint: DRUID_TOKEN_ADDRESS }
-        );
-
-        let tokenBalance = 0;
-        if (tokenAccounts.value.length > 0) {
-          tokenBalance = Number(tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount);
-        }
-
-        setHasEnoughTokens(tokenBalance >= REQUIRED_TOKEN_AMOUNT);
-      } catch (error) {
-        console.error('Error checking token balance:', error);
-        setHasEnoughTokens(false);
-      }
-      */
-    };
-
-    checkTokenBalance();
-  }, [wallet.publicKey]);
 
   const handleDeploy = async (bot: Bot) => {
     if (!wallet || !wallet.signTransaction) {
@@ -292,77 +434,37 @@ export default function DesktopInterface({
 
   return (
     <div className="fixed inset-0 w-screen h-screen pointer-events-none flex items-center justify-center">
-      {/* Desktop Icons */}
-      <div className="fixed left-4 top-4 grid grid-flow-col auto-cols-[96px] gap-6 pointer-events-auto
-                      grid-rows-4 md:grid-rows-5 max-h-[calc(100vh-2rem)]">
-        {/* Static Images */}
-        <motion.div 
-          className="flex flex-col items-center relative group" 
-          whileHover={{ scale: 1.05 }}
-          onClick={() => window.open('https://x.com/DruidAi_APP', '_blank')}
-        >
-          <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
-            <Image src="/twitter.png" alt="Twitter" fill className="object-cover" />
-          </div>
-          <span className="mt-2 text-xs text-white text-center max-w-full truncate">
-            Twitter
-          </span>
-        </motion.div>
-        
-        <motion.div 
-          className="flex flex-col items-center relative group" 
-          whileHover={{ scale: 1.05 }}
-          onClick={() => window.open('https://dexscreener.com/solana/MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump', '_blank')}
-        >
-          <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
-            <Image src="/dex.png" alt="Dex" fill className="object-cover" />
-          </div>
-          <span className="mt-2 text-xs text-white text-center max-w-full truncate">
-            Dex
-          </span>
-        </motion.div>
+      <div className="fixed left-4 top-4 grid auto-cols-[96px] gap-6 pointer-events-auto
+                    grid-flow-col grid-rows-[repeat(auto-fill,96px)] max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)]">
+        {/* Static icons using new component */}
+        <StaticDesktopIcon 
+          src="/twitter.png" 
+          alt="Twitter" 
+          href="https://x.com/DruidAi_APP" 
+        />
+        <StaticDesktopIcon 
+          src="/dex.png" 
+          alt="Dex" 
+          href="https://dexscreener.com/solana/MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump" 
+        />
+        <StaticDesktopIcon 
+          src="/doc.png" 
+          alt="Docs" 
+          href="https://druid-ai-docs.gitbook.io/start" 
+        />
 
-        <motion.div 
-          className="flex flex-col items-center relative group" 
-          whileHover={{ scale: 1.05 }}
-          onClick={() => window.open('https://druid-ai-docs.gitbook.io/start', '_blank')}
-        >
-          <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
-            <Image src="/doc.png" alt="Docs" fill className="object-cover" />
-          </div>
-          <span className="mt-2 text-xs text-white text-center max-w-full truncate">
-            Docs
-          </span>
-        </motion.div>
-
+        {/* Create icon with original structure */}
         <motion.div
-          className="flex flex-col items-center relative group" 
+          className="flex flex-col items-center relative group"
           whileHover={{ scale: 1.05 }}
           onClick={onUploadClick}
         >
-          <div 
-            className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer 
-                       bg-yellow-300/40 hover:bg-yellow-300/20 transition-colors 
-                       flex items-center justify-center
-                       animate-[subtle-glow_2s_ease-in-out_infinite]"
-          >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="24" 
-              height="24" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              className="text-yellow-100"
-            >
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
+          <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer bg-white/30">
+            <div className="absolute inset-0 flex items-center justify-center text-2xl text-white">
+              +
+            </div>
           </div>
-          <span className="mt-2 text-xs text-yellow-100 text-center max-w-full truncate">
+          <span className="mt-2 text-xs text-white text-center max-w-full truncate">
             Create
           </span>
         </motion.div>
@@ -373,15 +475,20 @@ export default function DesktopInterface({
             className="flex flex-col items-center relative group"
             whileHover={{ scale: 1.05 }}
           >
-            <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer bg-white/10 flex items-center justify-center">
-              <LoadingDots />
+            <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer bg-white/50 flex items-center justify-center">
+              <Image 
+                src="/loading.gif" 
+                alt="Loading" 
+                fill 
+                className="object-cover"
+              />
             </div>
             <span className="mt-2 text-xs text-white text-center max-w-full truncate">
               Loading
             </span>
           </motion.div>
         ) : ( 
-          bots.map((bot) => (
+          [...bots].reverse().map((bot) => (
             <div key={bot.id} className="relative">
               <motion.div
                 className="flex flex-col items-center relative group"
@@ -391,7 +498,23 @@ export default function DesktopInterface({
                   className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer"
                   onClick={() => openWindow(bot)}
                 >
-                  <Image src={bot.imageUrl} alt={bot.name} fill className="object-cover" />
+                  {bot.imageUrl ? (
+                    <Image 
+                      src={bot.imageUrl} 
+                      alt={bot.name} 
+                      fill 
+                      className="object-cover transition-all duration-200" 
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-white/10">
+                      <Image 
+                        src="/loading.gif" 
+                        alt="Loading" 
+                        fill 
+                        className="object-contain p-2" 
+                      />
+                    </div>
+                  )}
                   {deletingBotId === bot.id && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                       <LoadingDots size="sm" />
@@ -436,6 +559,26 @@ export default function DesktopInterface({
             </div>
           ))
         )}
+
+        {isCreating && (
+          <motion.div
+            key="creating"
+            className="flex flex-col items-center relative group"
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer bg-white/10 flex items-center justify-center">
+              <Image 
+                src="/loading.gif" 
+                alt="Creating" 
+                fill 
+                className="object-cover"
+              />
+            </div>
+            <span className="mt-2 text-xs text-white text-center max-w-full truncate">
+              Creating...
+            </span>
+          </motion.div>
+        )}
       </div>
 
       {/* Windows */}
@@ -456,7 +599,7 @@ export default function DesktopInterface({
                     src={bot.imageUrl}
                     alt={bot.name}
                     fill
-                    className="object-cover rounded"
+                    className="object-cover rounded grayscale hover:grayscale-0 transition-all duration-200"
                   />
                 </div>
                 <span className="text-sm">{bot.name}</span>
@@ -542,127 +685,19 @@ export default function DesktopInterface({
         ))}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {deploymentModal.isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] pointer-events-auto"
-          >
-            <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4"
-            >
-              <h3 className="text-xl font-semibold mb-4 text-white">Token Deployed Successfully! 🎉</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-gray-400 text-sm mb-1">Token Address:</p>
-                  <p className="text-white bg-gray-800 p-2 rounded text-sm font-mono break-all">
-                    {deploymentModal.tokenAddress}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <p className="text-gray-500 text-sm italic">
-                    Token creation may take up to 2 minutes to appear in pump.fun
-                  </p>
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={() => window.open(`${window.location.origin}${deploymentModal.landingPageUrl}`, '_blank')}
-                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                    >
-                      View Landing Page
-                    </button>
-                    <button
-                      onClick={() => setDeploymentModal({ isOpen: false })}
-                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <DeploymentModal 
+        isOpen={deploymentModal.isOpen}
+        tokenAddress={deploymentModal.tokenAddress}
+        landingPageUrl={deploymentModal.landingPageUrl}
+        onClose={() => setDeploymentModal({ isOpen: false })}
+      />
 
-      {/* Edit Bot Modal */}
-      <AnimatePresence>
-        {editModal.isOpen && editModal.bot && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] pointer-events-auto"
-          >
-            <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4"
-            >
-              <h3 className="text-xl font-semibold mb-4 text-white">Edit Bot Settings</h3>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
-                  const updatedBot = {
-                    ...editModal.bot!,
-                    name: formData.get('name') as string,
-                    personality: formData.get('personality') as string,
-                    background: formData.get('background') as string,
-                  };
-                  handleBotUpdate(updatedBot);
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
-                  <input
-                    name="name"
-                    defaultValue={editModal.bot.name}
-                    className="w-full bg-gray-800 rounded p-2 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Personality</label>
-                  <textarea
-                    name="personality"
-                    defaultValue={editModal.bot.personality}
-                    className="w-full bg-gray-800 rounded p-2 text-white h-24"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Background</label>
-                  <textarea
-                    name="background"
-                    defaultValue={editModal.bot.background}
-                    className="w-full bg-gray-800 rounded p-2 text-white h-24"
-                  />
-                </div>
-                <div className="flex justify-end gap-3 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setEditModal({ isOpen: false })}
-                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <EditBotModal 
+        isOpen={editModal.isOpen}
+        bot={editModal.bot}
+        onClose={() => setEditModal({ isOpen: false })}
+        onSubmit={handleBotUpdate}
+      />
     </div>
   );
 } 
