@@ -3,16 +3,16 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
-    const { appKey, appSecret, accessToken, accessSecret, clientToken } = await request.json();
+    const { appKey, appSecret, accessToken, accessSecret, clientToken, botId } = await request.json();
 
-    if (!clientToken) {
-      return NextResponse.json({ error: "Client token is required" }, { status: 400 });
+    if (!clientToken || !botId) {
+      return NextResponse.json({ error: "Client token and bot ID are required" }, { status: 400 });
     }
 
-    // Upsert the settings (create if doesn't exist, update if exists)
     const settings = await prisma.twitterSettings.upsert({
-      where: { clientToken },
+      where: { botId },
       create: {
+        botId,
         clientToken,
         appKey,
         appSecret,
@@ -48,14 +48,14 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const clientToken = searchParams.get('clientToken');
+    const botId = searchParams.get('botId');
 
-    if (!clientToken) {
-      return NextResponse.json({ error: "Client token is required" }, { status: 400 });
+    if (!botId) {
+      return NextResponse.json({ error: "Bot ID is required" }, { status: 400 });
     }
 
     const settings = await prisma.twitterSettings.findUnique({
-      where: { clientToken },
+      where: { botId },
     });
 
     if (!settings) {

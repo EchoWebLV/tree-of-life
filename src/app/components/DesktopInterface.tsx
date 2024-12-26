@@ -542,7 +542,7 @@ export default function DesktopInterface({
                 src="/loading.gif" 
                 alt="Creating" 
                 fill 
-                className="object-cover grayscale"
+                className="object-cover"
               />
             </div>
             <span className="mt-2 text-xs text-white text-center max-w-full truncate">

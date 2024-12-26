@@ -128,7 +128,7 @@ export default function WindowManager({
                       src={bot.imageUrl}
                       alt={bot.name}
                       fill
-                      className="object-cover rounded grayscale hover:grayscale-0 transition-all duration-200"
+                      className="object-cover rounded transition-all duration-200"
                     />
                   </div>
                   <span className="text-sm">{bot.name}</span>
@@ -256,8 +256,10 @@ export default function WindowManager({
         isOpen={twitterSettingsModal?.isOpen || false}
         onClose={() => setTwitterSettingsModal({ isOpen: false })}
         onSave={async (settings) => {
-          // Save Twitter settings logic here
           const clientToken = localStorage.getItem('clientToken') || '';
+          const botId = twitterSettingsModal.bot?.id;
+          if (!botId) return;
+
           await fetch('/api/twitter-settings', {
             method: 'POST',
             headers: {
@@ -266,10 +268,12 @@ export default function WindowManager({
             body: JSON.stringify({
               ...settings,
               clientToken,
+              botId,
             }),
           });
+          setTwitterSettingsModal({ isOpen: false });
         }}
-        initialSettings={undefined} // You can fetch and pass initial settings if needed
+        initialSettings={undefined}
       />
     </AnimatePresence>
   );

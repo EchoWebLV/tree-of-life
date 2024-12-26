@@ -18,6 +18,7 @@ model Bot {
   clientToken String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  twitterSettings TwitterSettings?
 }
 
 model LandingPage {
@@ -36,11 +37,13 @@ model LandingPage {
 
 model TwitterSettings {
   id           String   @id @default(cuid())
-  clientToken  String   @unique
+  botId        String   @unique
+  clientToken  String
   appKey       String
   appSecret    String
   accessToken  String
   accessSecret String
+  bot          Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
 }
 
 model TokenDeployment {

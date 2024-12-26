@@ -4,11 +4,11 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
-    const { text, clientToken } = await request.json();
+    const { text, botId } = await request.json();
 
-    // Get Twitter settings for this client
+    // Get Twitter settings for this bot
     const settings = await prisma.twitterSettings.findUnique({
-      where: { clientToken },
+      where: { botId },
     });
 
     if (!settings) {
