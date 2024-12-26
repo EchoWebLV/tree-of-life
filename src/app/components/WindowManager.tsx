@@ -1,19 +1,13 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Rnd } from 'react-rnd';
-import Chat from './Chat';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { PiPillDuotone } from 'react-icons/pi';
 import LoadingDots from './LoadingDots';
-
-interface Bot {
-  id: string;
-  name: string;
-  imageUrl: string;
-  personality: string;
-  background: string;
-}
+import Chat from './Chat';
+import { useWallet } from '@solana/wallet-adapter-react';
+import type { Bot } from './types';
 
 interface WindowState {
   id: string;
@@ -28,24 +22,23 @@ interface WindowManagerProps {
   windows: Bot[];
   selectedBot: Bot | null;
   setSelectedBot: (bot: Bot | null) => void;
-  onClose: (botId: string) => void;
-  onDeploy: (bot: Bot) => Promise<void>;
-  onEdit: (bot: Bot) => void;
+  closeWindow: (botId: string) => void;
+  handleDeploy: (bot: Bot) => Promise<void>;
   isDeploying: string | null;
-  wallet: { publicKey: null | { toString: () => string } };
+  setEditModal: (state: { isOpen: boolean; bot?: Bot }) => void;
 }
 
 export default function WindowManager({
   windows,
   selectedBot,
   setSelectedBot,
-  onClose,
-  onDeploy,
-  onEdit,
+  closeWindow,
+  handleDeploy,
   isDeploying,
-  wallet
+  setEditModal,
 }: WindowManagerProps) {
   const [windowStates, setWindowStates] = useState<Record<string, WindowState>>({});
+  const wallet = useWallet();
 
   const getDeployTooltipContent = () => {
     if (isDeploying) return 'Deploying...';
@@ -127,14 +120,14 @@ export default function WindowManager({
                       className="object-cover rounded grayscale hover:grayscale-0 transition-all duration-200"
                     />
                   </div>
-                  <span className="text-sm text-white">{bot.name}</span>
+                  <span className="text-sm">{bot.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Tooltip.Provider>
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
                         <button
-                          onClick={() => onEdit(bot)}
+                          onClick={() => setEditModal({ isOpen: true, bot })}
                           className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                    text-white rounded-full hover:opacity-90 transition-opacity"
                         >
@@ -169,7 +162,7 @@ export default function WindowManager({
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
                         <button
-                          onClick={() => onDeploy(bot)}
+                          onClick={() => handleDeploy(bot)}
                           className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                    text-white rounded-full hover:opacity-90 transition-opacity 
                                    disabled:opacity-50 disabled:cursor-not-allowed"
@@ -196,7 +189,7 @@ export default function WindowManager({
                     </Tooltip.Root>
                   </Tooltip.Provider>
                   <button
-                    onClick={() => onClose(bot.id)}
+                    onClick={() => closeWindow(bot.id)}
                     className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                              text-white rounded-full hover:opacity-90 transition-opacity"
                   >
@@ -226,4 +219,4 @@ export default function WindowManager({
       })}
     </AnimatePresence>
   );
-} 
+}

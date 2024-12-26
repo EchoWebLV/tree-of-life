@@ -34,6 +34,15 @@ model LandingPage {
   updatedAt    DateTime @updatedAt
 }
 
+model TwitterSettings {
+  id           String   @id @default(cuid())
+  clientToken  String   @unique
+  appKey       String
+  appSecret    String
+  accessToken  String
+  accessSecret String
+}
+
 model TokenDeployment {
   id          String   @id @default(cuid())
   clientToken String
