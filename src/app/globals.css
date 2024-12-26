@@ -129,7 +129,13 @@ body::before {
   font-size: 10px !important;
   height: 30px !important;
   padding: 0 16px !important;
-  background-color: #2A5E1C !important;
+  background-color: rgba(42, 94, 28, 0.2) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.wallet-adapter-button-start-icon {
+  display: none !important;
 }
 
 .font-lifecraft {
