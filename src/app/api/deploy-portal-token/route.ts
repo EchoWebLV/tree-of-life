@@ -277,7 +277,7 @@ async function deployToken(
               denominatedInSol: "true",
               amount: 0,
               slippage: 50,
-              priorityFee: 0.001,
+              priorityFee: 0.005,
               pool: "pump",
             }),
           },
