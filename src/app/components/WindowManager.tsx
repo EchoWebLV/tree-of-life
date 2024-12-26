@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Rnd } from 'react-rnd';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { PiPillDuotone } from 'react-icons/pi';
+import { TbBrandX } from 'react-icons/tb';
 import LoadingDots from './LoadingDots';
 import Chat from './Chat';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -44,6 +45,11 @@ export default function WindowManager({
     if (isDeploying) return 'Deploying...';
     if (!wallet.publicKey) return 'Connect wallet first';
     return 'Deploy On Pump.Fun (0.01 SOL)';
+  };
+
+  const getXTooltipContent = () => {
+    // if (!wallet.publicKey) return 'Connect wallet first';
+    return 'Deploy to X (Twitter)';
   };
 
   return (
@@ -183,6 +189,30 @@ export default function WindowManager({
                           sideOffset={5}
                         >
                           {getDeployTooltipContent()}
+                          <Tooltip.Arrow className="fill-black/90" />
+                        </Tooltip.Content>
+                      </Tooltip.Portal>
+                    </Tooltip.Root>
+                  </Tooltip.Provider>
+                  <Tooltip.Provider>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger asChild>
+                        <button
+                          onClick={() => {/* Add X deployment logic */}}
+                          className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
+                                   text-white rounded-full hover:opacity-90 transition-opacity 
+                                   disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={!wallet.publicKey}
+                        >
+                          <TbBrandX className="w-5 h-5" />
+                        </button>
+                      </Tooltip.Trigger>
+                      <Tooltip.Portal>
+                        <Tooltip.Content
+                          className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                          sideOffset={5}
+                        >
+                          {getXTooltipContent()}
                           <Tooltip.Arrow className="fill-black/90" />
                         </Tooltip.Content>
                       </Tooltip.Portal>
