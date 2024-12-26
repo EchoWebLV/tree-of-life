@@ -101,7 +101,6 @@ export default function Home() {
           </div>
           <DesktopInterface 
             bots={bots} 
-            onBotClick={() => {}} 
             onBotDelete={handleBotDelete}
             isLoading={isLoading}
             onUploadClick={() => setShowAnalyzer(true)}
