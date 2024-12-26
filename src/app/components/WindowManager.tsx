@@ -9,6 +9,7 @@ import LoadingDots from './LoadingDots';
 import Chat from './Chat';
 import { useWallet } from '@solana/wallet-adapter-react';
 import type { Bot } from './types';
+import TwitterSettingsModal from './TwitterSettingsModal';
 
 interface WindowState {
   id: string;
@@ -27,6 +28,8 @@ interface WindowManagerProps {
   handleDeploy: (bot: Bot) => Promise<void>;
   isDeploying: string | null;
   setEditModal: (state: { isOpen: boolean; bot?: Bot }) => void;
+  setTwitterSettingsModal: (state: { isOpen: boolean; bot?: Bot }) => void;
+  twitterSettingsModal: { isOpen: boolean; bot?: Bot };
 }
 
 export default function WindowManager({
@@ -37,6 +40,8 @@ export default function WindowManager({
   handleDeploy,
   isDeploying,
   setEditModal,
+  setTwitterSettingsModal,
+  twitterSettingsModal,
 }: WindowManagerProps) {
   const [windowStates, setWindowStates] = useState<Record<string, WindowState>>({});
   const wallet = useWallet();
@@ -198,11 +203,11 @@ export default function WindowManager({
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
                         <button
-                          onClick={() => {/* Add X deployment logic */}}
+                          onClick={() => setTwitterSettingsModal({ isOpen: true, bot })}
                           className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                    text-white rounded-full hover:opacity-90 transition-opacity 
                                    disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={!wallet.publicKey}
+                        //   disabled={!wallet.publicKey}
                         >
                           <TbBrandX className="w-5 h-5" />
                         </button>
@@ -247,6 +252,25 @@ export default function WindowManager({
           </Rnd>
         );
       })}
+      <TwitterSettingsModal 
+        isOpen={twitterSettingsModal?.isOpen || false}
+        onClose={() => setTwitterSettingsModal({ isOpen: false })}
+        onSave={async (settings) => {
+          // Save Twitter settings logic here
+          const clientToken = localStorage.getItem('clientToken') || '';
+          await fetch('/api/twitter-settings', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...settings,
+              clientToken,
+            }),
+          });
+        }}
+        initialSettings={undefined} // You can fetch and pass initial settings if needed
+      />
     </AnimatePresence>
   );
 }
