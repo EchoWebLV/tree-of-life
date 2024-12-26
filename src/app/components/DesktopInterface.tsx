@@ -111,7 +111,12 @@ export default function DesktopInterface({
       
       // Create connection
       const connection = new Connection(
-        "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
+        "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
+        {
+          commitment: 'confirmed',
+          confirmTransactionInitialTimeout: 120000, // 120 seconds
+          wsEndpoint: "wss://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
+        }
       );
 
       // Get latest blockhash
@@ -130,8 +135,18 @@ export default function DesktopInterface({
       const signed = await wallet.signTransaction(transaction);
       
       // Send transaction and store signature
-      txSignature = await connection.sendRawTransaction(signed.serialize());
-      await connection.confirmTransaction(txSignature);
+      txSignature = await connection.sendRawTransaction(signed.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+        maxRetries: 3
+      });
+
+      // Wait for confirmation with more detailed options
+      await connection.confirmTransaction({
+        signature: txSignature,
+        blockhash: blockhash,
+        lastValidBlockHeight: (await connection.getLatestBlockhash()).lastValidBlockHeight
+      }, 'confirmed');
 
       // Continue with token deployment
       const clientToken = localStorage.getItem('clientToken') || '';
@@ -161,36 +176,41 @@ export default function DesktopInterface({
     } catch (error) {
       console.error('Error:', error);
       
-      // If we have a transaction signature and deployment failed, attempt refund
-      if (txSignature) {
-        try {
-          const connection = new Connection(
-            "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
-          );
-          
-          // Create refund transaction
-          const { blockhash } = await connection.getLatestBlockhash();
-          const refundTx = new Transaction().add(
-            SystemProgram.transfer({
-              fromPubkey: TREASURY_ADDRESS,
-              toPubkey: wallet.publicKey,
-              lamports: PAYMENT_AMOUNT,
-            })
-          );
-          refundTx.recentBlockhash = blockhash;
-          refundTx.feePayer = TREASURY_ADDRESS;
-
-          // Send refund transaction
-          const refundSignature = await connection.sendTransaction(refundTx, []);
-          await connection.confirmTransaction(refundSignature);
-          
-          alert('Token deployment failed. Your payment has been refunded.');
-        } catch (refundError) {
-          console.error('Refund failed:', refundError);
-          alert('Token deployment failed. Please contact support for a refund.');
-        }
+      // Show a more user-friendly message for timeout errors
+      if (error instanceof Error && error.message?.includes('TransactionExpiredTimeoutError')) {
+        alert('Transaction is taking longer than expected. Please check your wallet or try again with a better connection.');
       } else {
-        alert('Failed to deploy token. Please try again.');
+        // If we have a transaction signature and deployment failed, attempt refund
+        if (txSignature) {
+          try {
+            const connection = new Connection(
+              "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
+            );
+            
+            // Create refund transaction
+            const { blockhash } = await connection.getLatestBlockhash();
+            const refundTx = new Transaction().add(
+              SystemProgram.transfer({
+                fromPubkey: TREASURY_ADDRESS,
+                toPubkey: wallet.publicKey,
+                lamports: PAYMENT_AMOUNT,
+              })
+            );
+            refundTx.recentBlockhash = blockhash;
+            refundTx.feePayer = TREASURY_ADDRESS;
+
+            // Send refund transaction
+            const refundSignature = await connection.sendTransaction(refundTx, []);
+            await connection.confirmTransaction(refundSignature);
+            
+            alert('Token deployment failed. Your payment has been refunded.');
+          } catch (refundError) {
+            console.error('Refund failed:', refundError);
+            alert('Token deployment failed. Please contact support for a refund.');
+          }
+        } else {
+          alert('Failed to deploy token. Please try again.');
+        }
       }
     } finally {
       setIsDeploying(null);
