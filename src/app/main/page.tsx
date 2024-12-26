@@ -82,8 +82,6 @@ export default function Home() {
           <div className="fixed top-4 right-4 z-50">
             <WalletButton />
           </div>
-          <Logo className="hidden sm:block" />
-          <span className="hidden sm:block">[v1.3.0]</span>
           <div className="mt-8">
             <AnimatedTree isAnalyzing={isAnalyzing} />
             <AIImageAnalyzer

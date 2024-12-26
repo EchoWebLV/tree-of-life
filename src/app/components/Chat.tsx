@@ -74,7 +74,7 @@ export default function Chat({ persona }: ChatProps) {
   };
 
   return (
-    <div className="flex flex-col text-xs h-full bg-black rounded-xl p-6 shadow-lg border border-white chat-container" ref={chatContainerRef}>
+    <div className="flex flex-col text-xs h-full rounded-xl p-6 shadow-lg border border-white chat-container" ref={chatContainerRef}>
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white">
         {messages.map((message, index) => (
           <div
