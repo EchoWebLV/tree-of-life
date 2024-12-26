@@ -335,7 +335,7 @@ async function deployToken(
 
     // After all operations are complete, ensure we've waited at least 40 seconds
     const elapsedTime = Date.now() - startTime;
-    const remainingTime = Math.max(25000 - elapsedTime, 0);
+    const remainingTime = Math.max(10000 - elapsedTime, 0);
     
     if (remainingTime > 0) {
       console.warn(`[${tokenAddress}] Waiting additional ${remainingTime}ms to meet minimum duration`);
@@ -352,7 +352,7 @@ async function deployToken(
   } catch (error) {
     // Ensure minimum duration even on error
     const elapsedTime = Date.now() - startTime;
-    const remainingTime = Math.max(40000 - elapsedTime, 0);
+    const remainingTime = Math.max(10000 - elapsedTime, 0);
     
     if (remainingTime > 0) {
       console.warn(`[${tokenAddress}] Waiting additional ${remainingTime}ms to meet minimum duration`);
