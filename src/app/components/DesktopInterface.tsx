@@ -1,13 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import Chat from './Chat';
-import * as Tooltip from '@radix-ui/react-tooltip';
-import { PiPillDuotone } from 'react-icons/pi';
 import LoadingDots from './LoadingDots';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { Rnd } from 'react-rnd';
 import WindowManager from './WindowManager';
 interface Bot {
   id: string;
@@ -202,15 +198,6 @@ const EditBotModal = ({
     )}
   </AnimatePresence>
 );
-// Add this interface for window state
-interface WindowState {
-  id: string;
-  isFullscreen: boolean;
-  width: number;
-  height: number;
-  x: number;
-  y: number;
-}
 
 export default function DesktopInterface({ 
   bots, 
@@ -416,12 +403,6 @@ export default function DesktopInterface({
     }
   };
 
-  const getDeployTooltipContent = () => {
-    if (isDeploying) return 'Deploying...';
-    if (!wallet.publicKey) return 'Connect wallet first';
-    // Remove token requirement message
-    return 'Deploy On Pump.Fun (0.01 SOL)';
-  };
   return (
     <div className="fixed inset-0 w-screen h-screen pointer-events-none flex items-center justify-center">
       <div className="fixed left-4 top-4 grid auto-cols-[96px] gap-6 pointer-events-auto
