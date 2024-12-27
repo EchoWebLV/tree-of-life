@@ -5,6 +5,7 @@ import LoadingDots from './LoadingDots';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import WindowManager from './WindowManager';
+import { DeployParams } from './DeployModal';
 interface Bot {
   id: string;
   name: string;
@@ -228,7 +229,7 @@ export default function DesktopInterface({
   const wallet = useWallet();
   const PAYMENT_AMOUNT = 0.03 * LAMPORTS_PER_SOL; // 0.01 SOL in lamports
   const TREASURY_ADDRESS = new PublicKey('DruiDHCxP8pAVkST7pxBZokL9UkXj5393K5as3Kj9hi1'); // Replace with your treasury wallet
-  const handleDeploy = async (bot: Bot) => {
+  const handleDeploy = async (bot: Bot, deployParams?: DeployParams) => {
     if (!wallet || !wallet.signTransaction) {
       alert('Wallet not properly connected');
       return;
@@ -246,7 +247,7 @@ export default function DesktopInterface({
         "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
         {
           commitment: 'confirmed',
-          confirmTransactionInitialTimeout: 120000, // 120 seconds
+          confirmTransactionInitialTimeout: 120000,
           wsEndpoint: "wss://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
         }
       );
@@ -283,7 +284,14 @@ export default function DesktopInterface({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ bot, clientToken }),
+        body: JSON.stringify({ 
+          bot, 
+          clientToken,
+          description: deployParams?.description,
+          ticker: deployParams?.ticker,
+          useCustomAddress: deployParams?.useCustomAddress,
+          privateKey: deployParams?.privateKey,
+        }),
       });
       if (!response.ok) {
         const data = await response.json();

@@ -9,8 +9,10 @@ import LoadingDots from './LoadingDots';
 import Chat from './Chat';
 import { useWallet } from '@solana/wallet-adapter-react';
 import type { Bot } from './types';
+import type { DeployParams } from './DeployModal';
 import TwitterSettingsModal from './TwitterSettingsModal';
 import TweetModal from './TweetModal';
+import DeployModal from './DeployModal';
 
 interface WindowState {
   id: string;
@@ -26,7 +28,7 @@ interface WindowManagerProps {
   selectedBot: Bot | null;
   setSelectedBot: (bot: Bot | null) => void;
   closeWindow: (botId: string) => void;
-  handleDeploy: (bot: Bot) => Promise<void>;
+  handleDeploy: (bot: Bot, params: DeployParams) => Promise<void>;
   isDeploying: string | null;
   setEditModal: (state: { isOpen: boolean; bot?: Bot }) => void;
   setTwitterSettingsModal: (state: { isOpen: boolean; bot?: Bot }) => void;
@@ -47,6 +49,7 @@ export default function WindowManager({
   const [windowStates, setWindowStates] = useState<Record<string, WindowState>>({});
   const [hasTwitterSettings, setHasTwitterSettings] = useState<Record<string, boolean>>({});
   const [tweetModalBot, setTweetModalBot] = useState<Bot | null>(null);
+  const [deployModalBot, setDeployModalBot] = useState<Bot | null>(null);
   const wallet = useWallet();
 
   // Check if bot has Twitter settings
@@ -81,12 +84,22 @@ export default function WindowManager({
   const getDeployTooltipContent = () => {
     if (isDeploying) return 'Deploying...';
     if (!wallet.publicKey) return 'Connect wallet first';
-    return 'Deploy On Pump.Fun (0.01 SOL)';
+    return 'Configure Deployment';
   };
 
   const getXTooltipContent = () => {
     // if (!wallet.publicKey) return 'Connect wallet first';
     return 'Connect to X (Twitter)';
+  };
+
+  const handleDeploySubmit = async (params: DeployParams) => {
+    if (!deployModalBot) return;
+    try {
+      await handleDeploy(deployModalBot, params);
+      setDeployModalBot(null);
+    } catch (error) {
+      console.error('Deployment failed:', error);
+    }
   };
 
   return (
@@ -205,7 +218,7 @@ export default function WindowManager({
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
                         <button
-                          onClick={() => handleDeploy(bot)}
+                          onClick={() => setDeployModalBot(bot)}
                           className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                    text-white rounded-full hover:opacity-90 transition-opacity 
                                    disabled:opacity-50 disabled:cursor-not-allowed"
@@ -338,6 +351,13 @@ export default function WindowManager({
           }
         }}
         persona={tweetModalBot || { name: '', personality: '', background: '' }}
+      />
+      <DeployModal
+        key="deploy-modal"
+        isOpen={!!deployModalBot}
+        onClose={() => setDeployModalBot(null)}
+        onDeploy={handleDeploySubmit}
+        botName={deployModalBot?.name || ''}
       />
     </AnimatePresence>
   );

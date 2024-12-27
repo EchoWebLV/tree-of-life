@@ -65,11 +65,21 @@ async function fetchWithTimeout(
 export async function POST(request: Request) {
   try {
     console.warn('Starting deployment request');
-    const { bot, clientToken } = await request.json();
+    const { 
+      bot, 
+      clientToken, 
+      description, 
+      ticker,
+      useCustomAddress,
+      privateKey 
+    } = await request.json();
 
     console.warn('Received payload:', {
       botId: bot.id,
       hasClientToken: !!clientToken,
+      customDescription: !!description,
+      customTicker: !!ticker,
+      hasCustomAddress: useCustomAddress && !!privateKey,
       timestamp: new Date().toISOString(),
     });
 
@@ -82,20 +92,39 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate a new Mint Keypair
-    const mint = Keypair.generate();
-    const tokenAddress = mint.publicKey.toBase58();
+    // If custom address is provided, use it instead of generating a new mint
+    let mint: Keypair;
+    let tokenAddress: string;
+
+    if (useCustomAddress && privateKey) {
+      try {
+        // Convert the private key string to a Keypair
+        const privateKeyBytes = bs58.decode(privateKey);
+        mint = Keypair.fromSecretKey(privateKeyBytes);
+        tokenAddress = mint.publicKey.toBase58();
+      } catch (error) {
+        console.error('Invalid private key provided:', error);
+        return NextResponse.json(
+          { error: "Invalid private key format" },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Generate a new Mint Keypair if no custom address provided
+      mint = Keypair.generate();
+      tokenAddress = mint.publicKey.toBase58();
+    }
 
     console.warn(`Creating landing page for token ${tokenAddress}`);
 
-    // Update initial status
+    // Update initial status with custom description if provided
     await prisma.landingPage.create({
       data: {
         tokenAddress,
         botId: bot.id,
         name: bot.name,
         imageUrl: bot.imageUrl,
-        personality: bot.personality,
+        personality: description || bot.personality,
         background: bot.background,
         status: "deploying",
       },
@@ -104,7 +133,7 @@ export async function POST(request: Request) {
     console.warn(`Landing page created, starting deployment for ${tokenAddress}`);
 
     // Wait for deployment to complete instead of running it in background
-    await deployToken(bot, mint, tokenAddress, clientToken);
+    await deployToken(bot, mint, tokenAddress, clientToken, description, ticker);
 
     // Return the landing page URL after deployment is complete
     return NextResponse.json({
@@ -126,7 +155,9 @@ async function deployToken(
   bot: Bot,
   mint: Keypair,
   tokenAddress: string,
-  clientToken: string
+  clientToken: string,
+  customDescription?: string,
+  customTicker?: string
 ) {
   const startTime = Date.now();
   
@@ -205,10 +236,10 @@ async function deployToken(
 
     formData.append("file", blob, "image.jpg");
     formData.append("name", bot.name);
-    formData.append("symbol", bot.name.slice(0, 4).toUpperCase());
+    formData.append("symbol", customTicker || bot.name.slice(0, 4).toUpperCase());
     formData.append(
       "description",
-      `${bot.personality}\n\n${bot.background}`
+      customDescription || `${bot.personality}\n\n${bot.background}`
     );
     formData.append("website", `https://druidai.app/token/${tokenAddress}`);
     formData.append("showName", "true");
