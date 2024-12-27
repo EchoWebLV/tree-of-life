@@ -83,24 +83,26 @@ export default function DeployModal({
                   onChange={(e) => setParams(prev => ({ ...prev, ticker: e.target.value.toUpperCase() }))}
                   className="w-full bg-gray-800 rounded p-2 text-white"
                   placeholder="e.g. PUMP"
-                  maxLength={4}
+                  maxLength={8}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="useCustomAddress"
-                  checked={params.useCustomAddress}
-                  onChange={(e) => setParams(prev => ({ 
-                    ...prev, 
-                    useCustomAddress: e.target.checked,
-                    privateKey: e.target.checked ? prev.privateKey : ''
-                  }))}
-                  className="bg-gray-800 rounded"
-                />
-                <label htmlFor="useCustomAddress" className="text-sm text-gray-400">
-                  Use custom address
-                </label>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="useCustomAddress"
+                    checked={params.useCustomAddress}
+                    onChange={(e) => setParams(prev => ({ 
+                      ...prev, 
+                      useCustomAddress: e.target.checked,
+                      privateKey: e.target.checked ? prev.privateKey : ''
+                    }))}
+                    className="bg-gray-800 rounded"
+                  />
+                  <label htmlFor="useCustomAddress" className="text-sm text-gray-400">
+                    Use custom address
+                  </label>
+                </div>
               </div>
               {params.useCustomAddress && (
                 <div>
@@ -121,6 +123,14 @@ export default function DeployModal({
                       {showPrivateKey ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
                     </button>
                   </div>
+                  <a 
+                  href="https://vanity.druidai.app/" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-xs text-blue-400 mt-2 hover:text-blue-300 transition-colors block"
+                >
+                  Generate your own vanity address →
+                </a>
                 </div>
               )}
               <div className="flex justify-end gap-2 mt-6">
