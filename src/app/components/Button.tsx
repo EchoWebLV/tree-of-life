@@ -4,7 +4,6 @@ import { ButtonHTMLAttributes } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary';
-  icon?: string;
   position?: 'fixed' | 'static';
   customPosition?: string;
 }
@@ -12,7 +11,6 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export default function Button({
   children,
   variant = 'primary',
-  icon,
   position = 'static',
   customPosition,
   className = '',

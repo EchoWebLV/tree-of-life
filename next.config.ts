@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    serverComponentsExternalPackages: ['twitter-api-v2'],
+  },
 };
 
 export default nextConfig;

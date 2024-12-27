@@ -82,8 +82,6 @@ export default function Home() {
           <div className="fixed top-4 right-4 z-50">
             <WalletButton />
           </div>
-          <Logo className="hidden sm:block" />
-          <span className="hidden sm:block">[v1.3.0]</span>
           <div className="mt-8">
             <AnimatedTree isAnalyzing={isAnalyzing} />
             <AIImageAnalyzer
@@ -103,11 +101,11 @@ export default function Home() {
           </div>
           <DesktopInterface 
             bots={bots} 
-            onBotClick={() => {}} 
             onBotDelete={handleBotDelete}
             isLoading={isLoading}
             onUploadClick={() => setShowAnalyzer(true)}
             setBots={setBots}
+            isCreating={isAnalyzing}
           />
         </main>
         <div className="fixed bottom-0 left-0 right-0 bg-black text-white text-[9px] py-1 text-center z-50">

@@ -40,11 +40,24 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen flex flex-col items-center p-4 bg-black text-white">
-      <div className="w-full max-w-4xl">
+    <main className="min-h-screen flex flex-col items-center p-4 bg-black text-white relative">
+      {/* Fire background */}
+      <div className="fixed inset-0 w-full h-full z-0">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-50"
+          style={{
+            backgroundImage: "url('/fire.gif')",
+            backgroundAttachment: 'fixed',
+            zIndex: -1
+          }}
+        />
+      </div>
+
+      {/* Content with higher z-index */}
+      <div className="w-full max-w-4xl relative z-10">
         <div className="text-center mb-8">
           <Logo />
-          <h2 className="text-xl mt-4 mb-2">Latest AI Agents</h2>
+          <h2 className="text-xl">Latest AI Agents</h2>
           <div className="mt-4 flex justify-center gap-4">
             <Link 
               href="/main" 
@@ -66,7 +79,7 @@ export default function Home() {
               <Link
                 key={token.id}
                 href={`/token/${token.tokenAddress}`}
-                className="flex bg-white/5 rounded-lg p-6 hover:bg-white/10 transition-colors flex-col h-full"
+                className="flex bg-black/50 backdrop-blur-sm rounded-lg p-6 hover:bg-black/60 transition-colors flex-col h-full"
               >
                 <div className="relative w-full aspect-square mb-4">
                   <Image
