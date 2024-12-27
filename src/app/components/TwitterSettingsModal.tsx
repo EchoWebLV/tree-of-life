@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { FaXTwitter } from "react-icons/fa6";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import LoadingDots from './LoadingDots';
 
 interface TwitterSettings {
   appKey: string;
@@ -21,20 +23,67 @@ export default function TwitterSettingsModal({
   isOpen, 
   onClose, 
   onSave,
-  initialSettings 
+  onLoad
 }: TwitterSettingsModalProps) {
-  const [settings, setSettings] = useState<TwitterSettings>(initialSettings || {
+  const [settings, setSettings] = useState<TwitterSettings>({
     appKey: '',
     appSecret: '',
     accessToken: '',
     accessSecret: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSecrets, setShowSecrets] = useState({
+    appSecret: false,
+    accessSecret: false
+  });
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (isOpen && onLoad) {
+        setIsLoading(true);
+        try {
+          const loadedSettings = await onLoad();
+          if (loadedSettings) {
+            setSettings(loadedSettings);
+          }
+        } catch (error) {
+          console.error('Error loading Twitter settings:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadSettings();
+  }, [isOpen, onLoad]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSave(settings);
     onClose();
   };
+
+  const toggleSecretVisibility = (field: 'appSecret' | 'accessSecret') => {
+    setShowSecrets(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  if (isLoading) {
+    return (
+      <Dialog.Root open={isOpen} onOpenChange={onClose}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-900 rounded-lg p-6 w-[400px]">
+            <div className="flex items-center justify-center h-32">
+              <LoadingDots />
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+    );
+  }
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
@@ -57,12 +106,21 @@ export default function TwitterSettingsModal({
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">App Secret</label>
-              <input
-                type="password"
-                value={settings.appSecret}
-                onChange={(e) => setSettings(prev => ({ ...prev, appSecret: e.target.value }))}
-                className="w-full bg-gray-800 rounded p-2 text-white"
-              />
+              <div className="relative">
+                <input
+                  type={showSecrets.appSecret ? "text" : "password"}
+                  value={settings.appSecret}
+                  onChange={(e) => setSettings(prev => ({ ...prev, appSecret: e.target.value }))}
+                  className="w-full bg-gray-800 rounded p-2 text-white pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleSecretVisibility('appSecret')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                >
+                  {showSecrets.appSecret ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Access Token</label>
@@ -75,12 +133,21 @@ export default function TwitterSettingsModal({
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Access Secret</label>
-              <input
-                type="password"
-                value={settings.accessSecret}
-                onChange={(e) => setSettings(prev => ({ ...prev, accessSecret: e.target.value }))}
-                className="w-full bg-gray-800 rounded p-2 text-white"
-              />
+              <div className="relative">
+                <input
+                  type={showSecrets.accessSecret ? "text" : "password"}
+                  value={settings.accessSecret}
+                  onChange={(e) => setSettings(prev => ({ ...prev, accessSecret: e.target.value }))}
+                  className="w-full bg-gray-800 rounded p-2 text-white pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleSecretVisibility('accessSecret')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                >
+                  {showSecrets.accessSecret ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                </button>
+              </div>
             </div>
             
             <div className="flex justify-end gap-2 mt-6">

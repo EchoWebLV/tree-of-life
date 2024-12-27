@@ -28,7 +28,6 @@ export default function TweetModal({
   const handleGenerateAndTweet = async () => {
     setIsTweeting(true);
     try {
-      // Generate tweet using AI
       const response = await fetch('/api/generate-tweet', {
         method: 'POST',
         headers: {
@@ -43,7 +42,6 @@ export default function TweetModal({
 
       const { tweet } = await response.json();
       
-      // Post the generated tweet
       await onTweet(tweet);
       setPostedTweet(tweet);
     } catch (error) {
@@ -64,10 +62,21 @@ export default function TweetModal({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-900 rounded-lg p-6 w-[400px]">
+          <Dialog.Title className="text-xl text-white mb-4 flex items-center gap-2">
+            <FaXTwitter /> Post Tweet
+          </Dialog.Title>
+          
           <div className="flex justify-between items-center mb-4">
-            <Dialog.Title className="text-xl text-white flex items-center gap-2">
-              <FaXTwitter /> Post Tweet
-            </Dialog.Title>
+            <div className="flex flex-col w-full">
+              <div className="flex gap-4 mb-4">
+                <button className="text-white border-b-2 border-blue-500 pb-1">
+                  Single Tweet
+                </button>
+                <button className="text-gray-500 pb-1 cursor-not-allowed">
+                  Autonomous Life
+                </button>
+              </div>
+            </div>
             <button
               onClick={onEditSettings}
               className="p-2 rounded-full hover:bg-gray-800 transition-colors"
