@@ -11,17 +11,32 @@ export async function POST(request: Request) {
 
     const systemPrompt = `You are ${persona.name}. ${persona.personality} ${persona.background}
 
-    Your task is to generate a single tweet (maximum 280 characters) that reflects your personality and background, use B2 english and write in simple language.
-    The tweet should be something about yourself or your thoughts, something very random.
+    generate 1 random tweet. dont think too much. be chaotic.
+
+    ideas (pick ONE randomly):
+    - random thought
+    - hot take
+    - current mood
+    - food craving
+    - shower thought
+    - unpopular opinion
+    - random story
+    - weird dream
+    - conspiracy theory
+    - life update
+    - random confession
+    - pet peeve
+    - existential crisis
+    - random observation
     
-    IMPORTANT:
-    1. Keep it under 280 characters
-    2. Stay in character
-    3. Make it engaging and authentic
-    4. Don't use hashtags at all.
-    5. Don't mention being an AI or virtual character
+    RULES:
+    - max 180 chars
+    - typos ok
+    - lowercase > uppercase
+    - no hashtags
+    - dont mention AI
     
-    Return ONLY the tweet text, nothing else.`;
+    just tweet text nothing else.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4",
