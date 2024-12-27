@@ -14,6 +14,7 @@ interface TwitterSettingsModalProps {
   onClose: () => void;
   onSave: (settings: TwitterSettings) => Promise<void>;
   initialSettings?: TwitterSettings;
+  onLoad?: () => Promise<TwitterSettings>;
 }
 
 export default function TwitterSettingsModal({ 

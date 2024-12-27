@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Rnd } from 'react-rnd';
@@ -10,6 +10,7 @@ import Chat from './Chat';
 import { useWallet } from '@solana/wallet-adapter-react';
 import type { Bot } from './types';
 import TwitterSettingsModal from './TwitterSettingsModal';
+import TweetModal from './TweetModal';
 
 interface WindowState {
   id: string;
@@ -44,7 +45,38 @@ export default function WindowManager({
   twitterSettingsModal,
 }: WindowManagerProps) {
   const [windowStates, setWindowStates] = useState<Record<string, WindowState>>({});
+  const [hasTwitterSettings, setHasTwitterSettings] = useState<Record<string, boolean>>({});
+  const [tweetModalBot, setTweetModalBot] = useState<Bot | null>(null);
   const wallet = useWallet();
+
+  // Check if bot has Twitter settings
+  useEffect(() => {
+    windows.forEach(async (bot) => {
+      const response = await fetch(`/api/twitter-settings?botId=${bot.id}`);
+      const data = await response.json();
+      setHasTwitterSettings(prev => ({
+        ...prev,
+        [bot.id]: !!data.settings
+      }));
+    });
+  }, [windows]);
+
+  const handleTweet = async (text: string) => {
+    if (!tweetModalBot) return;
+    
+    const response = await fetch('/api/post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        botId: tweetModalBot.id
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to post tweet');
+    }
+  };
 
   const getDeployTooltipContent = () => {
     if (isDeploying) return 'Deploying...';
@@ -203,11 +235,15 @@ export default function WindowManager({
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
                         <button
-                          onClick={() => setTwitterSettingsModal({ isOpen: true, bot })}
+                          onClick={() => {
+                            if (hasTwitterSettings[bot.id]) {
+                              setTweetModalBot(bot);
+                            } else {
+                              setTwitterSettingsModal({ isOpen: true, bot });
+                            }
+                          }}
                           className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
-                                   text-white rounded-full hover:opacity-90 transition-opacity 
-                                   disabled:opacity-50 disabled:cursor-not-allowed"
-                        //   disabled={!wallet.publicKey}
+                                   text-white rounded-full hover:opacity-90 transition-opacity"
                         >
                           <TbBrandX className="w-5 h-5" />
                         </button>
@@ -271,9 +307,34 @@ export default function WindowManager({
               botId,
             }),
           });
+          setHasTwitterSettings(prev => ({
+            ...prev,
+            [botId]: true
+          }));
           setTwitterSettingsModal({ isOpen: false });
         }}
-        initialSettings={undefined}
+        initialSettings={twitterSettingsModal.bot ? {
+          appKey: '',
+          appSecret: '',
+          accessToken: '',
+          accessSecret: ''
+        } : undefined}
+        onLoad={twitterSettingsModal.bot ? async () => {
+          const response = await fetch(`/api/twitter-settings?botId=${twitterSettingsModal.bot?.id}`);
+          const data = await response.json();
+          return data.settings;
+        } : undefined}
+      />
+      <TweetModal
+        isOpen={!!tweetModalBot}
+        onClose={() => setTweetModalBot(null)}
+        onTweet={handleTweet}
+        onEditSettings={() => {
+          setTweetModalBot(null);
+          if (tweetModalBot) {
+            setTwitterSettingsModal({ isOpen: true, bot: tweetModalBot });
+          }
+        }}
       />
     </AnimatePresence>
   );
