@@ -51,6 +51,18 @@ export default function WindowManager({
   const [tweetModalBot, setTweetModalBot] = useState<Bot | null>(null);
   const [deployModalBot, setDeployModalBot] = useState<Bot | null>(null);
   const wallet = useWallet();
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile device on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768); // You can adjust this breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Check if bot has Twitter settings
   useEffect(() => {
@@ -123,10 +135,12 @@ export default function WindowManager({
               width: windowState.width,
               height: windowState.height,
             }}
+            disableDragging={isMobile}
+            enableResizing={!isMobile}
             minWidth={300}
             minHeight={400}
             bounds="window"
-            dragHandleClassName="window-handle"
+            dragHandleClassName={isMobile ? undefined : "window-handle"}
             onDragStop={(e, d) => {
               setWindowStates(prev => ({
                 ...prev,
@@ -164,7 +178,11 @@ export default function WindowManager({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               className="bg-black/80 backdrop-blur-sm rounded-lg overflow-hidden w-full h-full"
-              onClick={() => setSelectedBot(bot)}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setSelectedBot(bot);
+                }
+              }}
             >
               <div className="flex items-center justify-between p-2 bg-white/10 window-handle cursor-move">
                 <div className="flex items-center gap-2">
