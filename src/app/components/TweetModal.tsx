@@ -8,26 +8,44 @@ interface TweetModalProps {
   onClose: () => void;
   onTweet: (text: string) => Promise<void>;
   onEditSettings: () => void;
+  persona: {
+    name: string;
+    personality: string;
+    background: string;
+  };
 }
 
 export default function TweetModal({ 
   isOpen, 
   onClose, 
   onTweet,
-  onEditSettings
+  onEditSettings,
+  persona
 }: TweetModalProps) {
-  const [tweetText, setTweetText] = useState('');
   const [isTweeting, setIsTweeting] = useState(false);
+  const [postedTweet, setPostedTweet] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tweetText.trim()) return;
-    
+  const handleGenerateAndTweet = async () => {
     setIsTweeting(true);
     try {
-      await onTweet(tweetText);
-      setTweetText('');
-      onClose();
+      // Generate tweet using AI
+      const response = await fetch('/api/generate-tweet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ persona }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate tweet');
+      }
+
+      const { tweet } = await response.json();
+      
+      // Post the generated tweet
+      await onTweet(tweet);
+      setPostedTweet(tweet);
     } catch (error) {
       console.error('Error posting tweet:', error);
       alert('Failed to post tweet');
@@ -36,8 +54,13 @@ export default function TweetModal({
     }
   };
 
+  const handleClose = () => {
+    setPostedTweet(null);
+    onClose();
+  };
+
   return (
-    <Dialog.Root open={isOpen} onOpenChange={onClose}>
+    <Dialog.Root open={isOpen} onOpenChange={handleClose}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-900 rounded-lg p-6 w-[400px]">
@@ -54,38 +77,40 @@ export default function TweetModal({
             </button>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <textarea
-                value={tweetText}
-                onChange={(e) => setTweetText(e.target.value)}
-                placeholder="What's happening?"
-                className="w-full bg-gray-800 rounded p-3 text-white h-32 resize-none"
-                maxLength={280}
-              />
-              <div className="text-right text-sm text-gray-400 mt-1">
-                {tweetText.length}/280
+          {postedTweet ? (
+            <div className="space-y-4">
+              <div className="bg-gray-800 rounded p-4 text-white">
+                <p className="text-sm text-gray-400 mb-2">Posted Tweet:</p>
+                <p>{postedTweet}</p>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleClose}
+                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+                >
+                  Close
+                </button>
               </div>
             </div>
-            
+          ) : (
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
               >
                 Cancel
               </button>
               <button
-                type="submit"
-                disabled={!tweetText.trim() || isTweeting}
+                onClick={handleGenerateAndTweet}
+                disabled={isTweeting}
                 className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500 
                          disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isTweeting ? 'Posting...' : 'Tweet'}
+                {isTweeting ? 'Generating...' : 'Generate & Tweet'}
               </button>
             </div>
-          </form>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

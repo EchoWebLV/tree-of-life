@@ -64,7 +64,7 @@ export default function WindowManager({
   const handleTweet = async (text: string) => {
     if (!tweetModalBot) return;
     
-    const response = await fetch('/api/post', {
+    const response = await fetch('/api/post-tweet', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -86,11 +86,11 @@ export default function WindowManager({
 
   const getXTooltipContent = () => {
     // if (!wallet.publicKey) return 'Connect wallet first';
-    return 'Deploy to X (Twitter)';
+    return 'Connect to X (Twitter)';
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="popLayout">
       {windows.map((bot) => {
         const windowState = windowStates[bot.id] || {
           id: bot.id,
@@ -103,7 +103,7 @@ export default function WindowManager({
 
         return (
           <Rnd
-            key={bot.id}
+            key={`window-${bot.id}`}
             default={{
               x: windowState.x,
               y: windowState.y,
@@ -289,6 +289,7 @@ export default function WindowManager({
         );
       })}
       <TwitterSettingsModal 
+        key="twitter-settings-modal"
         isOpen={twitterSettingsModal?.isOpen || false}
         onClose={() => setTwitterSettingsModal({ isOpen: false })}
         onSave={async (settings) => {
@@ -326,6 +327,7 @@ export default function WindowManager({
         } : undefined}
       />
       <TweetModal
+        key="tweet-modal"
         isOpen={!!tweetModalBot}
         onClose={() => setTweetModalBot(null)}
         onTweet={handleTweet}
@@ -335,6 +337,7 @@ export default function WindowManager({
             setTwitterSettingsModal({ isOpen: true, bot: tweetModalBot });
           }
         }}
+        persona={tweetModalBot || { name: '', personality: '', background: '' }}
       />
     </AnimatePresence>
   );
