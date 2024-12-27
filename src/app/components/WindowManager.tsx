@@ -179,13 +179,17 @@ export default function WindowManager({
                   <span className="text-sm">{bot.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Tooltip.Provider>
+                  <Tooltip.Provider delayDuration={0}>
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
                         <button
-                          onClick={() => setEditModal({ isOpen: true, bot })}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditModal({ isOpen: true, bot });
+                          }}
                           className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
-                                   text-white rounded-full hover:opacity-90 transition-opacity"
+                                     text-white rounded-full hover:opacity-90 transition-opacity
+                                     touch-manipulation"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -273,9 +277,13 @@ export default function WindowManager({
                     </Tooltip.Root>
                   </Tooltip.Provider>
                   <button
-                    onClick={() => closeWindow(bot.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeWindow(bot.id);
+                    }}
                     className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
-                             text-white rounded-full hover:opacity-90 transition-opacity"
+                             text-white rounded-full hover:opacity-90 transition-opacity
+                             touch-manipulation"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
