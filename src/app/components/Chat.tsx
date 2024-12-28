@@ -41,10 +41,10 @@ export default function Chat({ persona }: ChatProps) {
 
     const newMessages = [
       ...messages,
-      { role: 'user', content: input }
+      { role: 'user' as const, content: input }
     ];
 
-    setMessages(newMessages as { role: 'user' | 'assistant'; content: string }[]);
+    setMessages(newMessages);
     setInput('');
 
     try {
