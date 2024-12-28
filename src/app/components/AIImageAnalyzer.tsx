@@ -53,12 +53,38 @@ export default function AIImageAnalyzer({
     }
   }, [isOpen]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setUploadedFile(file);
-      const objectUrl = URL.createObjectURL(file);
-      setSelectedImage(objectUrl);
+      try {
+        // Convert file to buffer
+        const buffer = await file.arrayBuffer();
+        
+        // Resize image
+        const resizeResponse = await fetch('/api/resize-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/octet-stream',
+          },
+          body: buffer,
+        });
+
+        if (!resizeResponse.ok) {
+          throw new Error('Failed to resize image');
+        }
+
+        // Create blob from resized image
+        const resizedBlob = await resizeResponse.blob();
+        
+        // Create object URL for preview
+        const objectUrl = URL.createObjectURL(resizedBlob);
+        setSelectedImage(objectUrl);
+
+        // Save file to state
+        setUploadedFile(file);
+      } catch (error) {
+        console.error('Error resizing image:', error);
+      }
     }
   };
 
@@ -100,6 +126,7 @@ export default function AIImageAnalyzer({
     onAnalysisStart?.();
     
     try {
+      // Fetch NFT metadata
       const response = await fetch(`https://api.simplehash.com/api/v0/nfts/solana/${validAddress}`, {
         headers: {
           'X-API-KEY': "teamgpt_sk_6lpgkucpixnk5pnsay1dv3z2741d5d77",
@@ -112,11 +139,50 @@ export default function AIImageAnalyzer({
       }
 
       const data: NFTResponse = await response.json();
+
+      // Fetch and process the NFT image
+      const imageResponse = await fetch(data.image_url);
+      if (!imageResponse.ok) {
+        throw new Error('Failed to fetch NFT image');
+      }
+
+      // Convert image to buffer and resize
+      const imageBuffer = await imageResponse.arrayBuffer();
       
-      // Create a persona from NFT data
+      // Send to resize endpoint
+      const resizeResponse = await fetch('/api/resize-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+        body: imageBuffer,
+      });
+
+      if (!resizeResponse.ok) {
+        throw new Error('Failed to resize image');
+      }
+
+      // Prepare for upload
+      const resizedBlob = await resizeResponse.blob();
+      const formData = new FormData();
+      formData.append('file', resizedBlob, 'nft-image.jpg');
+
+      // Upload to our server
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload NFT image');
+      }
+
+      const { url: blobUrl } = await uploadResponse.json();
+      
+      // Create persona with our hosted image URL
       const nftPersona = {
         name: data.name,
-        imageUrl: data.image_url,
+        imageUrl: blobUrl,
         personality: `An NFT (say you are NFT only if asked) character with the following traits: ${data.extra_metadata.attributes
           .map(attr => `${attr.trait_type}: ${attr.value}`)
           .join(', ')}`,
