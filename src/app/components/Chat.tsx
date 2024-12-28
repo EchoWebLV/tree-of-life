@@ -14,12 +14,7 @@ interface ChatProps {
 
 export default function Chat({ persona }: ChatProps) {
     console.log(persona)
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: `Hello! I'm ${persona.name}. How can I help you today?`
-    }
-  ]);
+  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [input, setInput] = useState('');
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
