@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { useWallet } from '@solana/wallet-adapter-react';
 import type { NFTResponse } from '../types/nft';
-import Link from 'next/link';
+import Image from 'next/image';
 
 interface NFTGridProps {
   onSelect: (nft: NFTResponse) => void;
@@ -74,21 +73,20 @@ export default function NFTGrid({ onSelect, collectionId }: NFTGridProps) {
     );
   }
 
-  console.log(nfts)
-
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto p-2">
       {nfts.map((nft) => (
         <div
-          key={nft.nft_id}
+          key={`${nft.name}-${nft.image_url}`}
           onClick={() => onSelect(nft)}
           className="flex flex-col gap-4 bg-gray-100 p-3 rounded-lg hover:scale-105 transition-all cursor-pointer"
         >
           <div className="aspect-square relative">
-            <img
-              src={nft.image_url || nft.previews?.image_medium_url}
+            <Image
+              src={nft.image_url || nft.previews?.image_medium_url || '/placeholder.jpg'}
               alt={nft.name}
-              className="w-full h-full object-cover rounded-lg"
+              fill
+              className="object-cover rounded-lg"
             />
           </div>
           <div>

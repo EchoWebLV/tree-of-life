@@ -13,6 +13,7 @@ import type { DeployParams } from './DeployModal';
 import TwitterSettingsModal from './TwitterSettingsModal';
 import TweetModal from './TweetModal';
 import DeployModal from './DeployModal';
+import { checkTokenBalance } from '../utils/tokenCheck';
 
 interface WindowState {
   id: string;
@@ -52,6 +53,7 @@ export default function WindowManager({
   const [deployModalBot, setDeployModalBot] = useState<Bot | null>(null);
   const wallet = useWallet();
   const [isMobile, setIsMobile] = useState(false);
+  const [hasEnoughTokens, setHasEnoughTokens] = useState(false);
 
   // Detect mobile device on mount and window resize
   useEffect(() => {
@@ -75,6 +77,20 @@ export default function WindowManager({
       }));
     });
   }, [windows]);
+
+  // Check token balance when wallet connects
+  useEffect(() => {
+    const checkBalance = async () => {
+      if (wallet.publicKey) {
+        const hasBalance = await checkTokenBalance(wallet.publicKey);
+        setHasEnoughTokens(hasBalance);
+      } else {
+        setHasEnoughTokens(false);
+      }
+    };
+    
+    checkBalance();
+  }, [wallet.publicKey]);
 
   const handleTweet = async (text: string) => {
     if (!tweetModalBot) return;
@@ -105,7 +121,8 @@ export default function WindowManager({
   };
 
   const handleDeploySubmit = async (params: DeployParams) => {
-    if (!deployModalBot) return;
+    if (!wallet.publicKey || !deployModalBot) return;
+    
     try {
       await handleDeploy(deployModalBot, params);
       setDeployModalBot(null);
@@ -378,13 +395,15 @@ export default function WindowManager({
         }}
         persona={tweetModalBot || { name: '', personality: '', background: '' }}
       />
-      <DeployModal
-        key="deploy-modal"
-        isOpen={!!deployModalBot}
-        onClose={() => setDeployModalBot(null)}
-        onDeploy={handleDeploySubmit}
-        botName={deployModalBot?.name || ''}
-      />
+      {deployModalBot && (
+        <DeployModal
+          isOpen={!!deployModalBot}
+          onClose={() => setDeployModalBot(null)}
+          onDeploy={handleDeploySubmit}
+          botName={deployModalBot.name}
+          hasEnoughTokens={hasEnoughTokens}
+        />
+      )}
     </AnimatePresence>
   );
 }

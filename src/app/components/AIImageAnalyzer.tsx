@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Button from './Button';
 import { getClientToken } from '../utils/clientToken';
-import { useWallet } from '@solana/wallet-adapter-react';
-import NFTGrid from './NFTGrid';
 
 type UploadType = 'IMAGE' | 'NFT';
 
@@ -57,7 +55,6 @@ export default function AIImageAnalyzer({
   onBotCreated,
   modalClassName = '',
 }: AIImageAnalyzerProps) {
-  const { connected } = useWallet();
   const [uploadType, setUploadType] = useState<UploadType>('IMAGE');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -377,18 +374,27 @@ export default function AIImageAnalyzer({
                   </>
                 ) : (
                   <>
-                    {!connected ? (
-                      <div className="text-center text-gray-400 py-8">
-                        Please connect your wallet to view your NFTs
-                      </div>
-                    ) : (
-                      <NFTGrid
-                        onSelect={async (nft) => {
-                          setNftAddress(nft.collection.name);
-                          await analyzeNFT();
-                        }}
-                      />
+                    <input
+                      type="text"
+                      placeholder="Enter NFT address or URL"
+                      value={nftAddress || ''}
+                      onChange={(e) => {
+                        setNftAddress(e.target.value);
+                        setAddressError('');
+                      }}
+                      className="w-full p-2 rounded bg-white/10"
+                    />
+                    {addressError && (
+                      <p className="text-red-500 text-sm mt-1">{addressError}</p>
                     )}
+                    <Button
+                      variant="secondary"
+                      onClick={analyzeNFT}
+                      disabled={!nftAddress || isAnalyzing}
+                      className="w-full"
+                    >
+                      {isAnalyzing ? 'Fetching NFT...' : 'Bring To Life'}
+                    </Button>
                   </>
                 )}
               </div>
