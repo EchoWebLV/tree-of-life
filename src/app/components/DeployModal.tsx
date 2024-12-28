@@ -9,6 +9,7 @@ interface DeployModalProps {
   onClose: () => void;
   onDeploy: (params: DeployParams) => Promise<void>;
   botName: string;
+  hasEnoughTokens?: boolean;
 }
 
 export interface DeployParams {
@@ -22,7 +23,8 @@ export default function DeployModal({
   isOpen, 
   onClose, 
   onDeploy,
-  botName 
+  botName,
+  hasEnoughTokens = false
 }: DeployModalProps) {
   const [params, setParams] = useState<DeployParams>({
     description: '',
@@ -133,20 +135,32 @@ export default function DeployModal({
                 </a>
                 </div>
               )}
-              <div className="flex justify-end gap-2 mt-6">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
-                >
-                  Deploy (0.03 SOL)
-                </button>
+              <div className="space-y-2">
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!hasEnoughTokens}
+                    className={`px-4 py-2 rounded ${
+                      hasEnoughTokens 
+                        ? 'bg-blue-600 text-white hover:bg-blue-500' 
+                        : 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                    }`}
+                  >
+                    Deploy (0.03 SOL)
+                  </button>
+                </div>
+                {!hasEnoughTokens && (
+                  <div className="text-center text-red-400 text-sm">
+                    You need at least 20,000 DRUID tokens to deploy
+                  </div>
+                )}
               </div>
             </form>
           )}

@@ -188,7 +188,7 @@ async function deployToken(
       bs58.decode(process.env.PAYER_PRIVATE_KEY)
     );
 
-    // Directly GET the image (no HEAD request)
+    // Fetch image data - handle both direct URLs and uploaded images
     console.warn(`[${tokenAddress}] Attempting to fetch image from: ${bot.imageUrl}`);
     const imageResponse = await fetchWithTimeout(
       bot.imageUrl,
@@ -200,8 +200,8 @@ async function deployToken(
         method: "GET",
         cache: "no-store",
       },
-      10000, // 10-second timeout
-      2      // Retry up to 2 times
+      10000,
+      2
     );
 
     if (!imageResponse.ok) {
@@ -215,9 +215,9 @@ async function deployToken(
       );
     }
 
+    // Get the image data and content type
     const imageBuffer = await imageResponse.arrayBuffer();
-    const contentType =
-      imageResponse.headers.get("content-type") || "image/jpeg";
+    const contentType = imageResponse.headers.get("content-type") || "image/jpeg";
 
     console.warn(`[${tokenAddress}] Image fetch successful:`, {
       contentType,
@@ -232,9 +232,11 @@ async function deployToken(
     });
 
     const formData = new FormData();
-    const blob = new Blob([imageBuffer], { type: contentType });
 
+    // For NFT URLs, we'll create a blob from the fetched image data
+    const blob = new Blob([imageBuffer], { type: contentType });
     formData.append("file", blob, "image.jpg");
+
     formData.append("name", bot.name);
     formData.append("symbol", customTicker || bot.name.slice(0, 4).toUpperCase());
     formData.append(

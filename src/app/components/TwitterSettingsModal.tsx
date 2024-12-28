@@ -3,6 +3,8 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { FaXTwitter } from "react-icons/fa6";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import LoadingDots from './LoadingDots';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { checkTokenBalance } from '../utils/tokenCheck';
 
 interface TwitterSettings {
   appKey: string;
@@ -36,7 +38,24 @@ export default function TwitterSettingsModal({
     appSecret: false,
     accessSecret: false
   });
+  const [hasEnoughTokens, setHasEnoughTokens] = useState(false);
+  const wallet = useWallet();
 
+  // Add token balance check
+  useEffect(() => {
+    const checkBalance = async () => {
+      if (wallet.publicKey) {
+        const hasBalance = await checkTokenBalance(wallet.publicKey);
+        setHasEnoughTokens(hasBalance);
+      } else {
+        setHasEnoughTokens(false);
+      }
+    };
+    
+    checkBalance();
+  }, [wallet.publicKey]);
+
+  // Keep existing useEffect for loading settings
   useEffect(() => {
     const loadSettings = async () => {
       if (isOpen && onLoad) {
@@ -59,10 +78,12 @@ export default function TwitterSettingsModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasEnoughTokens) return;
     await onSave(settings);
     onClose();
   };
 
+  // Keep existing toggleSecretVisibility function
   const toggleSecretVisibility = (field: 'appSecret' | 'accessSecret') => {
     setShowSecrets(prev => ({
       ...prev,
@@ -70,6 +91,7 @@ export default function TwitterSettingsModal({
     }));
   };
 
+  // Keep existing loading return statement
   if (isLoading) {
     return (
       <Dialog.Root open={isOpen} onOpenChange={onClose}>
@@ -150,20 +172,32 @@ export default function TwitterSettingsModal({
               </div>
             </div>
             
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
-              >
-                Save Settings
-              </button>
+            <div className="flex flex-col gap-2 mt-6">
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!hasEnoughTokens}
+                  className={`px-4 py-2 rounded ${
+                    hasEnoughTokens 
+                      ? 'bg-blue-600 text-white hover:bg-blue-500' 
+                      : 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                  }`}
+                >
+                  Save Settings
+                </button>
+              </div>
+              {!hasEnoughTokens && (
+                <div className="text-right text-red-400 text-sm">
+                  You need at least 20,000 DRUID tokens to save settings
+                </div>
+              )}
             </div>
           </form>
         </Dialog.Content>
