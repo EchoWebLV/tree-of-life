@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Button from './Button';
 import { getClientToken } from '../utils/clientToken';
-import type { NFTResponse } from '../types/nft';
 
 type UploadType = 'IMAGE' | 'NFT';
 
@@ -28,6 +27,24 @@ interface AIImageAnalyzerProps {
   onAnalysisComplete: (persona: Persona) => void;
   onBotCreated?: (bot: Persona) => void;
   modalClassName?: string;
+}
+
+export interface NFTResponse {
+  name: string;
+  description: string;
+  image_url: string;
+  collection: {
+    name: string;
+    description: string;
+  };
+  extra_metadata: {
+    attributes: Array<{
+      trait_type: string;
+      value: string;
+      display_type: null | string;
+    }>;
+  };
+  chain: 'ethereum' | 'solana';
 }
 
 export default function AIImageAnalyzer({
@@ -88,35 +105,45 @@ export default function AIImageAnalyzer({
     }
   };
 
-  const extractAndValidateAddress = (input: string): string | null => {
-    // Base58 regex pattern (Solana addresses are base58)
-    const base58Pattern = /[1-9A-HJ-NP-Za-km-z]{32,44}/;
+  const extractAndValidateAddress = (input: string): { address: string | null; chain: 'ethereum' | 'solana' } => {
+    // Ethereum address regex (0x followed by 40 hex characters)
+    const ethPattern = /0x[a-fA-F0-9]{40}/;
+    // Solana address regex (base58)
+    const solanaPattern = /[1-9A-HJ-NP-Za-km-z]{32,44}/;
     
     // Direct address check
-    if (base58Pattern.test(input)) {
-      return input;
+    if (ethPattern.test(input)) {
+      return { address: input.toLowerCase(), chain: 'ethereum' };
+    }
+    if (solanaPattern.test(input)) {
+      return { address: input, chain: 'solana' };
     }
     
-    // URL check (for marketplaces like Magic Eden, etc.)
+    // URL check for marketplaces
     try {
       const url = new URL(input);
       const pathParts = url.pathname.split('/');
+      
+      // Check each part of the URL path
       for (const part of pathParts) {
-        if (base58Pattern.test(part)) {
-          return part;
+        if (ethPattern.test(part)) {
+          return { address: part.toLowerCase(), chain: 'ethereum' };
+        }
+        if (solanaPattern.test(part)) {
+          return { address: part, chain: 'solana' };
         }
       }
     } catch {
-      // Invalid URL, continue to return null
+      // Invalid URL
     }
     
-    return null;
+    return { address: null, chain: 'solana' }; // default to solana for backward compatibility
   };
 
   const analyzeNFT = async () => {
-    const validAddress = extractAndValidateAddress(nftAddress);
+    const { address: validAddress, chain } = extractAndValidateAddress(nftAddress);
     if (!validAddress) {
-      setAddressError('Please enter a valid Solana NFT address or URL');
+      setAddressError('Please enter a valid NFT address or URL');
       return;
     }
     setAddressError('');
@@ -126,8 +153,12 @@ export default function AIImageAnalyzer({
     onAnalysisStart?.();
     
     try {
-      // Fetch NFT metadata
-      const response = await fetch(`https://api.simplehash.com/api/v0/nfts/solana/${validAddress}`, {
+      // Fetch NFT metadata based on chain
+      const apiUrl = chain === 'ethereum' 
+        ? `https://api.simplehash.com/api/v0/nfts/ethereum/${validAddress}`
+        : `https://api.simplehash.com/api/v0/nfts/solana/${validAddress}`;
+
+      const response = await fetch(apiUrl, {
         headers: {
           'X-API-KEY': "teamgpt_sk_6lpgkucpixnk5pnsay1dv3z2741d5d77",
           'accept': 'application/json'
