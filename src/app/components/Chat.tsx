@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { DAILY_MESSAGE_LIMIT, getMessageCount, incrementMessageCount } from '../utils/messageLimit';
 
 interface Persona {
   name: string;
@@ -16,6 +17,7 @@ export default function Chat({ persona }: ChatProps) {
     console.log(persona)
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [input, setInput] = useState('');
+  const [messageCount, setMessageCount] = useState(() => getMessageCount());
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,6 +41,12 @@ export default function Chat({ persona }: ChatProps) {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
+    // Check message limit
+    if (!incrementMessageCount()) {
+      alert(`You've reached your daily limit of ${DAILY_MESSAGE_LIMIT} messages. Please try again tomorrow.`);
+      return;
+    }
+
     const newMessages = [
       ...messages,
       { role: 'user' as const, content: input }
@@ -46,6 +54,7 @@ export default function Chat({ persona }: ChatProps) {
 
     setMessages(newMessages);
     setInput('');
+    setMessageCount(getMessageCount()); // Update the message count state
 
     try {
       const response = await fetch('/api/chat', {
@@ -106,6 +115,9 @@ export default function Chat({ persona }: ChatProps) {
         >
           Send
         </button>
+      </div>
+      <div className="text-xs text-white/50 mt-2 text-right italic">
+        {messageCount.count}/{DAILY_MESSAGE_LIMIT} messages remaining today
       </div>
     </div>
   );
