@@ -44,8 +44,6 @@ export async function POST(request: Request) {
       max_tokens: 500,
     });
 
-    console.log(response);
-
     return NextResponse.json({ 
       response: response.choices[0]?.message?.content || 'No response generated'
     });
