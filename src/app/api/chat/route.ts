@@ -33,7 +33,8 @@ export async function POST(request: Request) {
     - Add filler words like "um", "like", "you know"
     - Express emotions naturally!!!
     
-    Respond while staying true to your character's unique voice and personality. Keep responses SHORT and snappy. Write like you're having a casual chat!`;
+    Respond while staying true to your character's unique voice and personality. Keep responses SHORT and snappy. Write like you're having a casual chat!
+    Remember: Brief responses only. No emojis. Stay in character.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
         { role: "system", content: systemPrompt },
         ...messages
       ],
-      max_tokens: 500,
+      max_tokens: 60,
     });
 
     return NextResponse.json({ 
