@@ -71,7 +71,11 @@ export async function POST(request: Request) {
       description, 
       ticker,
       useCustomAddress,
-      privateKey 
+      privateKey,
+      solAmount,
+      website,
+      twitter,
+      telegram
     } = await request.json();
 
     console.warn('Received payload:', {
@@ -127,13 +131,16 @@ export async function POST(request: Request) {
         personality: description || bot.personality,
         background: bot.background,
         status: "deploying",
+        website,
+        twitter,
+        telegram,
       },
     });
 
     console.warn(`Landing page created, starting deployment for ${tokenAddress}`);
 
     // Wait for deployment to complete instead of running it in background
-    await deployToken(bot, mint, tokenAddress, clientToken, description, ticker);
+    await deployToken(bot, mint, tokenAddress, clientToken, description, ticker, solAmount);
 
     // Return the landing page URL after deployment is complete
     return NextResponse.json({
@@ -157,7 +164,8 @@ async function deployToken(
   tokenAddress: string,
   clientToken: string,
   customDescription?: string,
-  customTicker?: string
+  customTicker?: string,
+  solAmount?: number
 ) {
   const startTime = Date.now();
   
@@ -168,14 +176,8 @@ async function deployToken(
       imageUrl: bot.imageUrl,
     });
 
-    if (!process.env.PAYER_PRIVATE_KEY) {
-      throw new Error("PAYER_PRIVATE_KEY not found in environment variables");
-    }
-
     // Initialize Solana connection
-    console.warn(`[${tokenAddress}] Initializing connection`);
-    const rpcEndpoint =
-      "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/";
+    const rpcEndpoint = "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/";
     const wsEndpoint = rpcEndpoint.replace("https://", "wss://");
 
     const connection = new Connection(rpcEndpoint, {
@@ -183,9 +185,22 @@ async function deployToken(
       commitment: "confirmed",
     });
 
-    console.warn(`[${tokenAddress}] Creating payer keypair`);
+    // Remove PAYER_PRIVATE_KEY check
+    // Instead, fetch bot's wallet
+    const botWallet = await prisma.botWallet.findUnique({
+      where: { botId: bot.id }
+    });
+
+    if (!botWallet) {
+      return NextResponse.json(
+        { error: "Bot wallet not found" },
+        { status: 400 }
+      );
+    }
+
+    // Use bot's wallet instead of PAYER_PRIVATE_KEY
     const payerKeypair = Keypair.fromSecretKey(
-      bs58.decode(process.env.PAYER_PRIVATE_KEY)
+      Buffer.from(botWallet.privateKey, 'base64')
     );
 
     // Fetch image data - handle both direct URLs and uploaded images
@@ -308,14 +323,14 @@ async function deployToken(
               },
               mint: mint.publicKey.toBase58(),
               denominatedInSol: "true",
-              amount: 0,
+              amount: solAmount || 0,
               slippage: 50,
               priorityFee: 0.005,
               pool: "pump",
             }),
           },
-          10000, // 10-second timeout
-          2      // Retry 2 times for create
+          10000,
+          2
         );
 
         console.warn(

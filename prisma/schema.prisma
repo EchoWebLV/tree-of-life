@@ -32,6 +32,9 @@ model LandingPage {
   background   String
   status       String  @default("pending")
   error        String?
+  website      String?
+  twitter      String?
+  telegram     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
