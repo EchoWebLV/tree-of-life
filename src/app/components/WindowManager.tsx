@@ -14,6 +14,9 @@ import TwitterSettingsModal from './TwitterSettingsModal';
 import TweetModal from './TweetModal';
 import DeployModal from './DeployModal';
 import { checkTokenBalance } from '../utils/tokenCheck';
+import { IoWalletOutline } from "react-icons/io5";
+import WalletDetailsModal from './WalletDetailsModal';
+import { Keypair } from '@solana/web3.js';
 
 interface WindowState {
   id: string;
@@ -54,6 +57,12 @@ export default function WindowManager({
   const wallet = useWallet();
   const [isMobile, setIsMobile] = useState(false);
   const [hasEnoughTokens, setHasEnoughTokens] = useState(false);
+  const generatedWalletAddress = '99bU2p9ksZwfczV4ha9L4abEtF117KfsAZKeu6vEQAs5';
+  const [walletDetailsModal, setWalletDetailsModal] = useState<{
+    isOpen: boolean;
+    publicKey?: string;
+    privateKey?: string;
+  }>({ isOpen: false });
 
   // Detect mobile device on mount and window resize
   useEffect(() => {
@@ -128,6 +137,50 @@ export default function WindowManager({
       setDeployModalBot(null);
     } catch (error) {
       console.error('Deployment failed:', error);
+    }
+  };
+
+  const handleWalletClick = async (botId: string) => {
+    try {
+      // First check if wallet exists
+      const response = await fetch(`/api/wallet/${botId}`);
+      const data = await response.json();
+      
+      if (data.wallet) {
+        // If wallet exists, show modal with details
+        setWalletDetailsModal({
+          isOpen: true,
+          publicKey: data.wallet.publicKey,
+          privateKey: data.wallet.privateKey,
+        });
+      } else {
+        // If no wallet exists, create one
+        const newKeypair = Keypair.generate();
+        const publicKey = newKeypair.publicKey.toString();
+        const privateKey = Buffer.from(newKeypair.secretKey).toString('base64');
+        
+        // Save to database
+        await fetch('/api/wallet', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            botId,
+            publicKey,
+            privateKey,
+          }),
+        });
+        
+        // Show modal with new wallet details
+        setWalletDetailsModal({
+          isOpen: true,
+          publicKey,
+          privateKey,
+        });
+      }
+    } catch (error) {
+      console.error('Error handling wallet:', error);
     }
   };
 
@@ -223,8 +276,8 @@ export default function WindowManager({
                             setEditModal({ isOpen: true, bot });
                           }}
                           className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
-                                     text-white rounded-full hover:opacity-90 transition-opacity
-                                     touch-manipulation"
+                                   text-white rounded-full hover:opacity-90 transition-opacity
+                                   touch-manipulation"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -278,6 +331,30 @@ export default function WindowManager({
                           sideOffset={5}
                         >
                           {getDeployTooltipContent()}
+                          <Tooltip.Arrow className="fill-black/90" />
+                        </Tooltip.Content>
+                      </Tooltip.Portal>
+                    </Tooltip.Root>
+                  </Tooltip.Provider>
+                  <Tooltip.Provider>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger asChild>
+                        <button
+                          onClick={() => handleWalletClick(bot.id)}
+                          className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
+                                   text-white rounded-full hover:opacity-90 transition-opacity"
+                        >
+                          <IoWalletOutline className="w-5 h-5" />
+                        </button>
+                      </Tooltip.Trigger>
+                      <Tooltip.Portal>
+                        <Tooltip.Content
+                          className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                          sideOffset={5}
+                        >
+                          {bot.wallet ? 
+                            `View Wallet: ${bot.wallet.publicKey.slice(0, 4)}...${bot.wallet.publicKey.slice(-4)}` : 
+                            'Generate New Wallet'}
                           <Tooltip.Arrow className="fill-black/90" />
                         </Tooltip.Content>
                       </Tooltip.Portal>
@@ -404,6 +481,12 @@ export default function WindowManager({
           hasEnoughTokens={hasEnoughTokens}
         />
       )}
+      <WalletDetailsModal
+        isOpen={walletDetailsModal.isOpen}
+        onClose={() => setWalletDetailsModal({ isOpen: false })}
+        publicKey={walletDetailsModal.publicKey || ''}
+        privateKey={walletDetailsModal.privateKey || ''}
+      />
     </AnimatePresence>
   );
 }
