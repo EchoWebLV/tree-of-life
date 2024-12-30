@@ -219,7 +219,7 @@ export default function WindowManager({
 
   const handleDeployToken = async (bot: Bot, deployParams?: DeployParams) => {
     if (!wallet || !wallet.signTransaction) {
-      alert('Wallet not properly connected');
+      toast.error('Wallet not properly connected');
       return;
     }
 
@@ -239,11 +239,17 @@ export default function WindowManager({
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to deploy token');
+        if (data.logs) {
+          toast.error(`Deployment failed: ${data.details}\n\nTransaction logs: ${data.logs.join('\n')}`);
+        } else {
+          toast.error(`Deployment failed: ${data.details || data.error}`);
+        }
+        return;
       }
 
-      const data = await response.json();
       setDeploymentModal({
         isOpen: true,
         tokenAddress: data.tokenAddress,
@@ -251,7 +257,7 @@ export default function WindowManager({
       });
     } catch (error) {
       console.error('Error:', error);
-      alert('Failed to deploy token. Please try again.');
+      toast.error('Failed to deploy token. Please try again.');
     } finally {
       setIsDeploying(null);
     }
