@@ -17,6 +17,8 @@ import { checkTokenBalance } from '../utils/tokenCheck';
 import { IoWalletOutline } from "react-icons/io5";
 import WalletDetailsModal from './WalletDetailsModal';
 import { Keypair } from '@solana/web3.js';
+import DeploymentModal from './DeploymentModal';
+import { toast } from 'sonner';
 
 interface WindowState {
   id: string;
@@ -33,7 +35,6 @@ interface WindowManagerProps {
   setSelectedBot: (bot: Bot | null) => void;
   closeWindow: (botId: string) => void;
   handleDeploy: (bot: Bot, params: DeployParams) => Promise<void>;
-  isDeploying: string | null;
   setEditModal: (state: { isOpen: boolean; bot?: Bot }) => void;
   setTwitterSettingsModal: (state: { isOpen: boolean; bot?: Bot }) => void;
   twitterSettingsModal: { isOpen: boolean; bot?: Bot };
@@ -45,7 +46,6 @@ export default function WindowManager({
   setSelectedBot,
   closeWindow,
   handleDeploy,
-  isDeploying,
   setEditModal,
   setTwitterSettingsModal,
   twitterSettingsModal,
@@ -62,6 +62,12 @@ export default function WindowManager({
     isOpen: boolean;
     publicKey?: string;
     privateKey?: string;
+  }>({ isOpen: false });
+  const [isDeploying, setIsDeploying] = useState<string | null>(null);
+  const [deploymentModal, setDeploymentModal] = useState<{
+    isOpen: boolean;
+    tokenAddress?: string;
+    landingPageUrl?: string;
   }>({ isOpen: false });
 
   // Detect mobile device on mount and window resize
@@ -101,6 +107,25 @@ export default function WindowManager({
     checkBalance();
   }, [wallet.publicKey]);
 
+  useEffect(() => {
+    const fetchWallets = async () => {
+      for (const bot of windows) {
+        try {
+          const response = await fetch(`/api/wallet/${bot.id}`);
+          const data = await response.json();
+          if (data.wallet) {
+            // Update the bot's wallet in the windows array
+            bot.wallet = data.wallet;
+          }
+        } catch (error) {
+          console.error('Error fetching wallet for bot:', bot.id, error);
+        }
+      }
+    };
+
+    fetchWallets();
+  }, [windows]); // Run when windows array changes
+
   const handleTweet = async (text: string) => {
     if (!tweetModalBot) return;
     
@@ -118,9 +143,10 @@ export default function WindowManager({
     }
   };
 
-  const getDeployTooltipContent = () => {
+  const getDeployTooltipContent = (bot: Bot) => {
     if (isDeploying) return 'Deploying...';
     if (!wallet.publicKey) return 'Connect wallet first';
+    if (!bot.wallet) return 'Generate wallet first';
     return 'Configure Deployment';
   };
 
@@ -133,7 +159,7 @@ export default function WindowManager({
     if (!wallet.publicKey || !deployModalBot) return;
     
     try {
-      await handleDeploy(deployModalBot, params);
+      await handleDeployToken(deployModalBot, params);
       setDeployModalBot(null);
     } catch (error) {
       console.error('Deployment failed:', error);
@@ -172,6 +198,12 @@ export default function WindowManager({
           }),
         });
         
+        // Update the bot's wallet in the windows array immediately
+        const updatedBot = windows.find(b => b.id === botId);
+        if (updatedBot) {
+          updatedBot.wallet = { publicKey, privateKey };
+        }
+        
         // Show modal with new wallet details
         setWalletDetailsModal({
           isOpen: true,
@@ -181,6 +213,46 @@ export default function WindowManager({
       }
     } catch (error) {
       console.error('Error handling wallet:', error);
+    }
+  };
+
+  const handleDeployToken = async (bot: Bot, deployParams?: DeployParams) => {
+    if (!wallet || !wallet.signTransaction) {
+      alert('Wallet not properly connected');
+      return;
+    }
+
+    try {
+      setIsDeploying(bot.id);
+      
+      const clientToken = localStorage.getItem('clientToken') || '';
+      const response = await fetch('/api/deploy-portal-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bot,
+          clientToken,
+          ...deployParams
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to deploy token');
+      }
+
+      const data = await response.json();
+      setDeploymentModal({
+        isOpen: true,
+        tokenAddress: data.tokenAddress,
+        landingPageUrl: data.landingPageUrl,
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to deploy token. Please try again.');
+    } finally {
+      setIsDeploying(null);
     }
   };
 
@@ -310,11 +382,26 @@ export default function WindowManager({
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
                         <button
-                          onClick={() => setDeployModalBot(bot)}
+                          onClick={async () => {
+                            console.log('Wallet connected:', !!wallet.publicKey);
+                            console.log('Bot wallet:', bot.wallet);
+                            
+                            if (!wallet.publicKey) {
+                              toast.error('Please connect your wallet first');
+                              return;
+                            }
+                            if (!bot.wallet) {
+                              toast.error('Please generate a wallet first');
+                              return;
+                            }
+                            if (!hasEnoughTokens) {
+                              toast.error('You need at least 20,000 DRUID tokens to deploy');
+                              return;
+                            }
+                            setDeployModalBot(bot);
+                          }}
                           className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
-                                   text-white rounded-full hover:opacity-90 transition-opacity 
-                                   disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={isDeploying === bot.id || !wallet.publicKey}
+                                   text-white rounded-full hover:opacity-90 transition-opacity"
                         >
                           {isDeploying === bot.id ? (
                             <div className="w-5 h-5 flex items-center justify-center">
@@ -330,7 +417,7 @@ export default function WindowManager({
                           className="bg-black/90 text-white text-xs py-1 px-2 rounded"
                           sideOffset={5}
                         >
-                          {getDeployTooltipContent()}
+                          {getDeployTooltipContent(bot)}
                           <Tooltip.Arrow className="fill-black/90" />
                         </Tooltip.Content>
                       </Tooltip.Portal>
@@ -479,6 +566,7 @@ export default function WindowManager({
           onDeploy={handleDeploySubmit}
           botName={deployModalBot.name}
           hasEnoughTokens={hasEnoughTokens}
+          isDeploying={isDeploying === deployModalBot.id}
         />
       )}
       <WalletDetailsModal
@@ -486,6 +574,12 @@ export default function WindowManager({
         onClose={() => setWalletDetailsModal({ isOpen: false })}
         publicKey={walletDetailsModal.publicKey || ''}
         privateKey={walletDetailsModal.privateKey || ''}
+      />
+      <DeploymentModal 
+        isOpen={deploymentModal.isOpen}
+        tokenAddress={deploymentModal.tokenAddress}
+        landingPageUrl={deploymentModal.landingPageUrl}
+        onClose={() => setDeploymentModal({ isOpen: false })}
       />
     </AnimatePresence>
   );

@@ -407,14 +407,10 @@ async function deployToken(
       await new Promise(resolve => setTimeout(resolve, remainingTime));
     }
 
-    console.error(`[${tokenAddress}] Deployment failed:`, error);
-    await prisma.landingPage.update({
-      where: { tokenAddress },
-      data: {
-        status: "failed",
-        error: error instanceof Error ? error.message : String(error),
-      },
-    });
-    throw error;
+    console.error("Deployment error:", error);
+    return NextResponse.json(
+      { error: "Failed to deploy token. Please try again." },
+      { status: 500 }
+    );
   }
 }
