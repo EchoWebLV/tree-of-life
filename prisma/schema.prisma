@@ -19,6 +19,7 @@ model Bot {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   twitterSettings TwitterSettings?
+  wallet      BotWallet?
 }
 
 model LandingPage {
@@ -31,6 +32,9 @@ model LandingPage {
   background   String
   status       String  @default("pending")
   error        String?
+  website      String?
+  twitter      String?
+  telegram     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -52,4 +56,14 @@ model TokenDeployment {
   createdAt   DateTime @default(now())
 
   @@index([clientToken, createdAt])
+}
+
+model BotWallet {
+  id         String   @id @default(cuid())
+  botId      String   @unique
+  publicKey  String
+  privateKey String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  bot        Bot      @relation(fields: [botId], references: [id])
 }

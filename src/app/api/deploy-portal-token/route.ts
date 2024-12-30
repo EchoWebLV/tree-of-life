@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { VersionedTransaction, Connection, Keypair } from "@solana/web3.js";
+import { VersionedTransaction, Connection, Keypair, SendTransactionError } from "@solana/web3.js";
 import bs58 from "bs58";
 import { prisma } from "@/lib/prisma";
 import { recordDeployment } from "@/lib/deploymentLimits";
@@ -13,6 +13,12 @@ interface Bot {
 }
 
 export const maxDuration = 300;
+
+interface DeploymentError {
+  message?: string;
+  details?: string;
+  logs?: string[];
+}
 
 // Helper function: fetch with timeout + retries
 async function fetchWithTimeout(
@@ -63,61 +69,32 @@ async function fetchWithTimeout(
 }
 
 export async function POST(request: Request) {
+  let mint: Keypair;
+  let tokenAddress: string;
+
   try {
-    console.warn('Starting deployment request');
-    const { 
-      bot, 
-      clientToken, 
-      description, 
-      ticker,
-      useCustomAddress,
-      privateKey 
-    } = await request.json();
-
-    console.warn('Received payload:', {
-      botId: bot.id,
-      hasClientToken: !!clientToken,
-      customDescription: !!description,
-      customTicker: !!ticker,
-      hasCustomAddress: useCustomAddress && !!privateKey,
-      timestamp: new Date().toISOString(),
-    });
-
-    // Validate environment
-    if (!process.env.PAYER_PRIVATE_KEY) {
-      console.error('Missing PAYER_PRIVATE_KEY');
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 }
-      );
-    }
-
-    // If custom address is provided, use it instead of generating a new mint
-    let mint: Keypair;
-    let tokenAddress: string;
+    const { bot, clientToken, description, ticker, useCustomAddress, privateKey, solAmount, website, twitter, telegram } = await request.json();
 
     if (useCustomAddress && privateKey) {
       try {
-        // Convert the private key string to a Keypair
         const privateKeyBytes = bs58.decode(privateKey);
         mint = Keypair.fromSecretKey(privateKeyBytes);
         tokenAddress = mint.publicKey.toBase58();
-      } catch (error) {
-        console.error('Invalid private key provided:', error);
+      } catch {
         return NextResponse.json(
           { error: "Invalid private key format" },
           { status: 400 }
         );
       }
     } else {
-      // Generate a new Mint Keypair if no custom address provided
       mint = Keypair.generate();
       tokenAddress = mint.publicKey.toBase58();
     }
 
-    console.warn(`Creating landing page for token ${tokenAddress}`);
+    // Deploy token first
+    await deployToken(bot, mint, tokenAddress, clientToken, description, ticker, solAmount);
 
-    // Update initial status with custom description if provided
+    // Only if deployment succeeds, create landing page
     await prisma.landingPage.create({
       data: {
         tokenAddress,
@@ -126,28 +103,35 @@ export async function POST(request: Request) {
         imageUrl: bot.imageUrl,
         personality: description || bot.personality,
         background: bot.background,
-        status: "deploying",
+        status: "completed",
+        website,
+        twitter,
+        telegram,
       },
     });
 
-    console.warn(`Landing page created, starting deployment for ${tokenAddress}`);
-
-    // Wait for deployment to complete instead of running it in background
-    await deployToken(bot, mint, tokenAddress, clientToken, description, ticker);
-
-    // Return the landing page URL after deployment is complete
     return NextResponse.json({
       success: true,
       tokenAddress,
       landingPageUrl: `/token/${tokenAddress}`,
       message: "Token deployment completed",
     });
-  } catch (error) {
-    console.error("Deployment error:", error);
-    return NextResponse.json(
-      { error: "Failed to create landing page" },
-      { status: 500 }
-    );
+
+  } catch (error: unknown) {
+    // Return error response without creating landing page
+    if (error && typeof error === 'object' && 'details' in error) {
+      const deployError = error as DeploymentError;
+      return NextResponse.json({
+        error: "Transaction failed",
+        details: deployError.details,
+        logs: deployError.logs || []
+      }, { status: 400 });
+    }
+
+    return NextResponse.json({
+      error: "Failed to deploy token",
+      details: error instanceof Error ? error.message : "Unknown error"
+    }, { status: 500 });
   }
 }
 
@@ -157,7 +141,8 @@ async function deployToken(
   tokenAddress: string,
   clientToken: string,
   customDescription?: string,
-  customTicker?: string
+  customTicker?: string,
+  solAmount?: number
 ) {
   const startTime = Date.now();
   
@@ -168,14 +153,8 @@ async function deployToken(
       imageUrl: bot.imageUrl,
     });
 
-    if (!process.env.PAYER_PRIVATE_KEY) {
-      throw new Error("PAYER_PRIVATE_KEY not found in environment variables");
-    }
-
     // Initialize Solana connection
-    console.warn(`[${tokenAddress}] Initializing connection`);
-    const rpcEndpoint =
-      "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/";
+    const rpcEndpoint = "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/";
     const wsEndpoint = rpcEndpoint.replace("https://", "wss://");
 
     const connection = new Connection(rpcEndpoint, {
@@ -183,9 +162,19 @@ async function deployToken(
       commitment: "confirmed",
     });
 
-    console.warn(`[${tokenAddress}] Creating payer keypair`);
+    // Remove PAYER_PRIVATE_KEY check
+    // Instead, fetch bot's wallet
+    const botWallet = await prisma.botWallet.findUnique({
+      where: { botId: bot.id }
+    });
+
+    if (!botWallet) {
+      throw new Error("Bot wallet not found");
+    }
+
+    // Use bot's wallet instead of PAYER_PRIVATE_KEY
     const payerKeypair = Keypair.fromSecretKey(
-      bs58.decode(process.env.PAYER_PRIVATE_KEY)
+      Buffer.from(botWallet.privateKey, 'base64')
     );
 
     // Fetch image data - handle both direct URLs and uploaded images
@@ -308,14 +297,14 @@ async function deployToken(
               },
               mint: mint.publicKey.toBase58(),
               denominatedInSol: "true",
-              amount: 0,
+              amount: solAmount || 0,
               slippage: 50,
               priorityFee: 0.005,
               pool: "pump",
             }),
           },
-          10000, // 10-second timeout
-          2      // Retry 2 times for create
+          10000,
+          2
         );
 
         console.warn(
@@ -354,14 +343,23 @@ async function deployToken(
     tx.sign([mint, payerKeypair]);
 
     // Send transaction
-    const signature = await connection.sendTransaction(tx);
-    const confirmation = await connection.confirmTransaction(signature, "confirmed");
+    try {
+      const signature = await connection.sendTransaction(tx);
+      const confirmation = await connection.confirmTransaction(signature, "confirmed");
 
-    if (confirmation.value.err) {
-      throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+      if (confirmation.value.err) {
+        throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+      }
+    } catch (error) {
+      if (error instanceof SendTransactionError) {
+        throw {
+          message: error.message,
+          logs: error.logs || [],
+          details: 'Bot wallet has insufficient SOL. Please fund the wallet with SOL first.'
+        };
+      }
+      throw error;
     }
-
-    console.warn("Transaction sent:", signature);
 
     // Record successful deployment usage
     await recordDeployment(clientToken);
@@ -392,14 +390,7 @@ async function deployToken(
       await new Promise(resolve => setTimeout(resolve, remainingTime));
     }
 
-    console.error(`[${tokenAddress}] Deployment failed:`, error);
-    await prisma.landingPage.update({
-      where: { tokenAddress },
-      data: {
-        status: "failed",
-        error: error instanceof Error ? error.message : String(error),
-      },
-    });
+    console.error("Deployment error:", error);
     throw error;
   }
 }

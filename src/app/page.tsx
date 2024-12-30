@@ -59,12 +59,20 @@ export default function Home() {
         })
       );
       
-      setLatestTokens(tokensWithDexStatus);
+      // Sort tokens: DEX paid first, then by creation date
+      const sortedTokens = tokensWithDexStatus.sort((a, b) => {
+        if (a.isDexPaid && !b.isDexPaid) return -1;
+        if (!a.isDexPaid && b.isDexPaid) return 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      
+      setLatestTokens(sortedTokens);
     } catch (error) {
       console.error('Error fetching tokens:', error);
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchLatestTokens();
     

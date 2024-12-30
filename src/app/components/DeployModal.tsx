@@ -7,16 +7,21 @@ import LoadingDots from './LoadingDots';
 interface DeployModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDeploy: (params: DeployParams) => Promise<void>;
+  onDeploy: (params: DeployParams) => void;
   botName: string;
-  hasEnoughTokens?: boolean;
+  hasEnoughTokens: boolean;
+  isDeploying: boolean;
 }
 
 export interface DeployParams {
-  description: string;
-  ticker: string;
-  useCustomAddress: boolean;
+  description?: string;
+  ticker?: string;
+  useCustomAddress?: boolean;
   privateKey?: string;
+  solAmount?: number;
+  website?: string;
+  twitter?: string;
+  telegram?: string;
 }
 
 export default function DeployModal({ 
@@ -24,81 +29,81 @@ export default function DeployModal({
   onClose, 
   onDeploy,
   botName,
-  hasEnoughTokens = false
+  hasEnoughTokens,
+  isDeploying
 }: DeployModalProps) {
-  const [params, setParams] = useState<DeployParams>({
-    description: '',
-    ticker: '',
-    useCustomAddress: false,
-    privateKey: '',
-  });
+  const [description, setDescription] = useState('');
+  const [ticker, setTicker] = useState('');
+  const [useCustomAddress, setUseCustomAddress] = useState(false);
+  const [privateKey, setPrivateKey] = useState('');
+  const [solAmount, setSolAmount] = useState(0.1);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-      await onDeploy({
-        description: params.description,
-        ticker: params.ticker,
-        useCustomAddress: params.useCustomAddress,
-        privateKey: params.privateKey,
-      });
-      onClose();
-    } catch (error) {
-      console.error('Deploy error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [twitter, setTwitter] = useState('');
+  const [telegram, setTelegram] = useState('');
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={onClose}>
+    <Dialog.Root open={isOpen}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-900 rounded-lg p-6 w-[400px]">
+        <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-900 rounded-lg p-6 w-[400px] max-h-[90vh] overflow-y-auto">
           <Dialog.Title className="text-xl text-white mb-4 flex items-center gap-2">
             <PiPillDuotone /> Deploy {botName} to Pump.Fun
           </Dialog.Title>
           
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
+          {isDeploying ? (
+            <div className="flex flex-col items-center justify-center py-12">
               <LoadingDots />
+              <p className="mt-4 text-gray-400">Deploying your token...</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <>
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Description</label>
                 <textarea
-                  value={params.description}
-                  onChange={(e) => setParams(prev => ({ ...prev, description: e.target.value }))}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   className="w-full bg-gray-800 rounded p-2 text-white h-24 resize-none"
                   placeholder="Enter token description..."
                 />
               </div>
+
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Ticker</label>
                 <input
                   type="text"
-                  value={params.ticker}
-                  onChange={(e) => setParams(prev => ({ ...prev, ticker: e.target.value.toUpperCase() }))}
+                  value={ticker}
+                  onChange={(e) => setTicker(e.target.value.toUpperCase())}
                   className="w-full bg-gray-800 rounded p-2 text-white"
                   placeholder="e.g. PUMP"
                   maxLength={8}
                 />
               </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Initial SOL Amount</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={solAmount}
+                    onChange={(e) => setSolAmount(Number(e.target.value))}
+                    min={0}
+                    step={0.1}
+                    className="w-full bg-gray-800 rounded p-2 text-white"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">SOL</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Amount of SOL to add to the initial liquidity pool
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="useCustomAddress"
-                    checked={params.useCustomAddress}
-                    onChange={(e) => setParams(prev => ({ 
-                      ...prev, 
-                      useCustomAddress: e.target.checked,
-                      privateKey: e.target.checked ? prev.privateKey : ''
-                    }))}
+                    checked={useCustomAddress}
+                    onChange={(e) => setUseCustomAddress(e.target.checked)}
                     className="bg-gray-800 rounded"
                   />
                   <label htmlFor="useCustomAddress" className="text-sm text-gray-400">
@@ -106,14 +111,15 @@ export default function DeployModal({
                   </label>
                 </div>
               </div>
-              {params.useCustomAddress && (
+
+              {useCustomAddress && (
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Private Key</label>
                   <div className="relative">
                     <input
                       type={showPrivateKey ? "text" : "password"}
-                      value={params.privateKey}
-                      onChange={(e) => setParams(prev => ({ ...prev, privateKey: e.target.value }))}
+                      value={privateKey}
+                      onChange={(e) => setPrivateKey(e.target.value)}
                       className="w-full bg-gray-800 rounded p-2 text-white pr-10"
                       placeholder="Enter private key..."
                     />
@@ -126,43 +132,70 @@ export default function DeployModal({
                     </button>
                   </div>
                   <a 
-                  href="https://vanity.druidai.app/" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-xs text-blue-400 mt-2 hover:text-blue-300 transition-colors block"
-                >
-                  Generate your own vanity address →
-                </a>
+                    href="https://vanity.druidai.app/" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-xs text-blue-400 mt-2 hover:text-blue-300 transition-colors block"
+                  >
+                    Generate your own vanity address →
+                  </a>
                 </div>
               )}
-              <div className="space-y-2">
-                <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!hasEnoughTokens}
-                    className={`px-4 py-2 rounded ${
-                      hasEnoughTokens 
-                        ? 'bg-blue-600 text-white hover:bg-blue-500' 
-                        : 'bg-gray-600 text-gray-300 cursor-not-allowed'
-                    }`}
-                  >
-                    Deploy (0.03 SOL)
-                  </button>
-                </div>
-                {!hasEnoughTokens && (
-                  <div className="text-center text-red-400 text-sm">
-                    You need at least 20,000 DRUID tokens to deploy
+
+              <div className="space-y-4 mt-4">
+                <h3 className="text-sm text-gray-400 font-medium">Social Links</h3>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Twitter</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={twitter}
+                      onChange={(e) => setTwitter(e.target.value.replace('@', ''))}
+                      className="w-full bg-gray-800 rounded p-2 text-white"
+                      placeholder="telegram"
+                    />
                   </div>
-                )}
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Telegram</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={telegram}
+                      onChange={(e) => setTelegram(e.target.value.replace('@', ''))}
+                      className="w-full bg-gray-800 rounded p-2 text-white"
+                      placeholder="twitter"
+                    />
+                  </div>
+                </div>
               </div>
-            </form>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => onDeploy({ 
+                    description, 
+                    ticker, 
+                    useCustomAddress, 
+                    privateKey, 
+                    solAmount,
+                    twitter,
+                    telegram
+                  })}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  disabled={!hasEnoughTokens}
+                >
+                  Deploy
+                </button>
+              </div>
+            </>
           )}
         </Dialog.Content>
       </Dialog.Portal>

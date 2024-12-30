@@ -4,6 +4,10 @@ export interface Bot {
   imageUrl: string;
   personality: string;
   background: string;
+  wallet?: {
+    publicKey: string;
+    privateKey: string;
+  };
 }
 
 export interface DesktopInterfaceProps {
