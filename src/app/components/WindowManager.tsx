@@ -19,6 +19,7 @@ import WalletDetailsModal from './WalletDetailsModal';
 import { Keypair } from '@solana/web3.js';
 import DeploymentModal from './DeploymentModal';
 import { toast } from 'sonner';
+import GlowingFeature from './GlowingFeature';
 
 interface WindowState {
   id: string;
@@ -426,13 +427,19 @@ export default function WindowManager({
                   <Tooltip.Provider>
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
-                        <button
-                          onClick={() => handleWalletClick(bot.id)}
-                          className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
-                                   text-white rounded-full hover:opacity-90 transition-opacity"
+                        <GlowingFeature 
+                          isNew={!bot.wallet} 
+                          featureId={`wallet-${bot.id}`}
                         >
-                          <IoWalletOutline className="w-5 h-5" />
-                        </button>
+                          <button
+                            onClick={() => handleWalletClick(bot.id)}
+                            className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
+                                     text-white rounded-full hover:opacity-90 transition-opacity
+                                     relative z-10"
+                          >
+                            <IoWalletOutline className="w-5 h-5" />
+                          </button>
+                        </GlowingFeature>
                       </Tooltip.Trigger>
                       <Tooltip.Portal>
                         <Tooltip.Content
