@@ -567,6 +567,7 @@ export default function DesktopInterface({
         closeWindow={closeWindow}
         handleDeploy={handleDeploy}
         isDeploying={isDeploying}
+        setIsDeploying={setIsDeploying}
         setEditModal={setEditModal}
         setTwitterSettingsModal={setTwitterSettingsModal}
         twitterSettingsModal={twitterSettingsModal}

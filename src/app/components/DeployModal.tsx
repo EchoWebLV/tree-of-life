@@ -148,13 +148,12 @@ export default function DeployModal({
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Twitter</label>
                   <div className="relative">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">@</span>
                     <input
                       type="text"
                       value={twitter}
                       onChange={(e) => setTwitter(e.target.value.replace('@', ''))}
-                      className="w-full bg-gray-800 rounded p-2 pl-6 text-white"
-                      placeholder="username"
+                      className="w-full bg-gray-800 rounded p-2 text-white"
+                      placeholder="telegram"
                     />
                   </div>
                 </div>
@@ -162,13 +161,12 @@ export default function DeployModal({
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Telegram</label>
                   <div className="relative">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">@</span>
                     <input
                       type="text"
                       value={telegram}
                       onChange={(e) => setTelegram(e.target.value.replace('@', ''))}
-                      className="w-full bg-gray-800 rounded p-2 pl-6 text-white"
-                      placeholder="username"
+                      className="w-full bg-gray-800 rounded p-2 text-white"
+                      placeholder="twitter"
                     />
                   </div>
                 </div>

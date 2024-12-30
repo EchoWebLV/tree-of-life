@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { botId: string } }
-) {
+export async function GET(request: Request) {
+  const { pathname } = new URL(request.url);
+  const botId = pathname.split('/').pop();
+
   try {
     const wallet = await prisma.botWallet.findUnique({
       where: {
-        botId: params.botId,
+        botId: botId,
       },
     });
 
