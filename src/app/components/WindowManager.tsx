@@ -36,9 +36,11 @@ interface WindowManagerProps {
   setSelectedBot: (bot: Bot | null) => void;
   closeWindow: (botId: string) => void;
   handleDeploy: (bot: Bot, params: DeployParams) => Promise<void>;
+  isDeploying: string | null;
   setEditModal: (state: { isOpen: boolean; bot?: Bot }) => void;
   setTwitterSettingsModal: (state: { isOpen: boolean; bot?: Bot }) => void;
   twitterSettingsModal: { isOpen: boolean; bot?: Bot };
+  setIsDeploying: (id: string | null) => void;
 }
 
 export default function WindowManager({
@@ -47,9 +49,11 @@ export default function WindowManager({
   setSelectedBot,
   closeWindow,
   handleDeploy,
+  isDeploying,
   setEditModal,
   setTwitterSettingsModal,
   twitterSettingsModal,
+  setIsDeploying,
 }: WindowManagerProps) {
   const [windowStates, setWindowStates] = useState<Record<string, WindowState>>({});
   const [hasTwitterSettings, setHasTwitterSettings] = useState<Record<string, boolean>>({});
@@ -58,13 +62,11 @@ export default function WindowManager({
   const wallet = useWallet();
   const [isMobile, setIsMobile] = useState(false);
   const [hasEnoughTokens, setHasEnoughTokens] = useState(false);
-  const generatedWalletAddress = '99bU2p9ksZwfczV4ha9L4abEtF117KfsAZKeu6vEQAs5';
   const [walletDetailsModal, setWalletDetailsModal] = useState<{
     isOpen: boolean;
     publicKey?: string;
     privateKey?: string;
   }>({ isOpen: false });
-  const [isDeploying, setIsDeploying] = useState<string | null>(null);
   const [deploymentModal, setDeploymentModal] = useState<{
     isOpen: boolean;
     tokenAddress?: string;
@@ -242,11 +244,7 @@ export default function WindowManager({
       const data = await response.json();
 
       if (!response.ok) {
-        if (data.logs) {
-          toast.error(`Deployment failed: ${data.details}\n\nTransaction logs: ${data.logs.join('\n')}`);
-        } else {
-          toast.error(`Deployment failed: ${data.details || data.error}`);
-        }
+        toast.error(data.details || 'Failed to deploy token');
         return;
       }
 

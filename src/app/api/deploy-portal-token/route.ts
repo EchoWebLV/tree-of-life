@@ -14,6 +14,12 @@ interface Bot {
 
 export const maxDuration = 300;
 
+interface DeploymentError {
+  message?: string;
+  details?: string;
+  logs?: string[];
+}
+
 // Helper function: fetch with timeout + retries
 async function fetchWithTimeout(
   url: string,
@@ -74,7 +80,7 @@ export async function POST(request: Request) {
         const privateKeyBytes = bs58.decode(privateKey);
         mint = Keypair.fromSecretKey(privateKeyBytes);
         tokenAddress = mint.publicKey.toBase58();
-      } catch (error) {
+      } catch {
         return NextResponse.json(
           { error: "Invalid private key format" },
           { status: 400 }
@@ -111,13 +117,14 @@ export async function POST(request: Request) {
       message: "Token deployment completed",
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Return error response without creating landing page
-    if (error.details) {
+    if (error && typeof error === 'object' && 'details' in error) {
+      const deployError = error as DeploymentError;
       return NextResponse.json({
         error: "Transaction failed",
-        details: error.details,
-        logs: error.logs || []
+        details: deployError.details,
+        logs: deployError.logs || []
       }, { status: 400 });
     }
 
@@ -353,8 +360,6 @@ async function deployToken(
       }
       throw error;
     }
-
-    console.warn("Transaction sent:", signature);
 
     // Record successful deployment usage
     await recordDeployment(clientToken);

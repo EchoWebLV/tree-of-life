@@ -51,7 +51,7 @@ export default function DeployModal({
           </Dialog.Title>
           
           {isDeploying ? (
-            <div className="text-center py-8">
+            <div className="flex flex-col items-center justify-center py-12">
               <LoadingDots />
               <p className="mt-4 text-gray-400">Deploying your token...</p>
             </div>
