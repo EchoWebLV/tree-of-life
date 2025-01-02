@@ -373,12 +373,6 @@ async function deployToken(
       await new Promise(resolve => setTimeout(resolve, remainingTime));
     }
 
-    // Update landing page status
-    await prisma.landingPage.update({
-      where: { tokenAddress },
-      data: { status: "completed" },
-    });
-
     console.warn(`[${tokenAddress}] Token deployed successfully`);
   } catch (error) {
     // Ensure minimum duration even on error
