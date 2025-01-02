@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { DAILY_MESSAGE_LIMIT, getMessageCount, incrementMessageCount } from '../utils/messageLimit';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { checkTokenBalance } from '../utils/tokenCheck';
 
 interface Persona {
+  id?: string;
   name: string;
   personality: string;
   background: string;
@@ -13,12 +16,20 @@ interface ChatProps {
   persona: Persona;
 }
 
+const UNCENSORED_STORAGE_KEY = 'uncensored_bots';
+
 export default function Chat({ persona }: ChatProps) {
-    console.log(persona)
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [input, setInput] = useState('');
   const [messageCount, setMessageCount] = useState(() => getMessageCount());
+  const [isUncensored, setIsUncensored] = useState(() => {
+    // Get uncensored state from localStorage
+    const uncensoredBots = JSON.parse(localStorage.getItem(UNCENSORED_STORAGE_KEY) || '{}');
+    return persona.id ? uncensoredBots[persona.id] || false : false;
+  });
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const [hasEnoughTokens, setHasEnoughTokens] = useState(false);
+  const wallet = useWallet();
 
   useEffect(() => {
     const scrollToBottom = () => {
@@ -38,6 +49,34 @@ export default function Chat({ persona }: ChatProps) {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    const checkBalance = async () => {
+      if (wallet.publicKey) {
+        const hasBalance = await checkTokenBalance(wallet.publicKey);
+        setHasEnoughTokens(hasBalance);
+        if (!hasBalance && isUncensored) {
+          setIsUncensored(false);
+        }
+      } else {
+        setHasEnoughTokens(false);
+        if (isUncensored) {
+          setIsUncensored(false);
+        }
+      }
+    };
+    
+    checkBalance();
+  }, [wallet.publicKey, isUncensored]);
+
+  // Add this useEffect to persist uncensored state
+  useEffect(() => {
+    if (!persona.id) return;
+    
+    const uncensoredBots = JSON.parse(localStorage.getItem(UNCENSORED_STORAGE_KEY) || '{}');
+    uncensoredBots[persona.id] = isUncensored;
+    localStorage.setItem(UNCENSORED_STORAGE_KEY, JSON.stringify(uncensoredBots));
+  }, [isUncensored, persona.id]);
+
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -54,10 +93,11 @@ export default function Chat({ persona }: ChatProps) {
 
     setMessages(newMessages);
     setInput('');
-    setMessageCount(getMessageCount()); // Update the message count state
+    setMessageCount(getMessageCount());
 
     try {
-      const response = await fetch('/api/chat', {
+      const endpoint = isUncensored ? '/api/uncensored-chat' : '/api/chat';
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,9 +105,10 @@ export default function Chat({ persona }: ChatProps) {
         body: JSON.stringify({
           messages: newMessages,
           persona: persona,
+          systemPrompt: `You are ${persona.name}. ${persona.personality} ${persona.background}`
         }),
       });
-      const data: { response: string } = await response.json();
+      const data = await response.json();
       setMessages([...newMessages, { 
         role: 'assistant' as const, 
         content: data.response 
@@ -79,6 +120,32 @@ export default function Chat({ persona }: ChatProps) {
 
   return (
     <div className="flex flex-col text-xs h-full rounded-xl p-6 shadow-lg border border-white chat-container" ref={chatContainerRef}>
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-2">
+          <span className="text-white">Mode:</span>
+          <button
+            onClick={() => {
+              if (!isUncensored && !hasEnoughTokens) {
+                alert('You need at least 20,000 DRUID tokens to use uncensored mode');
+                return;
+              }
+              setIsUncensored(!isUncensored);
+            }}
+            className={`px-3 py-1 rounded-xl transition-colors duration-200 text-xs
+              ${isUncensored 
+                ? 'bg-red-500 text-white hover:bg-red-600' 
+                : hasEnoughTokens 
+                  ? 'bg-green-500 text-white hover:bg-green-600'
+                  : 'bg-gray-500 text-white cursor-not-allowed'
+              }`}
+          >
+            {isUncensored ? 'Uncensored' : 'Natural'}
+          </button>
+        </div>
+        <div className="text-xs text-white/50 italic">
+          {messageCount.count}/{DAILY_MESSAGE_LIMIT} messages remaining
+        </div>
+      </div>
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white">
         {messages.map((message, index) => (
           <div
@@ -115,9 +182,6 @@ export default function Chat({ persona }: ChatProps) {
         >
           Send
         </button>
-      </div>
-      <div className="text-xs text-white/50 mt-2 text-right italic">
-        {messageCount.count}/{DAILY_MESSAGE_LIMIT} messages remaining today
       </div>
     </div>
   );
