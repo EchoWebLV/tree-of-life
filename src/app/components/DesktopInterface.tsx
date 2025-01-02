@@ -291,6 +291,9 @@ export default function DesktopInterface({
           ticker: deployParams?.ticker,
           useCustomAddress: deployParams?.useCustomAddress,
           privateKey: deployParams?.privateKey,
+          website: deployParams?.website,
+          twitter: deployParams?.twitter,
+          telegram: deployParams?.telegram,
         }),
       });
       if (!response.ok) {
