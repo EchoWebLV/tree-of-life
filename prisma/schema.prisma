@@ -18,9 +18,9 @@ model Bot {
   clientToken String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  isUncensored Boolean @default(false)
   twitterSettings TwitterSettings?
   wallet      BotWallet?
-  isUncensored Boolean @default(false)
 }
 
 model LandingPage {

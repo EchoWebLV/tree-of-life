@@ -6,7 +6,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { checkTokenBalance } from '../utils/tokenCheck';
 
 interface Persona {
-  id: string;
+  id?: string;
   name: string;
   personality: string;
   background: string;
@@ -25,7 +25,7 @@ export default function Chat({ persona }: ChatProps) {
   const [isUncensored, setIsUncensored] = useState(() => {
     // Get uncensored state from localStorage
     const uncensoredBots = JSON.parse(localStorage.getItem(UNCENSORED_STORAGE_KEY) || '{}');
-    return uncensoredBots[persona.id] || false;
+    return persona.id ? uncensoredBots[persona.id] || false : false;
   });
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [hasEnoughTokens, setHasEnoughTokens] = useState(false);
@@ -70,20 +70,11 @@ export default function Chat({ persona }: ChatProps) {
 
   // Add this useEffect to persist uncensored state
   useEffect(() => {
+    if (!persona.id) return;
+    
     const uncensoredBots = JSON.parse(localStorage.getItem(UNCENSORED_STORAGE_KEY) || '{}');
     uncensoredBots[persona.id] = isUncensored;
     localStorage.setItem(UNCENSORED_STORAGE_KEY, JSON.stringify(uncensoredBots));
-
-    // Update bot settings in database
-    fetch(`/api/bots/${persona.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        isUncensored,
-      }),
-    }).catch(console.error);
   }, [isUncensored, persona.id]);
 
   const sendMessage = async () => {
