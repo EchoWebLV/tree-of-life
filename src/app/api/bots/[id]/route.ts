@@ -14,6 +14,7 @@ export async function PUT(
         name: data.name,
         personality: data.personality,
         background: data.background,
+        isUncensored: data.isUncensored,
       },
     });
 

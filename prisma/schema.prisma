@@ -20,6 +20,7 @@ model Bot {
   updatedAt   DateTime @updatedAt
   twitterSettings TwitterSettings?
   wallet      BotWallet?
+  isUncensored Boolean @default(false)
 }
 
 model LandingPage {

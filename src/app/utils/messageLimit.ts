@@ -1,4 +1,4 @@
-export const DAILY_MESSAGE_LIMIT = 100;
+export const DAILY_MESSAGE_LIMIT = 200;
 
 interface MessageCount {
   count: number;
