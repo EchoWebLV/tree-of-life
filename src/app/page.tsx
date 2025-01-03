@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Logo from './components/Logo';
+import IntroModal from './components/IntroModal';
 
 interface Token {
   id: string;
@@ -22,6 +23,7 @@ interface DexOrder {
 
 export default function Home() {
   const [latestTokens, setLatestTokens] = useState<Token[]>([]);
+  const [showTutorials, setShowTutorials] = useState(false);
 
   const checkDexPaid = async (tokenAddress: string) => {
     try {
@@ -85,6 +87,10 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center p-4 bg-black text-white relative">
+      <IntroModal 
+        isOpen={showTutorials} 
+        onClose={() => setShowTutorials(false)} 
+      />
       {/* Fire background */}
       <div className="fixed inset-0 w-full h-full z-0">
         <div 
@@ -109,6 +115,12 @@ export default function Home() {
             >
               Launch App
             </Link>
+            <button
+              onClick={() => setShowTutorials(true)}
+              className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+            >
+              View Tutorials
+            </button>
           </div>
         </div>
 
