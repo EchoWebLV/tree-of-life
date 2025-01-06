@@ -7,7 +7,6 @@ import DesktopInterface from "../components/DesktopInterface";
 import type { Persona } from "../components/AIImageAnalyzer";
 import React from "react";
 import { getClientToken } from "../utils/clientToken";
-import Logo from "../components/Logo";
 import ClientWalletProvider from "../components/WalletProvider";
 import WalletButton from "../components/WalletButton";
 

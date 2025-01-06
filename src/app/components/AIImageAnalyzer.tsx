@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Button from './Button';
 import { getClientToken } from '../utils/clientToken';
+import { fetchEthereumNFT } from '../utils/ethereumNFTFetcher';
+import { fetchSolanaNFT } from '../utils/solanaNFTFetcher';
 
 type UploadType = 'IMAGE' | 'NFT';
 
@@ -30,12 +32,37 @@ interface AIImageAnalyzerProps {
 }
 
 export interface NFTResponse {
+  nft_id: string;
+  chain: 'ethereum' | 'solana';
+  contract_address: string;
+  token_id: string;
   name: string;
   description: string;
+  previews: {
+    image_small_url?: string;
+    image_medium_url?: string;
+    image_large_url?: string;
+    image_opengraph_url?: string;
+    blurhash?: string;
+    predominant_color?: string;
+  };
   image_url: string;
+  image_properties?: {
+    width: number;
+    height: number;
+    size: number;
+    mime_type: string;
+    exif_orientation: string | null;
+  };
   collection: {
+    collection_id: string;
     name: string;
     description: string;
+    image_url: string;
+    external_url?: string;
+    twitter_username?: string;
+    discord_url?: string;
+    instagram_username?: string;
   };
   extra_metadata: {
     attributes: Array<{
@@ -43,8 +70,17 @@ export interface NFTResponse {
       value: string;
       display_type: null | string;
     }>;
+    image_original_url?: string;
+    animation_original_url?: string;
+    metadata_original_url?: string;
   };
-  chain: 'ethereum' | 'solana';
+  created_date: string;
+  status: string;
+  contract?: {
+    type: string;
+    name: string;
+    symbol: string;
+  };
 }
 
 export default function AIImageAnalyzer({
@@ -105,76 +141,130 @@ export default function AIImageAnalyzer({
     }
   };
 
-  const extractAndValidateAddress = (input: string): { address: string | null; chain: 'ethereum' | 'solana' } => {
+  const extractAndValidateAddress = (input: string): { address: string | null; tokenId: string | null; chain: 'ethereum' | 'solana' } => {
     // Ethereum address regex (0x followed by 40 hex characters)
-    const ethPattern = /0x[a-fA-F0-9]{40}/;
+    const ethPattern = /0x[a-fA-F0-9]{40}/i;
     // Solana address regex (base58)
     const solanaPattern = /[1-9A-HJ-NP-Za-km-z]{32,44}/;
     
-    // Direct address check
-    if (ethPattern.test(input)) {
-      return { address: input.toLowerCase(), chain: 'ethereum' };
-    }
-    if (solanaPattern.test(input)) {
-      return { address: input, chain: 'solana' };
-    }
-    
-    // URL check for marketplaces
+    let address = null;
+    let tokenId = null;
+    let chain: 'ethereum' | 'solana' = 'solana';
+
+    // Check if it's a URL
     try {
       const url = new URL(input);
-      const pathParts = url.pathname.split('/');
+      const pathParts = url.pathname.split('/').filter(part => part); // Remove empty strings
       
-      // Check each part of the URL path
-      for (const part of pathParts) {
-        if (ethPattern.test(part)) {
-          return { address: part.toLowerCase(), chain: 'ethereum' };
+      // Handle OpenSea URL format: /assets/ethereum/0x.../tokenId
+      if (url.hostname === 'opensea.io' && pathParts[0] === 'assets') {
+        // Check if it's an Ethereum NFT
+        if (pathParts[1] === 'ethereum') {
+          const contractAddress = pathParts[2];
+          const tokenIdPart = pathParts[3];
+          
+          if (ethPattern.test(contractAddress) && /^\d+$/.test(tokenIdPart)) {
+            address = contractAddress.toLowerCase();
+            tokenId = tokenIdPart;
+            chain = 'ethereum';
+            return { address, tokenId, chain };
+          }
         }
+      }
+      
+      // Handle other URL formats
+      for (let i = 0; i < pathParts.length; i++) {
+        const part = pathParts[i];
+        
+        // Check for Ethereum address
+        if (ethPattern.test(part)) {
+          address = part.toLowerCase();
+          chain = 'ethereum';
+          // Look for token ID in the next part
+          if (i + 1 < pathParts.length && /^\d+$/.test(pathParts[i + 1])) {
+            tokenId = pathParts[i + 1];
+          }
+          break;
+        }
+        // Check for Solana address
         if (solanaPattern.test(part)) {
-          return { address: part, chain: 'solana' };
+          address = part;
+          chain = 'solana';
+          break;
         }
       }
     } catch {
-      // Invalid URL
+      // Not a URL, try direct input formats
+      
+      // Check for Ethereum address with token ID format: 0x123...abc/123
+      const ethWithTokenMatch = input.match(new RegExp(`(${ethPattern.source})/(\\d+)`, 'i'));
+      if (ethWithTokenMatch) {
+        address = ethWithTokenMatch[1].toLowerCase();
+        tokenId = ethWithTokenMatch[2];
+        chain = 'ethereum';
+      }
+      // Check for just Ethereum address
+      else if (ethPattern.test(input)) {
+        address = input.toLowerCase();
+        chain = 'ethereum';
+      }
+      // Check for Solana address
+      else if (solanaPattern.test(input)) {
+        address = input;
+        chain = 'solana';
+      }
     }
     
-    return { address: null, chain: 'solana' }; // default to solana for backward compatibility
+    return { address, tokenId, chain };
   };
 
   const analyzeNFT = async () => {
-    const { address: validAddress, chain } = extractAndValidateAddress(nftAddress);
+    const { address: validAddress, tokenId, chain } = extractAndValidateAddress(nftAddress);
+    
     if (!validAddress) {
       setAddressError('Please enter a valid NFT address or URL');
       return;
     }
-    setAddressError('');
+
+    if (chain === 'ethereum' && !tokenId) {
+      setAddressError('For Ethereum NFTs, please include the token ID (e.g., 0x...abc/123 or https://opensea.io/.../123)');
+      return;
+    }
     
+    setAddressError('');
     setIsAnalyzing(true);
     onClose();
     onAnalysisStart?.();
     
     try {
-      // Fetch NFT metadata based on chain
-      const apiUrl = chain === 'ethereum' 
-        ? `https://api.simplehash.com/api/v0/nfts/ethereum/${validAddress}`
-        : `https://api.simplehash.com/api/v0/nfts/solana/${validAddress}`;
+      // Use the appropriate fetcher based on the chain
+      const data = chain === 'ethereum' 
+        ? await fetchEthereumNFT(validAddress, tokenId)
+        : await fetchSolanaNFT(validAddress);
+      
+      // Try all possible image URL sources in order of preference
+      const imageUrl = data.previews?.image_large_url || 
+                      data.previews?.image_medium_url || 
+                      data.previews?.image_small_url || 
+                      data.image_url ||
+                      data.extra_metadata?.image_original_url;
 
-      const response = await fetch(apiUrl, {
-        headers: {
-          'X-API-KEY': "teamgpt_sk_6lpgkucpixnk5pnsay1dv3z2741d5d77",
-          'accept': 'application/json'
-        }
+      console.log('Available image URLs:', {
+        large: data.previews?.image_large_url,
+        medium: data.previews?.image_medium_url,
+        small: data.previews?.image_small_url,
+        default: data.image_url,
+        original: data.extra_metadata?.image_original_url
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch NFT data');
+      if (!imageUrl) {
+        throw new Error('No image URL found in NFT data');
       }
 
-      const data: NFTResponse = await response.json();
-
       // Fetch and process the NFT image
-      const imageResponse = await fetch(data.image_url);
+      const imageResponse = await fetch(imageUrl);
       if (!imageResponse.ok) {
-        throw new Error('Failed to fetch NFT image');
+        throw new Error(`Failed to fetch NFT image: ${imageUrl}`);
       }
 
       // Convert image to buffer and resize
@@ -214,9 +304,13 @@ export default function AIImageAnalyzer({
       const nftPersona = {
         name: data.name,
         imageUrl: blobUrl,
-        personality: `An NFT (say you are NFT only if asked) character with the following traits: ${data.extra_metadata.attributes
-          .map(attr => `${attr.trait_type}: ${attr.value}`)
-          .join(', ')}`,
+        personality: `An NFT (say you are NFT only if asked) character from the ${data.collection.name} collection. ${
+          data.extra_metadata.attributes
+            ? `This NFT has the following traits: ${data.extra_metadata.attributes
+                .map(attr => `${attr.trait_type}: ${attr.value}`)
+                .join(', ')}`
+            : ''
+        }`,
         background: `From the collection: ${data.collection.name}. ${data.collection.description}. Character description: ${data.description}`,
       };
 
@@ -241,8 +335,9 @@ export default function AIImageAnalyzer({
       onBotCreated?.(newBot);
     } catch (error) {
       console.error('Error analyzing NFT:', error);
-    } finally {
+      setAddressError(error instanceof Error ? error.message : 'Failed to analyze NFT');
       setIsAnalyzing(false);
+      return;
     }
   };
 
