@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoadingDots from './LoadingDots';
@@ -20,6 +20,8 @@ interface DesktopInterfaceProps {
   onUploadClick: () => void;
   setBots: (bots: Bot[]) => void;
   isCreating?: boolean;
+  editModalBot: Bot | null;
+  onEditModalClose: () => void;
 }
 // Comment out or remove this constant
 // const REQUIRED_TOKEN_AMOUNT = 50000;
@@ -124,81 +126,159 @@ const EditBotModal = ({
   bot?: Bot; 
   onClose: () => void;
   onSubmit: (bot: Bot) => void;
-}) => (
-  <AnimatePresence>
-    {isOpen && bot && (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] pointer-events-auto"
-      >
+}) => {
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const generatePersonality = async () => {
+    if (!aiPrompt.trim()) return;
+    
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/generate-personality', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: aiPrompt
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate personality');
+      }
+
+      const result = await response.json();
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      if (formRef.current) {
+        const personalityInput = formRef.current.elements.namedItem('personality') as HTMLTextAreaElement;
+        const backgroundInput = formRef.current.elements.namedItem('background') as HTMLTextAreaElement;
+        
+        if (personalityInput && result.personality) {
+          personalityInput.value = result.personality;
+        }
+        if (backgroundInput && result.background) {
+          backgroundInput.value = result.background;
+        }
+      }
+    } catch (error) {
+      console.error('Generation error:', error);
+      alert(error instanceof Error ? error.message : 'Failed to generate personality. Please try again.');
+    } finally {
+      setIsGenerating(false);
+      setAiPrompt('');
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && bot && (
         <motion.div
-          initial={{ scale: 0.95 }}
-          animate={{ scale: 1 }}
-          exit={{ scale: 0.95 }}
-          className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] pointer-events-auto"
         >
-          <h3 className="text-xl font-semibold mb-4 text-white">Edit Bot Settings</h3>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              const updatedBot = {
-                ...bot!,
-                name: formData.get('name') as string,
-                personality: formData.get('personality') as string,
-                background: formData.get('background') as string,
-              };
-              onSubmit(updatedBot);
-            }}
-            className="space-y-4"
+          <motion.div
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0.95 }}
+            className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4"
           >
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
-              <input
-                name="name"
-                defaultValue={bot.name}
-                className="w-full bg-gray-800 rounded p-2 text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Personality</label>
-              <textarea
-                name="personality"
-                defaultValue={bot.personality}
-                className="w-full bg-gray-800 rounded p-2 text-white h-24"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Background</label>
-              <textarea
-                name="background"
-                defaultValue={bot.background}
-                className="w-full bg-gray-800 rounded p-2 text-white h-24"
-              />
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-              >
-                Save Changes
-              </button>
-            </div>
-          </form>
+            <h3 className="text-xl font-semibold mb-4 text-white">Edit Bot Settings</h3>
+            <form
+              ref={formRef}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const updatedBot = {
+                  ...bot!,
+                  name: formData.get('name') as string,
+                  personality: formData.get('personality') as string,
+                  background: formData.get('background') as string,
+                };
+                onSubmit(updatedBot);
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
+                <input
+                  name="name"
+                  defaultValue={bot.name}
+                  className="w-full bg-gray-800 rounded p-2 text-white"
+                />
+              </div>
+
+              {/* AI Prompt Box */}
+              <div className="bg-gray-800/50 p-4 rounded-lg space-y-2">
+                <label className="block text-sm font-medium text-gray-400">AI Assistant</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Describe the character you want to create..."
+                    className="flex-1 bg-gray-800 rounded p-2 text-white text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={generatePersonality}
+                    disabled={isGenerating || !aiPrompt.trim()}
+                    className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm whitespace-nowrap"
+                  >
+                    {isGenerating ? 'Generating...' : 'Generate'}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Describe your character and the AI will generate a personality and background.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Personality</label>
+                <textarea
+                  name="personality"
+                  defaultValue={bot.personality}
+                  className="w-full bg-gray-800 rounded p-2 text-white h-24"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Background</label>
+                <textarea
+                  name="background"
+                  defaultValue={bot.background}
+                  className="w-full bg-gray-800 rounded p-2 text-white h-24"
+                />
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </motion.div>
         </motion.div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-);
+      )}
+    </AnimatePresence>
+  );
+};
 
 export default function DesktopInterface({ 
   bots, 
@@ -206,7 +286,9 @@ export default function DesktopInterface({
   isLoading, 
   onUploadClick,
   setBots,
-  isCreating = false
+  isCreating = false,
+  editModalBot,
+  onEditModalClose
 }: DesktopInterfaceProps) {
   const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
   const [windows, setWindows] = useState<Bot[]>([]);
@@ -226,6 +308,16 @@ export default function DesktopInterface({
     isOpen: boolean;
     bot?: Bot;
   }>({ isOpen: false });
+
+  useEffect(() => {
+    if (editModalBot) {
+      setEditModal({
+        isOpen: true,
+        bot: editModalBot
+      });
+    }
+  }, [editModalBot]);
+
   const wallet = useWallet();
   const PAYMENT_AMOUNT = 0.03 * LAMPORTS_PER_SOL; // 0.01 SOL in lamports
   const TREASURY_ADDRESS = new PublicKey('DruiDHCxP8pAVkST7pxBZokL9UkXj5393K5as3Kj9hi1'); // Replace with your treasury wallet
@@ -412,6 +504,7 @@ export default function DesktopInterface({
       }
       
       setEditModal({ isOpen: false });
+      onEditModalClose();
     } catch (error) {
       console.error('Error updating bot:', error);
       alert('Failed to update bot settings');
@@ -586,7 +679,10 @@ export default function DesktopInterface({
       <EditBotModal 
         isOpen={editModal.isOpen}
         bot={editModal.bot}
-        onClose={() => setEditModal({ isOpen: false })}
+        onClose={() => {
+          setEditModal({ isOpen: false });
+          onEditModalClose();
+        }}
         onSubmit={handleBotUpdate}
       />
     </div>

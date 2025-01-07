@@ -17,6 +17,11 @@ export interface Persona {
   imageUrl?: string;
 }
 
+export interface Bot extends Persona {
+  id: string;
+  imageUrl: string;
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -26,8 +31,8 @@ interface AIImageAnalyzerProps {
   isOpen: boolean;
   onClose: () => void;
   onAnalysisStart: () => void;
-  onAnalysisComplete: (persona: Persona) => void;
-  onBotCreated?: (bot: Persona) => void;
+  onAnalysisComplete: (persona: Bot) => void;
+  onBotCreated?: (bot: Bot) => void;
   modalClassName?: string;
 }
 
