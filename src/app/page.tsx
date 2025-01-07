@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Logo from './components/Logo';
@@ -24,6 +24,30 @@ interface DexOrder {
 export default function Home() {
   const [latestTokens, setLatestTokens] = useState<Token[]>([]);
   const [showTutorials, setShowTutorials] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  
+  const slides = [
+    { src: '/coingeko.png', alt: 'CoinGeko', href: 'https://www.coingecko.com/en/coins/druid-ai' },
+    { src: '/memecoin.png', alt: 'Memecoin', href: 'https://memecoinseason.net/p/druid-ai' },
+    { src: '/dextools.svg', alt: 'Dext', href: 'https://www.dextools.io/app/en/token/druidai?t=1736240680806' },
+  ];
+
+  const nextSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev === slides.length - 2 ? 0 : prev + 1));
+  }, [slides.length]);
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev === 0 ? slides.length - 2 : prev - 1));
+  };
+
+  // Auto-sliding effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      nextSlide();
+    }, 7500);
+
+    return () => clearInterval(timer);
+  }, [nextSlide]);
 
   const checkDexPaid = async (tokenAddress: string) => {
     try {
@@ -121,6 +145,59 @@ export default function Home() {
             >
               View Tutorials
             </button>
+          </div>
+          
+          {/* Slideshow */}
+          <div className="mt-8 relative w-full max-w-xl mx-auto">
+            <div className="overflow-hidden rounded-lg h-32">
+              <div 
+                className="flex transition-transform duration-1000 ease-in-out"
+                style={{ transform: `translateX(-${currentSlide * 50}%)` }}
+              >
+                {slides.map((slide, index) => (
+                  <div key={index} className="min-w-[50%] px-2">
+                    <Link 
+                      href={slide.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block transition-transform hover:scale-105"
+                    >
+                      <Image
+                        src={slide.src}
+                        alt={slide.alt}
+                        width={300}
+                        height={128}
+                        className="h-32 w-full object-contain bg-black/20 rounded-lg"
+                      />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 p-2 rounded-full hover:bg-black/70 text-sm"
+              onClick={prevSlide}
+            >
+              ←
+            </button>
+            <button
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 p-2 rounded-full hover:bg-black/70 text-sm"
+              onClick={nextSlide}
+            >
+              →
+            </button>
+            {/* Slide indicators */}
+            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex gap-2">
+              {slides.slice(0, slides.length - 1).map((_, index) => (
+                <button
+                  key={index}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                    currentSlide === index ? 'bg-white' : 'bg-white/50'
+                  }`}
+                  onClick={() => setCurrentSlide(index)}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
