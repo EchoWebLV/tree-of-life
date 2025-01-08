@@ -20,6 +20,7 @@ model Bot {
   updatedAt   DateTime @updatedAt
   twitterSettings TwitterSettings?
   wallet      BotWallet?
+  messages    Message[]
 }
 
 model LandingPage {
@@ -66,4 +67,15 @@ model BotWallet {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   bot        Bot      @relation(fields: [botId], references: [id])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  botId     String
+  role      String   // 'user' or 'assistant'
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  bot       Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  @@index([botId, createdAt])
 }

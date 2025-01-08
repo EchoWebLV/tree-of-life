@@ -12,6 +12,12 @@ interface Persona {
   background: string;
 }
 
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt?: string;
+}
+
 interface ChatProps {
   persona: Persona;
 }
@@ -19,17 +25,36 @@ interface ChatProps {
 const UNCENSORED_STORAGE_KEY = 'uncensored_bots';
 
 export default function Chat({ persona }: ChatProps) {
-  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [messageCount, setMessageCount] = useState(() => getMessageCount());
+  const [isLoading, setIsLoading] = useState(false);
   const [isUncensored, setIsUncensored] = useState(() => {
-    // Get uncensored state from localStorage
     const uncensoredBots = JSON.parse(localStorage.getItem(UNCENSORED_STORAGE_KEY) || '{}');
     return persona.id ? uncensoredBots[persona.id] || false : false;
   });
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [hasEnoughTokens, setHasEnoughTokens] = useState(false);
   const wallet = useWallet();
+
+  // Load previous messages
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (!persona.id) return;
+      
+      try {
+        const response = await fetch(`/api/messages?botId=${persona.id}`);
+        if (!response.ok) throw new Error('Failed to fetch messages');
+        
+        const data = await response.json();
+        setMessages(data.messages);
+      } catch (error) {
+        console.error('Error loading messages:', error);
+      }
+    };
+
+    loadMessages();
+  }, [persona.id]);
 
   useEffect(() => {
     const scrollToBottom = () => {
@@ -68,7 +93,6 @@ export default function Chat({ persona }: ChatProps) {
     checkBalance();
   }, [wallet.publicKey, isUncensored]);
 
-  // Add this useEffect to persist uncensored state
   useEffect(() => {
     if (!persona.id) return;
     
@@ -77,25 +101,44 @@ export default function Chat({ persona }: ChatProps) {
     localStorage.setItem(UNCENSORED_STORAGE_KEY, JSON.stringify(uncensoredBots));
   }, [isUncensored, persona.id]);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  const storeMessage = async (message: Message) => {
+    if (!persona.id) return;
 
-    // Check message limit
+    try {
+      await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          botId: persona.id,
+          role: message.role,
+          content: message.content,
+        }),
+      });
+    } catch (error) {
+      console.error('Error storing message:', error);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || isLoading) return;
+
     if (!incrementMessageCount()) {
       alert(`You've reached your daily limit of ${DAILY_MESSAGE_LIMIT} messages. Please try again tomorrow.`);
       return;
     }
 
-    const newMessages = [
-      ...messages,
-      { role: 'user' as const, content: input }
-    ];
-
-    setMessages(newMessages);
+    const userMessage = { role: 'user' as const, content: input };
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setMessageCount(getMessageCount());
+    setIsLoading(true);
 
     try {
+      // Store user message
+      await storeMessage(userMessage);
+
       const endpoint = isUncensored ? '/api/uncensored-chat' : '/api/chat';
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -103,18 +146,23 @@ export default function Chat({ persona }: ChatProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: newMessages,
+          messages: [...messages, userMessage],
           persona: persona,
           systemPrompt: `You are ${persona.name}. ${persona.personality} ${persona.background}`
         }),
       });
+      
       const data = await response.json();
-      setMessages([...newMessages, { 
-        role: 'assistant' as const, 
-        content: data.response 
-      }]);
+      const assistantMessage = { role: 'assistant' as const, content: data.response };
+      
+      // Store assistant message
+      await storeMessage(assistantMessage);
+      
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -162,25 +210,33 @@ export default function Chat({ persona }: ChatProps) {
             </p>
           </div>
         ))}
+        {isLoading && (
+          <div className="p-4 rounded-xl bg-black text-white max-w-[80%] shadow-sm border border-white animate-pulse">
+            Thinking...
+          </div>
+        )}
       </div>
       <div className="h-[60px] flex gap-3 pt-3 border-t border-white">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+          onKeyPress={(e) => e.key === 'Enter' && !isLoading && sendMessage()}
           className="w-3/4 p-1 rounded-xl bg-black border border-white
             focus:outline-none focus:ring-2 focus:ring-white
             text-white placeholder-white/60 text-base md:text-xs chat-input no-select"
           placeholder="Type your message..."
           style={{ fontSize: '16px' }}
+          disabled={isLoading}
         />
         <button
           onClick={sendMessage}
+          disabled={isLoading}
           className="w-1/4 px-4 py-1 bg-white text-black rounded-xl 
-            hover:bg-white/90 transition-colors duration-200 font-medium text-xs"
+            hover:bg-white/90 transition-colors duration-200 font-medium text-xs
+            disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Send
+          {isLoading ? 'Sending...' : 'Send'}
         </button>
       </div>
     </div>
