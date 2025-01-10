@@ -43,7 +43,7 @@ export default function TokenRequirementModal({
               To use the {feature} feature, you need:
             </p>
             <div className="bg-gray-800 p-4 rounded-lg">
-              <p className="text-white text-lg font-semibold">{requiredTokens.toLocaleString()} DRUID Tokens</p>
+              <p className="text-white text-lg font-semibold">{requiredTokens.toLocaleString()} DRU Tokens</p>
             </div>
             {!connected && (
               <div className="mt-4">
