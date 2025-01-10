@@ -164,8 +164,10 @@ export default function WindowManager({
     return 'Configure Deployment';
   };
 
-  const getXTooltipContent = () => {
-    // if (!wallet.publicKey) return 'Connect wallet first';
+  const getXTooltipContent = (bot: Bot) => {
+    if (hasTwitterSettings[bot.id]) {
+      return 'Post a Tweet';
+    }
     return 'Connect to X (Twitter)';
   };
 
@@ -302,12 +304,22 @@ export default function WindowManager({
   };
 
   // Update the Twitter settings click handler
-  const handleTwitterSettingsClick = (bot: Bot) => {
-    checkTokensAndProceed(
-      'Twitter Integration',
-      20000,
-      () => setTwitterSettingsModal({ isOpen: true, bot })
-    );
+  const handleTwitterSettingsClick = async (bot: Bot) => {
+    // First check if we have Twitter settings
+    const response = await fetch(`/api/twitter-settings?botId=${bot.id}`);
+    const data = await response.json();
+    
+    if (data.settings) {
+      // If we have settings, show tweet modal
+      setTweetModalBot(bot);
+    } else {
+      // If no settings, show settings modal with token check
+      checkTokensAndProceed(
+        'Twitter Integration',
+        20000,
+        () => setTwitterSettingsModal({ isOpen: true, bot })
+      );
+    }
   };
 
   // Update the deploy click handler
@@ -521,7 +533,7 @@ export default function WindowManager({
                           className="bg-black/90 text-white text-xs py-1 px-2 rounded"
                           sideOffset={5}
                         >
-                          {getXTooltipContent()}
+                          {getXTooltipContent(bot)}
                           <Tooltip.Arrow className="fill-black/90" />
                         </Tooltip.Content>
                       </Tooltip.Portal>
