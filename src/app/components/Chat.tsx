@@ -139,7 +139,11 @@ export default function Chat({ persona }: ChatProps) {
       // Store user message
       await storeMessage(userMessage);
 
-      const endpoint = isUncensored ? '/api/uncensored-chat' : '/api/chat';
+      let endpoint = '/api/chat';
+      if (isUncensored) {
+        endpoint = '/api/uncensored-chat';
+      }
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -151,13 +155,13 @@ export default function Chat({ persona }: ChatProps) {
           systemPrompt: `You are ${persona.name}. ${persona.personality} ${persona.background}`
         }),
       });
-      
+
       const data = await response.json();
       const assistantMessage = { role: 'assistant' as const, content: data.response };
       
       // Store assistant message
       await storeMessage(assistantMessage);
-      
+
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error:', error);
@@ -174,7 +178,7 @@ export default function Chat({ persona }: ChatProps) {
           <button
             onClick={() => {
               if (!isUncensored && !hasEnoughTokens) {
-                alert('You need at least 20,000 DRUID tokens to use uncensored mode');
+                alert('You need at least 20,000 DRU tokens to use uncensored mode');
                 return;
               }
               setIsUncensored(!isUncensored);
@@ -185,7 +189,7 @@ export default function Chat({ persona }: ChatProps) {
                 : hasEnoughTokens 
                   ? 'bg-green-500 text-white hover:bg-green-600'
                   : 'bg-gray-500 text-white cursor-not-allowed'
-              }`}
+            }`}
           >
             {isUncensored ? 'Uncensored' : 'Natural'}
           </button>

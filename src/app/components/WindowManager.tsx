@@ -20,6 +20,7 @@ import { Keypair } from '@solana/web3.js';
 import DeploymentModal from './DeploymentModal';
 import { toast } from 'sonner';
 import GlowingFeature from './GlowingFeature';
+import TokenRequirementModal from './TokenRequirementModal';
 
 interface WindowState {
   id: string;
@@ -72,6 +73,16 @@ export default function WindowManager({
     tokenAddress?: string;
     landingPageUrl?: string;
   }>({ isOpen: false });
+  const [tokenRequirementModal, setTokenRequirementModal] = useState<{
+    isOpen: boolean;
+    feature: string;
+    requiredTokens: number;
+    onProceed?: () => void;
+  }>({
+    isOpen: false,
+    feature: '',
+    requiredTokens: 0,
+  });
 
   // Detect mobile device on mount and window resize
   useEffect(() => {
@@ -261,6 +272,59 @@ export default function WindowManager({
     }
   };
 
+  const checkTokensAndProceed = async (
+    feature: string,
+    requiredTokens: number,
+    onProceed: () => void
+  ) => {
+    if (!wallet.publicKey) {
+      setTokenRequirementModal({
+        isOpen: true,
+        feature,
+        requiredTokens,
+        onProceed,
+      });
+      return;
+    }
+
+    const hasTokens = await checkTokenBalance(wallet.publicKey);
+    if (!hasTokens) {
+      setTokenRequirementModal({
+        isOpen: true,
+        feature,
+        requiredTokens,
+        onProceed,
+      });
+      return;
+    }
+
+    onProceed();
+  };
+
+  // Update the Twitter settings click handler
+  const handleTwitterSettingsClick = (bot: Bot) => {
+    checkTokensAndProceed(
+      'Twitter Integration',
+      20000,
+      () => setTwitterSettingsModal({ isOpen: true, bot })
+    );
+  };
+
+  // Update the deploy click handler
+  const handleDeployClick = (bot: Bot) => {
+    checkTokensAndProceed(
+      'Token Deployment',
+      20000,
+      () => {
+        if (!bot.wallet) {
+          toast.error('Please generate a wallet first');
+          return;
+        }
+        setDeployModalBot(bot);
+      }
+    );
+  };
+
   return (
     <AnimatePresence mode="popLayout">
       {windows.map((bot) => {
@@ -387,24 +451,7 @@ export default function WindowManager({
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
                         <button
-                          onClick={async () => {
-                            console.log('Wallet connected:', !!wallet.publicKey);
-                            console.log('Bot wallet:', bot.wallet);
-                            
-                            if (!wallet.publicKey) {
-                              toast.error('Please connect your wallet first');
-                              return;
-                            }
-                            if (!bot.wallet) {
-                              toast.error('Please generate a wallet first');
-                              return;
-                            }
-                            if (!hasEnoughTokens) {
-                              toast.error('You need at least 20,000 DRUID tokens to deploy');
-                              return;
-                            }
-                            setDeployModalBot(bot);
-                          }}
+                          onClick={() => handleDeployClick(bot)}
                           className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                    text-white rounded-full hover:opacity-90 transition-opacity"
                         >
@@ -462,13 +509,7 @@ export default function WindowManager({
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
                         <button
-                          onClick={() => {
-                            if (hasTwitterSettings[bot.id]) {
-                              setTweetModalBot(bot);
-                            } else {
-                              setTwitterSettingsModal({ isOpen: true, bot });
-                            }
-                          }}
+                          onClick={() => handleTwitterSettingsClick(bot)}
                           className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                    text-white rounded-full hover:opacity-90 transition-opacity"
                         >
@@ -591,6 +632,21 @@ export default function WindowManager({
         tokenAddress={deploymentModal.tokenAddress}
         landingPageUrl={deploymentModal.landingPageUrl}
         onClose={() => setDeploymentModal({ isOpen: false })}
+      />
+      <TokenRequirementModal
+        isOpen={tokenRequirementModal.isOpen}
+        onClose={() => {
+          setTokenRequirementModal(prev => ({ ...prev, isOpen: false }));
+          if (tokenRequirementModal.onProceed && wallet.publicKey) {
+            checkTokensAndProceed(
+              tokenRequirementModal.feature,
+              tokenRequirementModal.requiredTokens,
+              tokenRequirementModal.onProceed
+            );
+          }
+        }}
+        feature={tokenRequirementModal.feature}
+        requiredTokens={tokenRequirementModal.requiredTokens}
       />
     </AnimatePresence>
   );

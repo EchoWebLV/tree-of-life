@@ -195,7 +195,7 @@ export default function TwitterSettingsModal({
               </div>
               {!hasEnoughTokens && (
                 <div className="text-right text-red-400 text-sm">
-                  You need at least 20,000 DRUID tokens to save settings
+                  You need at least 20,000 DRU tokens to save settings
                 </div>
               )}
             </div>
