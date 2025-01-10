@@ -5,10 +5,21 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+async function getCryptoPrice(coin: string) {
+  try {
+    const response = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/crypto-price?coin=${coin}`);
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching crypto price:', error);
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { messages, persona } = await request.json();
-
+    
     const systemPrompt = `You are ${persona.name}. ${persona.personality} ${persona.background}
 
     IMPORTANT INSTRUCTIONS FOR SPEECH PATTERNS:
@@ -36,17 +47,64 @@ export async function POST(request: Request) {
     Respond while staying true to your character's unique voice and personality. Keep responses SHORT and snappy. Write like you're having a casual chat!
     Remember: Brief responses only. No emojis. Stay in character.`;
 
+    // First completion with function calling
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4",
       messages: [
         { role: "system", content: systemPrompt },
         ...messages
       ],
-      max_tokens: 100,
+      functions: [
+        {
+          name: "getCryptoPrice",
+          description: "Get the current price, 24h change, and market cap for a cryptocurrency",
+          parameters: {
+            type: "object",
+            properties: {
+              coin: {
+                type: "string",
+                description: "The name or symbol of the cryptocurrency (e.g., bitcoin, ethereum, etc.)"
+              }
+            },
+            required: ["coin"]
+          }
+        }
+      ],
+      function_call: "auto",
+      max_tokens: 120,
     });
 
+    const responseMessage = response.choices[0].message;
+
+    // Check if the model wants to call the function
+    if (responseMessage.function_call) {
+      const functionArgs = JSON.parse(responseMessage.function_call.arguments);
+      const cryptoData = await getCryptoPrice(functionArgs.coin);
+
+      // Second completion with the crypto data
+      const secondResponse = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages,
+          responseMessage,
+          {
+            role: "function",
+            name: "getCryptoPrice",
+            content: JSON.stringify(cryptoData)
+          }
+        ],
+        max_tokens: 120,
+      });
+
+      return NextResponse.json({ 
+        response: secondResponse.choices[0]?.message?.content || 'No response generated'
+      });
+    }
+
+    // If no function was called, return the original response
     return NextResponse.json({ 
-      response: response.choices[0]?.message?.content || 'No response generated'
+      response: responseMessage.content || 'No response generated'
     });
   } catch (error) {
     console.error('Error:', error);
