@@ -5,11 +5,24 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-async function getCryptoPrice(coin: string) {
+async function getCryptoPrice(coin: string, request: Request) {
   try {
-    const response = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/crypto-price?coin=${coin}`);
-    if (!response.ok) return null;
-    return await response.json();
+    // Get the origin from the request URL
+    const url = new URL(request.url);
+    const response = await fetch(`${url.origin}/api/crypto-price?coin=${coin}`);
+    
+    if (!response.ok) {
+      console.error('Crypto price fetch failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url
+      });
+      return null;
+    }
+    
+    const data = await response.json();
+    console.log('Crypto price data received:', data);
+    return data;
   } catch (error) {
     console.error('Error fetching crypto price:', error);
     return null;
@@ -79,7 +92,7 @@ export async function POST(request: Request) {
     // Check if the model wants to call the function
     if (responseMessage.function_call) {
       const functionArgs = JSON.parse(responseMessage.function_call.arguments);
-      const cryptoData = await getCryptoPrice(functionArgs.coin);
+      const cryptoData = await getCryptoPrice(functionArgs.coin, request);
 
       // Second completion with the crypto data
       const secondResponse = await openai.chat.completions.create({
