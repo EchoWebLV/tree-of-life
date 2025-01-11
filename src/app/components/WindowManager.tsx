@@ -5,6 +5,7 @@ import { Rnd } from 'react-rnd';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { PiPillDuotone } from 'react-icons/pi';
 import { TbBrandX } from 'react-icons/tb';
+import { HiMiniChevronRight } from 'react-icons/hi2';
 import LoadingDots from './LoadingDots';
 import Chat from './Chat';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -49,7 +50,6 @@ export default function WindowManager({
   selectedBot,
   setSelectedBot,
   closeWindow,
-  handleDeploy,
   isDeploying,
   setEditModal,
   setTwitterSettingsModal,
@@ -57,6 +57,14 @@ export default function WindowManager({
   setIsDeploying,
 }: WindowManagerProps) {
   const [windowStates, setWindowStates] = useState<Record<string, WindowState>>({});
+  const [menuVisibility, setMenuVisibility] = useState<Record<string, boolean>>(() => {
+    // Initialize all menus as closed (false)
+    const initialState: Record<string, boolean> = {};
+    windows.forEach(bot => {
+      initialState[bot.id] = false;
+    });
+    return initialState;
+  });
   const [hasTwitterSettings, setHasTwitterSettings] = useState<Record<string, boolean>>({});
   const [tweetModalBot, setTweetModalBot] = useState<Bot | null>(null);
   const [deployModalBot, setDeployModalBot] = useState<Bot | null>(null);
@@ -343,10 +351,10 @@ export default function WindowManager({
         const windowState = windowStates[bot.id] || {
           id: bot.id,
           isFullscreen: false,
-          width: 400,
-          height: 600,
-          x: Math.random() * (window.innerWidth - 400),
-          y: Math.random() * (window.innerHeight - 600),
+          width: isMobile ? window.innerWidth : 400,
+          height: isMobile ? window.innerHeight * 0.8 : 500,
+          x: isMobile ? 0 : Math.random() * (window.innerWidth - 400),
+          y: isMobile ? window.innerHeight * 0.2 : Math.random() * (window.innerHeight - 600),
         };
 
         return (
@@ -360,24 +368,33 @@ export default function WindowManager({
             }}
             disableDragging={isMobile}
             enableResizing={!isMobile}
-            minWidth={300}
-            minHeight={400}
-            bounds="window"
+            minWidth={isMobile ? window.innerWidth : (menuVisibility[bot.id] ? 420 : 450)}
+            minHeight={isMobile ? window.innerHeight * 0.8 : (menuVisibility[bot.id] ? 400 : 500)}
+            maxWidth={isMobile ? window.innerWidth : undefined}
+            maxHeight={isMobile ? window.innerHeight * 0.8 : undefined}
+            bounds={isMobile ? "parent" : "window"}
+            position={isMobile ? { x: 0, y: window.innerHeight * 0.2 } : undefined}
             dragHandleClassName={isMobile ? undefined : "window-handle"}
             onDragStop={(e, d) => {
-              setWindowStates(prev => ({
-                ...prev,
-                [bot.id]: { ...windowState, x: d.x, y: d.y }
-              }));
+              if (!isMobile) {
+                setWindowStates(prev => ({
+                  ...prev,
+                  [bot.id]: { ...windowState, x: d.x, y: d.y }
+                }));
+              }
             }}
             onResizeStop={(e, direction, ref, delta, position) => {
+              const newHeight = ref.offsetHeight;
+              if (newHeight < (menuVisibility[bot.id] ? 400 : 500)) {
+                return;
+              }
               setWindowStates(prev => ({
                 ...prev,
                 [bot.id]: {
                   ...windowState,
-                  width: ref.offsetWidth,
-                  height: ref.offsetHeight,
-                  x: position.x,
+                  width: isMobile ? window.innerWidth : ref.offsetWidth,
+                  height: isMobile ? window.innerHeight * 0.8 : newHeight,
+                  x: isMobile ? 0 : position.x,
                   y: position.y,
                 }
               }));
@@ -392,6 +409,13 @@ export default function WindowManager({
                 bottom: 0,
                 width: '100vw',
                 height: '100vh',
+              } : {}),
+              ...(isMobile ? {
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: '80vh',
               } : {})
             }}
             className={`pointer-events-auto ${windowState.isFullscreen ? 'fullscreen-window' : ''}`}
@@ -400,173 +424,342 @@ export default function WindowManager({
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              className="bg-black/80 backdrop-blur-sm rounded-lg overflow-hidden w-full h-full"
+              className={`bg-black/80 backdrop-blur-sm overflow-hidden w-full h-full ${
+                isMobile ? 'rounded-t-2xl rounded-b-none' : 'rounded-lg'
+              }`}
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
                   setSelectedBot(bot);
                 }
               }}
             >
-              <div className="flex items-center justify-between p-2 bg-white/10 window-handle cursor-move">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 relative">
-                    <Image
-                      src={bot.imageUrl}
-                      alt={bot.name}
-                      fill
-                      className="object-cover rounded transition-all duration-200"
-                    />
-                  </div>
-                  <span className="text-sm">{bot.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Tooltip.Provider delayDuration={0}>
-                    <Tooltip.Root>
-                      <Tooltip.Trigger asChild>
+              <div className="flex h-full">
+                {/* Main content area */}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between p-2 bg-white/10 window-handle cursor-move">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 relative">
+                        <Image
+                          src={bot.imageUrl}
+                          alt={bot.name}
+                          fill
+                          className="object-cover rounded transition-all duration-200"
+                        />
+                      </div>
+                      <span className="text-sm">{bot.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {isMobile ? (
+                        // Mobile menu buttons in top bar
+                        <>
+                          <Tooltip.Provider delayDuration={0}>
+                            <Tooltip.Root>
+                              <Tooltip.Trigger asChild>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditModal({ isOpen: true, bot });
+                                  }}
+                                  className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
+                                           text-white rounded-full hover:opacity-90 transition-opacity
+                                           touch-manipulation"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                  </svg>
+                                </button>
+                              </Tooltip.Trigger>
+                              <Tooltip.Portal>
+                                <Tooltip.Content
+                                  className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                  sideOffset={5}
+                                >
+                                  Edit Bot Settings
+                                  <Tooltip.Arrow className="fill-black/90" />
+                                </Tooltip.Content>
+                              </Tooltip.Portal>
+                            </Tooltip.Root>
+                          </Tooltip.Provider>
+
+                          <Tooltip.Provider delayDuration={0}>
+                            <Tooltip.Root>
+                              <Tooltip.Trigger asChild>
+                                <button
+                                  onClick={() => handleDeployClick(bot)}
+                                  className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
+                                           text-white rounded-full hover:opacity-90 transition-opacity"
+                                >
+                                  {isDeploying === bot.id ? (
+                                    <div className="w-4 h-4 flex items-center justify-center">
+                                      <LoadingDots size="sm" />
+                                    </div>
+                                  ) : (
+                                    <PiPillDuotone className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </Tooltip.Trigger>
+                              <Tooltip.Portal>
+                                <Tooltip.Content
+                                  className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                  sideOffset={5}
+                                >
+                                  {getDeployTooltipContent(bot)}
+                                  <Tooltip.Arrow className="fill-black/90" />
+                                </Tooltip.Content>
+                              </Tooltip.Portal>
+                            </Tooltip.Root>
+                          </Tooltip.Provider>
+
+                          <Tooltip.Provider delayDuration={0}>
+                            <Tooltip.Root>
+                              <Tooltip.Trigger asChild>
+                                <GlowingFeature 
+                                  isNew={!bot.wallet} 
+                                  featureId={`wallet-${bot.id}`}
+                                >
+                                  <button
+                                    onClick={() => handleWalletClick(bot.id)}
+                                    className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
+                                             text-white rounded-full hover:opacity-90 transition-opacity
+                                             relative z-10"
+                                  >
+                                    <IoWalletOutline className="w-4 h-4" />
+                                  </button>
+                                </GlowingFeature>
+                              </Tooltip.Trigger>
+                              <Tooltip.Portal>
+                                <Tooltip.Content
+                                  className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                  sideOffset={5}
+                                >
+                                  {bot.wallet ? 
+                                    `View Wallet: ${bot.wallet.publicKey.slice(0, 4)}...${bot.wallet.publicKey.slice(-4)}` : 
+                                    'Generate New Wallet'}
+                                  <Tooltip.Arrow className="fill-black/90" />
+                                </Tooltip.Content>
+                              </Tooltip.Portal>
+                            </Tooltip.Root>
+                          </Tooltip.Provider>
+
+                          <Tooltip.Provider delayDuration={0}>
+                            <Tooltip.Root>
+                              <Tooltip.Trigger asChild>
+                                <button
+                                  onClick={() => handleTwitterSettingsClick(bot)}
+                                  className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
+                                           text-white rounded-full hover:opacity-90 transition-opacity"
+                                >
+                                  <TbBrandX className="w-4 h-4" />
+                                </button>
+                              </Tooltip.Trigger>
+                              <Tooltip.Portal>
+                                <Tooltip.Content
+                                  className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                  sideOffset={5}
+                                >
+                                  {getXTooltipContent(bot)}
+                                  <Tooltip.Arrow className="fill-black/90" />
+                                </Tooltip.Content>
+                              </Tooltip.Portal>
+                            </Tooltip.Root>
+                          </Tooltip.Provider>
+                        </>
+                      ) : (
+                        // Desktop menu toggle button
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditModal({ isOpen: true, bot });
-                          }}
+                          onClick={() => setMenuVisibility(prev => ({
+                            ...prev,
+                            [bot.id]: !prev[bot.id]
+                          }))}
                           className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
                                    text-white rounded-full hover:opacity-90 transition-opacity
                                    touch-manipulation"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                          </svg>
+                          <HiMiniChevronRight 
+                            size={20}
+                            className={`transform transition-transform ${menuVisibility[bot.id] ? 'rotate-180' : ''}`}
+                          />
                         </button>
-                      </Tooltip.Trigger>
-                      <Tooltip.Portal>
-                        <Tooltip.Content
-                          className="bg-black/90 text-white text-xs py-1 px-2 rounded"
-                          sideOffset={5}
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeWindow(bot.id);
+                        }}
+                        className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
+                                 text-white rounded-full hover:opacity-90 transition-opacity
+                                 touch-manipulation"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                         >
-                          Edit Bot Settings
-                          <Tooltip.Arrow className="fill-black/90" />
-                        </Tooltip.Content>
-                      </Tooltip.Portal>
-                    </Tooltip.Root>
-                  </Tooltip.Provider>
-                  <Tooltip.Provider>
-                    <Tooltip.Root>
-                      <Tooltip.Trigger asChild>
-                        <button
-                          onClick={() => handleDeployClick(bot)}
-                          className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
-                                   text-white rounded-full hover:opacity-90 transition-opacity"
-                        >
-                          {isDeploying === bot.id ? (
-                            <div className="w-5 h-5 flex items-center justify-center">
-                              <LoadingDots size="sm" />
-                            </div>
-                          ) : (
-                            <PiPillDuotone className="w-5 h-5" />
-                          )}
-                        </button>
-                      </Tooltip.Trigger>
-                      <Tooltip.Portal>
-                        <Tooltip.Content
-                          className="bg-black/90 text-white text-xs py-1 px-2 rounded"
-                          sideOffset={5}
-                        >
-                          {getDeployTooltipContent(bot)}
-                          <Tooltip.Arrow className="fill-black/90" />
-                        </Tooltip.Content>
-                      </Tooltip.Portal>
-                    </Tooltip.Root>
-                  </Tooltip.Provider>
-                  <Tooltip.Provider>
-                    <Tooltip.Root>
-                      <Tooltip.Trigger asChild>
-                        <GlowingFeature 
-                          isNew={!bot.wallet} 
-                          featureId={`wallet-${bot.id}`}
-                        >
-                          <button
-                            onClick={() => handleWalletClick(bot.id)}
-                            className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
-                                     text-white rounded-full hover:opacity-90 transition-opacity
-                                     relative z-10"
-                          >
-                            <IoWalletOutline className="w-5 h-5" />
-                          </button>
-                        </GlowingFeature>
-                      </Tooltip.Trigger>
-                      <Tooltip.Portal>
-                        <Tooltip.Content
-                          className="bg-black/90 text-white text-xs py-1 px-2 rounded"
-                          sideOffset={5}
-                        >
-                          {bot.wallet ? 
-                            `View Wallet: ${bot.wallet.publicKey.slice(0, 4)}...${bot.wallet.publicKey.slice(-4)}` : 
-                            'Generate New Wallet'}
-                          <Tooltip.Arrow className="fill-black/90" />
-                        </Tooltip.Content>
-                      </Tooltip.Portal>
-                    </Tooltip.Root>
-                  </Tooltip.Provider>
-                  <Tooltip.Provider>
-                    <Tooltip.Root>
-                      <Tooltip.Trigger asChild>
-                        <button
-                          onClick={() => handleTwitterSettingsClick(bot)}
-                          className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
-                                   text-white rounded-full hover:opacity-90 transition-opacity"
-                        >
-                          <TbBrandX className="w-5 h-5" />
-                        </button>
-                      </Tooltip.Trigger>
-                      <Tooltip.Portal>
-                        <Tooltip.Content
-                          className="bg-black/90 text-white text-xs py-1 px-2 rounded"
-                          sideOffset={5}
-                        >
-                          {getXTooltipContent(bot)}
-                          <Tooltip.Arrow className="fill-black/90" />
-                        </Tooltip.Content>
-                      </Tooltip.Portal>
-                    </Tooltip.Root>
-                  </Tooltip.Provider>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      closeWindow(bot.id);
-                    }}
-                    className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
-                             text-white rounded-full hover:opacity-90 transition-opacity
-                             touch-manipulation"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex h-[calc(100%-40px)]">
+                    <div className={`p-4 overflow-y-auto flex-1 transition-all duration-300 ease-in-out ${
+                      !isMobile && menuVisibility[bot.id] ? 'pr-[175px]' : 'pr-4'
+                    }`}>
+                      <Chat persona={bot} />
+                    </div>
+                    
+                    {/* Right sidebar with buttons - only shown on desktop */}
+                    {!isMobile && (
+                      <div className={`flex flex-col gap-2 p-2 bg-white/5 border-l border-white/10 fixed right-0 h-[calc(100%-40px)] transition-all duration-300 ease-in-out ${
+                        !menuVisibility[bot.id] ? 'translate-x-full' : 'translate-x-0'
+                      }`} style={{ width: '175px' }}>
+                        <Tooltip.Provider>
+                          <Tooltip.Root>
+                            <Tooltip.Trigger asChild>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditModal({ isOpen: true, bot });
+                                }}
+                                className="flex items-center gap-2 p-2 bg-gradient-to-r from-gray-500 to-gray-600 
+                                         text-white rounded-lg hover:opacity-90 transition-opacity w-full
+                                         touch-manipulation"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                                <span className="text-sm">Edit Bot</span>
+                              </button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Portal>
+                              <Tooltip.Content
+                                className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                sideOffset={5}
+                              >
+                                Edit Bot Settings
+                                <Tooltip.Arrow className="fill-black/90" />
+                              </Tooltip.Content>
+                            </Tooltip.Portal>
+                          </Tooltip.Root>
+                        </Tooltip.Provider>
+
+                        <Tooltip.Provider>
+                          <Tooltip.Root>
+                            <Tooltip.Trigger asChild>
+                              <button
+                                onClick={() => handleDeployClick(bot)}
+                                className="flex items-center gap-2 p-2 bg-gradient-to-r from-gray-500 to-gray-600 
+                                         text-white rounded-lg hover:opacity-90 transition-opacity w-full"
+                              >
+                                {isDeploying === bot.id ? (
+                                  <div className="w-5 h-5 flex items-center justify-center">
+                                    <LoadingDots size="sm" />
+                                  </div>
+                                ) : (
+                                  <PiPillDuotone className="w-5 h-5" />
+                                )}
+                                <span className="text-sm">Deploy Token</span>
+                              </button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Portal>
+                              <Tooltip.Content
+                                className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                sideOffset={5}
+                              >
+                                {getDeployTooltipContent(bot)}
+                                <Tooltip.Arrow className="fill-black/90" />
+                              </Tooltip.Content>
+                            </Tooltip.Portal>
+                          </Tooltip.Root>
+                        </Tooltip.Provider>
+
+                        <Tooltip.Provider>
+                          <Tooltip.Root>
+                            <Tooltip.Trigger asChild>
+                              <GlowingFeature 
+                                isNew={!bot.wallet} 
+                                featureId={`wallet-${bot.id}`}
+                              >
+                                <button
+                                  onClick={() => handleWalletClick(bot.id)}
+                                  className="flex items-center gap-2 p-2 bg-gradient-to-r from-gray-500 to-gray-600 
+                                           text-white rounded-lg hover:opacity-90 transition-opacity w-full
+                                           relative z-10"
+                                >
+                                  <IoWalletOutline className="w-5 h-5" />
+                                  <span className="text-sm">Wallet</span>
+                                </button>
+                              </GlowingFeature>
+                            </Tooltip.Trigger>
+                            <Tooltip.Portal>
+                              <Tooltip.Content
+                                className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                sideOffset={5}
+                              >
+                                {bot.wallet ? 
+                                  `View Wallet: ${bot.wallet.publicKey.slice(0, 4)}...${bot.wallet.publicKey.slice(-4)}` : 
+                                  'Generate New Wallet'}
+                                <Tooltip.Arrow className="fill-black/90" />
+                              </Tooltip.Content>
+                            </Tooltip.Portal>
+                          </Tooltip.Root>
+                        </Tooltip.Provider>
+
+                        <Tooltip.Provider>
+                          <Tooltip.Root>
+                            <Tooltip.Trigger asChild>
+                              <button
+                                onClick={() => handleTwitterSettingsClick(bot)}
+                                className="flex items-center gap-2 p-2 bg-gradient-to-r from-gray-500 to-gray-600 
+                                         text-white rounded-lg hover:opacity-90 transition-opacity w-full"
+                              >
+                                <TbBrandX className="w-5 h-5" />
+                                <span className="text-sm">Twitter</span>
+                              </button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Portal>
+                              <Tooltip.Content
+                                className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                sideOffset={5}
+                              >
+                                {getXTooltipContent(bot)}
+                                <Tooltip.Arrow className="fill-black/90" />
+                              </Tooltip.Content>
+                            </Tooltip.Portal>
+                          </Tooltip.Root>
+                        </Tooltip.Provider>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="p-4 h-[calc(100%-48px)] overflow-y-auto">
-                <Chat persona={bot} />
               </div>
             </motion.div>
           </Rnd>

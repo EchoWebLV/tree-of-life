@@ -12,7 +12,8 @@ export async function GET(request: Request) {
   try {
     const messages = await prisma.message.findMany({
       where: { botId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
       select: {
         role: true,
         content: true,
@@ -20,7 +21,10 @@ export async function GET(request: Request) {
       },
     });
 
-    return NextResponse.json({ messages });
+    // Reverse to maintain chronological order
+    const orderedMessages = messages.reverse();
+
+    return NextResponse.json({ messages: orderedMessages });
   } catch (error) {
     console.error('Error fetching messages:', error);
     return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });

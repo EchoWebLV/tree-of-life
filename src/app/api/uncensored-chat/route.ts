@@ -7,6 +7,9 @@ export async function POST(request: Request) {
   try {
     const { messages, persona } = await request.json();
 
+    // Limit to last 50 messages
+    const limitedMessages = messages.slice(-30);
+
     const systemPrompt = `You are ${persona.name}. ${persona.personality} ${persona.background}
 
     IMPORTANT INSTRUCTIONS FOR SPEECH PATTERNS:
@@ -37,9 +40,9 @@ export async function POST(request: Request) {
       key: API_KEY,
       messages: [
         { role: "system", content: systemPrompt },
-        ...messages
+        ...limitedMessages
       ],
-      max_tokens: 120
+      max_tokens: 1024
     };
 
     const response = await fetch(API_URL, {
