@@ -62,7 +62,7 @@ export async function POST(request: Request) {
 
     // First completion with function calling
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         ...messages
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
 
       // Second completion with the crypto data
       const secondResponse = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
