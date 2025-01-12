@@ -4,10 +4,10 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     const publicBots = await prisma.$queryRaw`
-      SELECT id, name, "imageUrl", personality, background, "createdAt"
+      SELECT id, name, "imageUrl", personality, background, "updatedAt"
       FROM "Bot"
       WHERE "isPublic" = true
-      ORDER BY "createdAt" DESC
+      ORDER BY "updatedAt" DESC
       LIMIT 12
     `;
     
