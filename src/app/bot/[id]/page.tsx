@@ -10,46 +10,53 @@ interface PageProps {
 export default async function BotLandingPage({ params }: PageProps) {
   const { id } = await params;
   
-  const landingPage = await prisma.landingPage.findUnique({
-    where: { id }
+  const bot = await prisma.bot.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      imageUrl: true,
+      personality: true,
+      background: true
+    }
   });
 
-  if (!landingPage) {
-    return <div>Bot not found</div>;
+  if (!bot) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Bot Not Found</h1>
+          <p className="text-gray-400">The requested bot could not be found.</p>
+        </div>
+      </div>
+    );
   }
 
   const persona = {
-    name: landingPage.name,
-    personality: landingPage.personality,
-    background: landingPage.background
+    name: bot.name,
+    personality: bot.personality,
+    background: bot.background
   };
 
   return (
     <main className="min-h-screen flex flex-col items-center p-4 bg-black text-white">
       <div className="max-w-4xl w-full space-y-8">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 bg-white/5 p-6 rounded-lg">
           <div className="relative w-24 h-24">
             <Image
-              src={landingPage.imageUrl}
-              alt={landingPage.name}
+              src={bot.imageUrl}
+              alt={bot.name}
               fill
               className="object-cover rounded-lg"
             />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{landingPage.name}</h1>
-            <a 
-              href={`https://pump.fun/token/${landingPage.tokenAddress}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:underline"
-            >
-              View on Pump.Fun
-            </a>
+            <h1 className="text-2xl font-bold">{bot.name}</h1>
+            <p className="text-gray-400 mt-2">Public AI Agent</p>
           </div>
         </div>
         
-        <div className="h-[600px] bg-black/50 rounded-lg p-4">
+        <div className="h-[600px] bg-black/80 backdrop-blur-sm rounded-lg overflow-hidden">
           <Chat persona={persona} />
         </div>
       </div>

@@ -3,24 +3,38 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
+    // Get landing pages that are completed and have a token address
     const tokens = await prisma.landingPage.findMany({
+      where: {
+        AND: [
+          { status: 'completed' },
+          { tokenAddress: { not: '' } },
+          { error: null } // Ensure there were no deployment errors
+        ]
+      },
       take: 12,
       orderBy: {
         createdAt: 'desc'
       },
       select: {
         id: true,
-        tokenAddress: true,
         name: true,
         imageUrl: true,
-        createdAt: true
+        tokenAddress: true,
+        createdAt: true,
+        botId: true
       }
     });
     
-    // Ensure we always return an array, even if empty
-    return NextResponse.json(tokens || []);
+    // Filter out any landing pages where the bot is just public but not deployed
+    const deployedTokens = tokens.filter(token => token.tokenAddress.startsWith('0x') || token.tokenAddress.length === 44);
+    
+    return NextResponse.json(deployedTokens || []);
   } catch (error) {
-    console.error('Error fetching latest tokens:', error);
-    return NextResponse.json({ error: 'Failed to fetch tokens', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+    console.error('Error fetching tokens:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch tokens' },
+      { status: 500 }
+    );
   }
 } 

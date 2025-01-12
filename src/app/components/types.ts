@@ -4,6 +4,7 @@ export interface Bot {
   imageUrl: string;
   personality: string;
   background: string;
+  isPublic?: boolean;
   wallet?: {
     publicKey: string;
     privateKey: string;

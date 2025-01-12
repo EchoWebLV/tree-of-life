@@ -15,6 +15,15 @@ interface Token {
   isDexPaid?: boolean;
 }
 
+interface PublicBot {
+  id: string;
+  name: string;
+  imageUrl: string;
+  personality: string;
+  background: string;
+  createdAt: string;
+}
+
 interface DexOrder {
   type: string;
   status: string;
@@ -23,6 +32,7 @@ interface DexOrder {
 
 export default function Home() {
   const [latestTokens, setLatestTokens] = useState<Token[]>([]);
+  const [publicBots, setPublicBots] = useState<PublicBot[]>([]);
   const [showTutorials, setShowTutorials] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   
@@ -98,14 +108,30 @@ export default function Home() {
     }
   };
 
+  const fetchPublicBots = async () => {
+    try {
+      const response = await fetch('/api/public-bots');
+      if (!response.ok) {
+        throw new Error('Failed to fetch public bots');
+      }
+      const data = await response.json();
+      setPublicBots(data);
+    } catch (error) {
+      console.error('Error fetching public bots:', error);
+    }
+  };
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchLatestTokens();
+    fetchPublicBots();
     
-    // Set up polling interval (every 30 seconds to respect rate limit)
-    const interval = setInterval(fetchLatestTokens, 30000);
+    // Set up polling interval (every 30 seconds)
+    const interval = setInterval(() => {
+      fetchLatestTokens();
+      fetchPublicBots();
+    }, 30000);
     
-    // Cleanup interval on component unmount
     return () => clearInterval(interval);
   }, []);
 
@@ -128,10 +154,9 @@ export default function Home() {
       </div>
 
       {/* Content with higher z-index */}
-      <div className="w-full max-w-4xl relative z-10">
+      <div className="w-full max-w-7xl relative z-10">
         <div className="text-center mb-8">
           <Logo />
-          <h2 className="text-xl">Latest AI Agents Launched On Pump</h2>
           <div className="mt-4 flex justify-center gap-4">
             <Link 
               href="/main" 
@@ -201,44 +226,86 @@ export default function Home() {
           </div>
         </div>
 
-        {latestTokens.length === 0 ? (
-          <div className="text-center text-gray-400 py-12">
-            <p>No tokens have been deployed yet.</p>
-            <p className="mt-2">Be the first to create one!</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Deployed Tokens Column */}
+          <div>
+            <h2 className="text-xl font-bold mb-4 text-center">Latest Deployed Tokens</h2>
+            {latestTokens.length === 0 ? (
+              <div className="text-center text-gray-400 py-12">
+                <p>No tokens have been deployed yet.</p>
+                <p className="mt-2">Be the first to create one!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {latestTokens.map((token) => (
+                  <Link
+                    key={token.id}
+                    href={`/token/${token.tokenAddress}`}
+                    className="flex bg-black/50 backdrop-blur-sm rounded-lg p-4 hover:bg-black/60 transition-colors flex-col"
+                  >
+                    <div className="relative w-full aspect-square mb-2">
+                      <Image
+                        src={token.imageUrl}
+                        alt={token.name}
+                        fill
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
+                    <h3 className="text-base font-bold mb-1">{token.name}</h3>
+                    <div className="flex flex-col gap-1 mt-auto">
+                      <div className="text-xs">
+                        {token.isDexPaid ? (
+                          <span className="text-green-400">DEX Paid ✓</span>
+                        ) : (
+                          <span className="text-gray-400">DEX Not Paid ✗</span>
+                        )}
+                      </div>
+                      <div className="text-[10px] bg-white/10 px-2 py-1 rounded-full text-center">
+                        View Token
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {latestTokens.map((token) => (
-              <Link
-                key={token.id}
-                href={`/token/${token.tokenAddress}`}
-                className="flex bg-black/50 backdrop-blur-sm rounded-lg p-6 hover:bg-black/60 transition-colors flex-col h-full"
-              >
-                <div className="relative w-full aspect-square mb-4">
-                  <Image
-                    src={token.imageUrl}
-                    alt={token.name}
-                    fill
-                    className="object-cover rounded-lg"
-                  />
-                </div>
-                <h2 className="text-lg font-bold mb-2">{token.name}</h2>
-                <div className="flex flex-col gap-2 mt-auto">
-                  <div className="text-sm text-gray-400">
-                    {token.isDexPaid ? (
-                      <span className="text-green-400">DEX Paid ✓</span>
-                    ) : (
-                      <span className="text-gray-400">DEX Not Paid ✗</span>
-                    )}
-                  </div>
-                  <div className="text-[10px] bg-white/10 px-2 py-1 rounded-full text-center">
-                    View Agent
-                  </div>
-                </div>
-              </Link>
-            ))}
+
+          {/* Public Bots Column */}
+          <div>
+            <h2 className="text-xl font-bold mb-4 text-center">Public AI Agents</h2>
+            {publicBots.length === 0 ? (
+              <div className="text-center text-gray-400 py-12">
+                <p>No public agents available yet.</p>
+                <p className="mt-2">Make your agent public to see it here!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {publicBots.map((bot) => (
+                  <Link
+                    key={bot.id}
+                    href={`/bot/${bot.id}`}
+                    className="flex bg-black/50 backdrop-blur-sm rounded-lg p-4 hover:bg-black/60 transition-colors flex-col"
+                  >
+                    <div className="relative w-full aspect-square mb-2">
+                      <Image
+                        src={bot.imageUrl}
+                        alt={bot.name}
+                        fill
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
+                    <h3 className="text-base font-bold mb-1">{bot.name}</h3>
+                    <div className="mt-auto">
+                      <div className="text-[10px] bg-white/10 px-2 py-1 rounded-full text-center">
+                        Chat Now
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </main>
   );
