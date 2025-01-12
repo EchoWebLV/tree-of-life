@@ -12,7 +12,6 @@ export async function GET() {
           { error: null } // Ensure there were no deployment errors
         ]
       },
-      take: 12,
       orderBy: {
         createdAt: 'desc'
       },
