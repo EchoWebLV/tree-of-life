@@ -15,7 +15,7 @@ import TwitterSettingsModal from './TwitterSettingsModal';
 import TweetModal from './TweetModal';
 import DeployModal from './DeployModal';
 import { checkTokenBalance } from '../utils/tokenCheck';
-import { IoWalletOutline } from "react-icons/io5";
+import { IoWalletOutline, IoGlobeOutline } from "react-icons/io5";
 import WalletDetailsModal from './WalletDetailsModal';
 import { Keypair } from '@solana/web3.js';
 import DeploymentModal from './DeploymentModal';
@@ -91,6 +91,7 @@ export default function WindowManager({
     feature: '',
     requiredTokens: 0,
   });
+  const [makingPublic, setMakingPublic] = useState<string | null>(null);
 
   // Detect mobile device on mount and window resize
   useEffect(() => {
@@ -345,6 +346,70 @@ export default function WindowManager({
     );
   };
 
+  const handleMakePublic = async (bot: Bot) => {
+    try {
+      setMakingPublic(bot.id);
+      
+      // Update the bot's isPublic status
+      const response = await fetch(`/api/bots/${bot.id}/public`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isPublic: !bot.isPublic
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update bot visibility');
+      }
+
+      // If making public and no landing page exists, create one
+      if (!bot.isPublic) {
+        const landingResponse = await fetch('/api/landing-page', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            botId: bot.id,
+            name: bot.name,
+            imageUrl: bot.imageUrl,
+            personality: bot.personality,
+            background: bot.background
+          }),
+        });
+
+        const landingData = await landingResponse.json();
+        if (!landingResponse.ok) {
+          throw new Error(landingData.error || 'Failed to create landing page');
+        }
+
+        toast.success(`Bot is now public! Landing page created at ${window.location.origin}${landingData.landingPageUrl}`);
+      } else {
+        toast.success('Bot is now private');
+      }
+
+      // Update the bot in the windows array
+      const updatedBot = windows.find(b => b.id === bot.id);
+      if (updatedBot) {
+        updatedBot.isPublic = data.isPublic;
+      }
+    } catch (error) {
+      console.error('Error updating bot visibility:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update bot visibility');
+    } finally {
+      setMakingPublic(null);
+    }
+  };
+
+  const getPublicTooltipContent = (bot: Bot) => {
+    if (makingPublic === bot.id) return 'Updating...';
+    return bot.isPublic ? 'Make Private' : 'Make Public';
+  };
+
   return (
     <AnimatePresence mode="popLayout">
       {windows.map((bot) => {
@@ -486,6 +551,37 @@ export default function WindowManager({
                                   sideOffset={5}
                                 >
                                   Edit Bot Settings
+                                  <Tooltip.Arrow className="fill-black/90" />
+                                </Tooltip.Content>
+                              </Tooltip.Portal>
+                            </Tooltip.Root>
+                          </Tooltip.Provider>
+
+                          <Tooltip.Provider delayDuration={0}>
+                            <Tooltip.Root>
+                              <Tooltip.Trigger asChild>
+                                <button
+                                  onClick={() => handleMakePublic(bot)}
+                                  disabled={makingPublic === bot.id}
+                                  className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
+                                           text-white rounded-full hover:opacity-90 transition-opacity
+                                           disabled:opacity-50"
+                                >
+                                  {makingPublic === bot.id ? (
+                                    <div className="w-4 h-4 flex items-center justify-center">
+                                      <LoadingDots size="sm" />
+                                    </div>
+                                  ) : (
+                                    <IoGlobeOutline className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </Tooltip.Trigger>
+                              <Tooltip.Portal>
+                                <Tooltip.Content
+                                  className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                  sideOffset={5}
+                                >
+                                  {getPublicTooltipContent(bot)}
                                   <Tooltip.Arrow className="fill-black/90" />
                                 </Tooltip.Content>
                               </Tooltip.Portal>
@@ -751,6 +847,38 @@ export default function WindowManager({
                                 sideOffset={5}
                               >
                                 {getXTooltipContent(bot)}
+                                <Tooltip.Arrow className="fill-black/90" />
+                              </Tooltip.Content>
+                            </Tooltip.Portal>
+                          </Tooltip.Root>
+                        </Tooltip.Provider>
+
+                        <Tooltip.Provider>
+                          <Tooltip.Root>
+                            <Tooltip.Trigger asChild>
+                              <button
+                                onClick={() => handleMakePublic(bot)}
+                                disabled={makingPublic === bot.id}
+                                className="flex items-center gap-2 p-2 bg-gradient-to-r from-gray-500 to-gray-600 
+                                         text-white rounded-lg hover:opacity-90 transition-opacity w-full
+                                         disabled:opacity-50"
+                              >
+                                {makingPublic === bot.id ? (
+                                  <div className="w-5 h-5 flex items-center justify-center">
+                                    <LoadingDots size="sm" />
+                                  </div>
+                                ) : (
+                                  <IoGlobeOutline className="w-5 h-5" />
+                                )}
+                                <span className="text-sm">{bot.isPublic ? 'Make Private' : 'Make Public'}</span>
+                              </button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Portal>
+                              <Tooltip.Content
+                                className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                sideOffset={5}
+                              >
+                                {getPublicTooltipContent(bot)}
                                 <Tooltip.Arrow className="fill-black/90" />
                               </Tooltip.Content>
                             </Tooltip.Portal>

@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { randomUUID } from 'crypto';
 
 export async function POST(request: Request) {
   try {
-    const { bot, tokenAddress } = await request.json();
+    const body = await request.json();
+    const { botId, name, imageUrl, personality, background, tokenAddress } = body;
     
-    if (!bot || !tokenAddress) {
+    if (!botId || !name || !imageUrl || !personality || !background) {
       return NextResponse.json(
         { error: 'Missing required data' },
         { status: 400 }
@@ -14,12 +16,13 @@ export async function POST(request: Request) {
 
     const landingPage = await prisma.landingPage.create({
       data: {
-        tokenAddress,
-        botId: bot.id,
-        name: bot.name,
-        imageUrl: bot.imageUrl,
-        personality: bot.personality,
-        background: bot.background
+        tokenAddress: tokenAddress || randomUUID(),
+        botId,
+        name,
+        imageUrl,
+        personality,
+        background,
+        status: 'completed'
       }
     });
 

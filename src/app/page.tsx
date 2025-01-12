@@ -15,6 +15,15 @@ interface Token {
   isDexPaid?: boolean;
 }
 
+interface PublicBot {
+  id: string;
+  name: string;
+  imageUrl: string;
+  personality: string;
+  background: string;
+  createdAt: string;
+}
+
 interface DexOrder {
   type: string;
   status: string;
@@ -23,8 +32,13 @@ interface DexOrder {
 
 export default function Home() {
   const [latestTokens, setLatestTokens] = useState<Token[]>([]);
+  const [publicBots, setPublicBots] = useState<PublicBot[]>([]);
   const [showTutorials, setShowTutorials] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [tokenPage, setTokenPage] = useState(1);
+  const [botPage, setBotPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const itemsPerPage = 10;
   
   const slides = [
     { src: '/coingeko.png', alt: 'CoinGeko', href: 'https://www.coingecko.com/en/coins/druid-ai' },
@@ -98,14 +112,45 @@ export default function Home() {
     }
   };
 
+  const fetchPublicBots = async () => {
+    try {
+      const response = await fetch('/api/public-bots');
+      if (!response.ok) {
+        throw new Error('Failed to fetch public bots');
+      }
+      const data = await response.json();
+      setPublicBots(data);
+    } catch (error) {
+      console.error('Error fetching public bots:', error);
+    }
+  };
+
+  // Filter function for both tokens and bots
+  const filteredTokens = latestTokens.filter(token =>
+    token.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredBots = publicBots.filter(bot =>
+    bot.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Reset pages when search changes
+  useEffect(() => {
+    setTokenPage(1);
+    setBotPage(1);
+  }, [searchQuery]);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchLatestTokens();
+    fetchPublicBots();
     
-    // Set up polling interval (every 30 seconds to respect rate limit)
-    const interval = setInterval(fetchLatestTokens, 30000);
+    // Set up polling interval (every 30 seconds)
+    const interval = setInterval(() => {
+      fetchLatestTokens();
+      fetchPublicBots();
+    }, 30000);
     
-    // Cleanup interval on component unmount
     return () => clearInterval(interval);
   }, []);
 
@@ -128,10 +173,9 @@ export default function Home() {
       </div>
 
       {/* Content with higher z-index */}
-      <div className="w-full max-w-4xl relative z-10">
+      <div className="w-full max-w-7xl relative z-10">
         <div className="text-center mb-8">
           <Logo />
-          <h2 className="text-xl">Latest AI Agents Launched On Pump</h2>
           <div className="mt-4 flex justify-center gap-4">
             <Link 
               href="/main" 
@@ -146,7 +190,7 @@ export default function Home() {
               View Tutorials
             </button>
           </div>
-          
+
           {/* Slideshow */}
           <div className="mt-8 relative w-full max-w-xl mx-auto">
             <div className="overflow-hidden rounded-lg h-32">
@@ -199,46 +243,156 @@ export default function Home() {
               ))}
             </div>
           </div>
+
+          {/* Search Bar */}
+          <div className="mt-12 max-w-md mx-auto">
+            <input
+              type="text"
+              placeholder="Search tokens and agents..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 bg-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/20 text-white placeholder-gray-400"
+            />
+          </div>
         </div>
 
-        {latestTokens.length === 0 ? (
-          <div className="text-center text-gray-400 py-12">
-            <p>No tokens have been deployed yet.</p>
-            <p className="mt-2">Be the first to create one!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {latestTokens.map((token) => (
-              <Link
-                key={token.id}
-                href={`/token/${token.tokenAddress}`}
-                className="flex bg-black/50 backdrop-blur-sm rounded-lg p-6 hover:bg-black/60 transition-colors flex-col h-full"
-              >
-                <div className="relative w-full aspect-square mb-4">
-                  <Image
-                    src={token.imageUrl}
-                    alt={token.name}
-                    fill
-                    className="object-cover rounded-lg"
-                  />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Deployed Tokens Column */}
+          <div>
+            <h2 className="text-xl font-bold mb-4 text-center">Latest Deployed Tokens</h2>
+            {filteredTokens.length === 0 ? (
+              <div className="text-center text-gray-400 py-12">
+                <p>{searchQuery ? 'No matching tokens found' : 'No tokens have been deployed yet.'}</p>
+                <p className="mt-2">{searchQuery ? 'Try a different search term' : 'Be the first to create one!'}</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-4">
+                  {filteredTokens
+                    .slice((tokenPage - 1) * itemsPerPage, tokenPage * itemsPerPage)
+                    .map((token) => (
+                    <Link
+                      key={token.id}
+                      href={`/token/${token.tokenAddress}`}
+                      className="flex bg-black/50 backdrop-blur-sm rounded-lg p-4 hover:bg-black/60 transition-colors items-center gap-4"
+                    >
+                      <div className="relative w-24 h-24 flex-shrink-0">
+                        <Image
+                          src={token.imageUrl}
+                          alt={token.name}
+                          fill
+                          className="object-cover rounded-lg"
+                        />
+                      </div>
+                      <div className="flex flex-col flex-grow">
+                        <h3 className="text-lg font-bold mb-2">{token.name}</h3>
+                        <div className="flex items-center gap-4">
+                          <div className="text-sm">
+                            {token.isDexPaid ? (
+                              <span className="text-green-400">DEX Paid ✓</span>
+                            ) : (
+                              <span className="text-gray-400">DEX Not Paid ✗</span>
+                            )}
+                          </div>
+                          <div className="text-xs bg-white/10 px-3 py-1 rounded-full">
+                            View Token
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-                <h2 className="text-lg font-bold mb-2">{token.name}</h2>
-                <div className="flex flex-col gap-2 mt-auto">
-                  <div className="text-sm text-gray-400">
-                    {token.isDexPaid ? (
-                      <span className="text-green-400">DEX Paid ✓</span>
-                    ) : (
-                      <span className="text-gray-400">DEX Not Paid ✗</span>
-                    )}
+                {filteredTokens.length > itemsPerPage && (
+                  <div className="flex justify-center items-center gap-2 mt-4">
+                    <button
+                      onClick={() => setTokenPage(p => Math.max(1, p - 1))}
+                      disabled={tokenPage === 1}
+                      className="px-3 py-1 bg-white/10 rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:hover:bg-white/10"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm text-gray-400">
+                      Page {tokenPage} of {Math.ceil(filteredTokens.length / itemsPerPage)}
+                    </span>
+                    <button
+                      onClick={() => setTokenPage(p => Math.min(Math.ceil(filteredTokens.length / itemsPerPage), p + 1))}
+                      disabled={tokenPage >= Math.ceil(filteredTokens.length / itemsPerPage)}
+                      className="px-3 py-1 bg-white/10 rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:hover:bg-white/10"
+                    >
+                      Next
+                    </button>
                   </div>
-                  <div className="text-[10px] bg-white/10 px-2 py-1 rounded-full text-center">
-                    View Agent
-                  </div>
-                </div>
-              </Link>
-            ))}
+                )}
+              </>
+            )}
           </div>
-        )}
+
+          {/* Public Bots Column */}
+          <div>
+            <h2 className="text-xl font-bold mb-4 text-center">Public AI Agents</h2>
+            {filteredBots.length === 0 ? (
+              <div className="text-center text-gray-400 py-12">
+                <p>{searchQuery ? 'No matching agents found' : 'No public agents available yet.'}</p>
+                <p className="mt-2">{searchQuery ? 'Try a different search term' : 'Make your agent public to see it here!'}</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-4">
+                  {filteredBots
+                    .slice((botPage - 1) * itemsPerPage, botPage * itemsPerPage)
+                    .map((bot) => (
+                    <Link
+                      key={bot.id}
+                      href={`/bot/${bot.id}`}
+                      className="flex bg-black/50 backdrop-blur-sm rounded-lg p-4 hover:bg-black/60 transition-colors items-center gap-4"
+                    >
+                      <div className="relative w-24 h-24 flex-shrink-0">
+                        <Image
+                          src={bot.imageUrl}
+                          alt={bot.name}
+                          fill
+                          className="object-cover rounded-lg"
+                        />
+                      </div>
+                      <div className="flex flex-col flex-grow">
+                        <h3 className="text-lg font-bold mb-2">{bot.name}</h3>
+                        <div className="flex items-center gap-4">
+                          <div className="text-sm text-gray-400">
+                            AI Agent
+                          </div>
+                          <div className="text-xs bg-white/10 px-3 py-1 rounded-full">
+                            Chat Now
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                {filteredBots.length > itemsPerPage && (
+                  <div className="flex justify-center items-center gap-2 mt-4">
+                    <button
+                      onClick={() => setBotPage(p => Math.max(1, p - 1))}
+                      disabled={botPage === 1}
+                      className="px-3 py-1 bg-white/10 rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:hover:bg-white/10"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm text-gray-400">
+                      Page {botPage} of {Math.ceil(filteredBots.length / itemsPerPage)}
+                    </span>
+                    <button
+                      onClick={() => setBotPage(p => Math.min(Math.ceil(filteredBots.length / itemsPerPage), p + 1))}
+                      disabled={botPage >= Math.ceil(filteredBots.length / itemsPerPage)}
+                      className="px-3 py-1 bg-white/10 rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:hover:bg-white/10"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );
