@@ -94,7 +94,34 @@ export async function POST(request: Request) {
     // Deploy token first
     await deployToken(bot, mint, tokenAddress, clientToken, description, ticker, solAmount);
 
-    // Only if deployment succeeds, create landing page
+    // Check if a landing page already exists for this bot
+    const existingPage = await prisma.landingPage.findFirst({
+      where: { botId: bot.id }
+    });
+
+    if (existingPage) {
+      // Update existing landing page with token address
+      await prisma.landingPage.update({
+        where: { id: existingPage.id },
+        data: {
+          tokenAddress,
+          personality: description || bot.personality,
+          status: "completed",
+          website,
+          twitter,
+          telegram,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        tokenAddress,
+        landingPageUrl: `/token/${tokenAddress}`,
+        message: "Token deployment completed",
+      });
+    }
+
+    // If no landing page exists, create a new one
     await prisma.landingPage.create({
       data: {
         tokenAddress,

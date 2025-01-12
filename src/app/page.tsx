@@ -139,6 +139,12 @@ export default function Home() {
             >
               Launch App
             </Link>
+            <Link 
+              href="/public" 
+              className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+            >
+              Public Bots
+            </Link>
             <button
               onClick={() => setShowTutorials(true)}
               className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"

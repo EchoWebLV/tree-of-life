@@ -68,6 +68,7 @@ export default function WindowManager({
   const [hasTwitterSettings, setHasTwitterSettings] = useState<Record<string, boolean>>({});
   const [tweetModalBot, setTweetModalBot] = useState<Bot | null>(null);
   const [deployModalBot, setDeployModalBot] = useState<Bot | null>(null);
+  const [isPublishing, setIsPublishing] = useState<string | null>(null);
   const wallet = useWallet();
   const [isMobile, setIsMobile] = useState(false);
   const [hasEnoughTokens, setHasEnoughTokens] = useState(false);
@@ -345,6 +346,41 @@ export default function WindowManager({
     );
   };
 
+  const handleMakePublic = async (bot: Bot) => {
+    try {
+      setIsPublishing(bot.id);
+      const response = await fetch('/api/landing-page', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bot,
+          tokenAddress: 'no-token'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to make bot public');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Bot is now public!');
+        // Open the landing page in a new tab
+        window.open(`${window.location.origin}${data.landingPageUrl}`, '_blank');
+      } else if (data.message === 'Bot is already public') {
+        toast.info('Bot is already public');
+        window.open(`${window.location.origin}${data.landingPageUrl}`, '_blank');
+      }
+    } catch (error) {
+      console.error('Error making bot public:', error);
+      toast.error('Failed to make bot public');
+    } finally {
+      setIsPublishing(null);
+    }
+  };
+
   return (
     <AnimatePresence mode="popLayout">
       {windows.map((bot) => {
@@ -552,7 +588,7 @@ export default function WindowManager({
                             </Tooltip.Root>
                           </Tooltip.Provider>
 
-                          <Tooltip.Provider delayDuration={0}>
+                          <Tooltip.Provider>
                             <Tooltip.Root>
                               <Tooltip.Trigger asChild>
                                 <button
@@ -569,6 +605,50 @@ export default function WindowManager({
                                   sideOffset={5}
                                 >
                                   {getXTooltipContent(bot)}
+                                  <Tooltip.Arrow className="fill-black/90" />
+                                </Tooltip.Content>
+                              </Tooltip.Portal>
+                            </Tooltip.Root>
+                          </Tooltip.Provider>
+
+                          <Tooltip.Provider>
+                            <Tooltip.Root>
+                              <Tooltip.Trigger asChild>
+                                <button
+                                  onClick={() => handleMakePublic(bot)}
+                                  className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 
+                                           text-white rounded-full hover:opacity-90 transition-opacity"
+                                  disabled={isPublishing === bot.id}
+                                >
+                                  {isPublishing === bot.id ? (
+                                    <div className="w-4 h-4 flex items-center justify-center">
+                                      <LoadingDots size="sm" />
+                                    </div>
+                                  ) : (
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                      <polyline points="15 3 21 3 21 9" />
+                                      <line x1="10" y1="14" x2="21" y2="3" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </Tooltip.Trigger>
+                              <Tooltip.Portal>
+                                <Tooltip.Content
+                                  className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                  sideOffset={5}
+                                >
+                                  Make this bot public on the front page
                                   <Tooltip.Arrow className="fill-black/90" />
                                 </Tooltip.Content>
                               </Tooltip.Portal>
@@ -751,6 +831,51 @@ export default function WindowManager({
                                 sideOffset={5}
                               >
                                 {getXTooltipContent(bot)}
+                                <Tooltip.Arrow className="fill-black/90" />
+                              </Tooltip.Content>
+                            </Tooltip.Portal>
+                          </Tooltip.Root>
+                        </Tooltip.Provider>
+
+                        <Tooltip.Provider>
+                          <Tooltip.Root>
+                            <Tooltip.Trigger asChild>
+                              <button
+                                onClick={() => handleMakePublic(bot)}
+                                className="flex items-center gap-2 p-2 bg-gradient-to-r from-gray-500 to-gray-600 
+                                         text-white rounded-lg hover:opacity-90 transition-opacity w-full"
+                                disabled={isPublishing === bot.id}
+                              >
+                                {isPublishing === bot.id ? (
+                                  <div className="w-5 h-5 flex items-center justify-center">
+                                    <LoadingDots size="sm" />
+                                  </div>
+                                ) : (
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                    <polyline points="15 3 21 3 21 9" />
+                                    <line x1="10" y1="14" x2="21" y2="3" />
+                                  </svg>
+                                )}
+                                <span className="text-sm">Make Public</span>
+                              </button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Portal>
+                              <Tooltip.Content
+                                className="bg-black/90 text-white text-xs py-1 px-2 rounded"
+                                sideOffset={5}
+                              >
+                                Make this bot public on the front page
                                 <Tooltip.Arrow className="fill-black/90" />
                               </Tooltip.Content>
                             </Tooltip.Portal>

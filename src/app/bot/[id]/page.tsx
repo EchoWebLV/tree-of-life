@@ -38,14 +38,16 @@ export default async function BotLandingPage({ params }: PageProps) {
           </div>
           <div>
             <h1 className="text-2xl font-bold">{landingPage.name}</h1>
-            <a 
-              href={`https://pump.fun/token/${landingPage.tokenAddress}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:underline"
-            >
-              View on Pump.Fun
-            </a>
+            {landingPage.tokenAddress && landingPage.tokenAddress !== 'no-token' && (
+              <a 
+                href={`https://pump.fun/token/${landingPage.tokenAddress}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:underline"
+              >
+                View on Pump.Fun
+              </a>
+            )}
           </div>
         </div>
         
