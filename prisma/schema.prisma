@@ -17,7 +17,6 @@ model Bot {
   authToken   String   @default(uuid())
   clientToken String
   isPublic    Boolean  @default(false)
-  madePublicAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   twitterSettings TwitterSettings?

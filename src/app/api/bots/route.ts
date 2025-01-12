@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       where: {
         clientToken: clientToken
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
         name: true,
@@ -25,7 +25,6 @@ export async function GET(request: Request) {
         createdAt: true,
         updatedAt: true,
         isPublic: true,
-        // Explicitly exclude madePublicAt if it doesn't exist in the database
       }
     });
 
@@ -44,7 +43,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { clientToken, ...botData } = body;
+    const { clientToken, name, imageUrl, personality, background } = body;
 
     if (!clientToken) {
       return NextResponse.json(
@@ -55,8 +54,12 @@ export async function POST(request: Request) {
 
     const bot = await prisma.bot.create({
       data: {
-        ...botData,
-        clientToken: clientToken,
+        name,
+        imageUrl,
+        personality,
+        background,
+        clientToken,
+        isPublic: false,
       },
     });
 
