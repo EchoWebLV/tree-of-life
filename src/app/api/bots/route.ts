@@ -15,11 +15,25 @@ export async function GET(request: Request) {
         clientToken: clientToken
       },
       orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        imageUrl: true,
+        personality: true,
+        background: true,
+        clientToken: true,
+        createdAt: true,
+        updatedAt: true,
+        isPublic: true,
+        // Explicitly exclude madePublicAt if it doesn't exist in the database
+      }
     });
 
     return NextResponse.json(bots || []);
   } catch (error) {
-    console.error('Error fetching bots:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error fetching bots:', errorMessage);
+    
     return NextResponse.json(
       { error: 'Failed to fetch bots' },
       { status: 500 }
