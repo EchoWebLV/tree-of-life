@@ -1,9 +1,51 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { headers } from 'next/headers';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
+const MAX_REQUESTS_PER_WINDOW = 20; // 20 requests per minute
+
+// In-memory store for rate limiting
+const rateLimitStore = new Map<string, { count: number; timestamp: number }>();
+
+// Clean up old entries every hour
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of rateLimitStore.entries()) {
+    if (now - value.timestamp > RATE_LIMIT_WINDOW) {
+      rateLimitStore.delete(key);
+    }
+  }
+}, 60 * 60 * 1000);
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const userRateLimit = rateLimitStore.get(ip);
+
+  if (!userRateLimit) {
+    rateLimitStore.set(ip, { count: 1, timestamp: now });
+    return false;
+  }
+
+  if (now - userRateLimit.timestamp > RATE_LIMIT_WINDOW) {
+    // Reset if window has passed
+    rateLimitStore.set(ip, { count: 1, timestamp: now });
+    return false;
+  }
+
+  if (userRateLimit.count >= MAX_REQUESTS_PER_WINDOW) {
+    return true;
+  }
+
+  // Increment count
+  userRateLimit.count += 1;
+  return false;
+}
 
 async function getCryptoPrice(coin: string, request: Request) {
   try {
@@ -31,6 +73,18 @@ async function getCryptoPrice(coin: string, request: Request) {
 
 export async function POST(request: Request) {
   try {
+    // Get IP address from headers
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const ip = forwardedFor ? forwardedFor.split(',')[0] : 'unknown';
+
+    // Check rate limit
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const { messages, persona } = await request.json();
     
     const systemPrompt = `You are ${persona.name}. ${persona.personality} ${persona.background}

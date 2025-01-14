@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { DAILY_MESSAGE_LIMIT, getMessageCount, incrementMessageCount } from '../utils/messageLimit';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { checkTokenBalance } from '../utils/tokenCheck';
 
@@ -27,7 +26,6 @@ const UNCENSORED_STORAGE_KEY = 'uncensored_bots';
 export default function Chat({ persona }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [messageCount, setMessageCount] = useState(() => getMessageCount());
   const [isLoading, setIsLoading] = useState(false);
   const [isUncensored, setIsUncensored] = useState(() => {
     const uncensoredBots = JSON.parse(localStorage.getItem(UNCENSORED_STORAGE_KEY) || '{}');
@@ -124,15 +122,9 @@ export default function Chat({ persona }: ChatProps) {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    if (!incrementMessageCount()) {
-      alert(`You've reached your daily limit of ${DAILY_MESSAGE_LIMIT} messages. Please try again tomorrow.`);
-      return;
-    }
-
     const userMessage = { role: 'user' as const, content: input };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
-    setMessageCount(getMessageCount());
     setIsLoading(true);
 
     try {
@@ -193,9 +185,6 @@ export default function Chat({ persona }: ChatProps) {
           >
             {isUncensored ? 'Uncensored' : 'Natural'}
           </button>
-        </div>
-        <div className="text-xs text-white/50 italic">
-          {messageCount.count}/{DAILY_MESSAGE_LIMIT} messages remaining
         </div>
       </div>
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white">
