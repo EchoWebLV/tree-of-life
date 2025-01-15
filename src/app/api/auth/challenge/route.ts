@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const nonce = randomBytes(32).toString('base64');
     
     // Create a challenge message
-    const message = `Welcome to Tree of Life!
+    const message = `Welcome to Druid AI!
 
 Please sign this message to verify your wallet ownership. This will not trigger a blockchain transaction or cost any gas fees.
 

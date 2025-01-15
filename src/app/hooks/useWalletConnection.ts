@@ -106,7 +106,7 @@ export const useWalletConnection = () => {
     };
 
     connectWallet();
-  }, [connected, publicKey, signMessage, isConnecting]);
+  }, [connected, publicKey, signMessage]);
 
   return {
     isConnecting,
