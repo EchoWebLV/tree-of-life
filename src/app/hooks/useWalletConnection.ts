@@ -8,6 +8,20 @@ export const useWalletConnection = () => {
   const { publicKey, connected, signMessage } = useWallet();
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previouslyConnected, setPreviouslyConnected] = useState(false);
+
+  // Handle wallet disconnection
+  useEffect(() => {
+    if (previouslyConnected && !connected) {
+      console.log('Wallet disconnected, cleaning up clientToken');
+      localStorage.removeItem('clientToken');
+      // Generate a new client token for the anonymous session
+      getClientToken();
+      // Reload page to refresh state
+      window.location.reload();
+    }
+    setPreviouslyConnected(connected);
+  }, [connected, previouslyConnected]);
 
   useEffect(() => {
     const connectWallet = async () => {
@@ -65,17 +79,20 @@ export const useWalletConnection = () => {
         console.log('API response:', data);
 
         if (!response.ok) {
+          if (data.clientToken && data.clientToken !== clientToken) {
+            // If the wallet is already associated with a different client token,
+            // switch to using that token
+            console.log('Switching to existing client token:', data.clientToken);
+            localStorage.setItem('clientToken', data.clientToken);
+            toast.success('Connected to existing account');
+            // Reload the page to refresh data with new client token
+            window.location.reload();
+            return;
+          }
+          
           console.error('API error:', data);
           setError(data.error || 'Failed to connect wallet');
-          // If the wallet is already connected to a different client token,
-          // update the local storage with that token
-          if (data.clientToken) {
-            console.log('Updating client token:', data.clientToken);
-            localStorage.setItem('clientToken', data.clientToken);
-            toast.success('Using existing account for this wallet');
-          } else {
-            toast.error(data.error || 'Failed to connect wallet');
-          }
+          toast.error(data.error || 'Failed to connect wallet');
         } else {
           console.log('Wallet connected successfully');
           toast.success('Wallet connected successfully');
