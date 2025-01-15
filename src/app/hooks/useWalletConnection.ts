@@ -13,7 +13,6 @@ export const useWalletConnection = () => {
   // Handle wallet disconnection
   useEffect(() => {
     if (previouslyConnected && !connected) {
-      console.log('Wallet disconnected, cleaning up clientToken');
       localStorage.removeItem('clientToken');
       // Generate a new client token for the anonymous session
       getClientToken();
@@ -107,7 +106,7 @@ export const useWalletConnection = () => {
     };
 
     connectWallet();
-  }, [connected, publicKey, signMessage]);
+  }, [connected, publicKey, signMessage, isConnecting]);
 
   return {
     isConnecting,
