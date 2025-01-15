@@ -42,6 +42,7 @@
     "react-snowstorm": "^0.0.3",
     "sharp": "^0.33.5",
     "sonner": "^1.7.1",
+    "tweetnacl": "^1.0.3",
     "twitter-api-v2": "^1.19.0"
   },
   "devDependencies": {

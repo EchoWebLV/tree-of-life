@@ -3,14 +3,30 @@
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useEffect, useState } from 'react';
+import { useWalletConnection } from '../hooks/useWalletConnection';
+import { toast } from 'sonner';
 
 export default function WalletButton() {
   const [mounted, setMounted] = useState(false);
-  const { connected } = useWallet();
+  const { connected, publicKey } = useWallet();
+  const { error, isConnecting } = useWalletConnection();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  // Debug logging
+  useEffect(() => {
+    if (connected) {
+      console.log('Wallet connected:', publicKey?.toString());
+    }
+  }, [connected, publicKey]);
 
   if (!mounted) return null;
 
