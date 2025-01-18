@@ -1,6 +1,34 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { headers } from 'next/headers';
+import { prisma } from '@/lib/prisma';
+
+interface APISettings {
+  crypto: boolean;
+  news: boolean;
+  weather: boolean;
+  exchange: boolean;
+}
+
+function getAPISettings(settings: unknown): APISettings {
+  const defaultSettings: APISettings = {
+    crypto: true,
+    news: true,
+    weather: true,
+    exchange: true
+  };
+
+  if (typeof settings !== 'object' || !settings) {
+    return defaultSettings;
+  }
+
+  const s = settings as Record<string, unknown>;
+  return {
+    crypto: typeof s.crypto === 'boolean' ? s.crypto : true,
+    news: typeof s.news === 'boolean' ? s.news : true,
+    weather: typeof s.weather === 'boolean' ? s.weather : true,
+    exchange: typeof s.exchange === 'boolean' ? s.exchange : true
+  };
+}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -71,6 +99,77 @@ async function getCryptoPrice(coin: string, request: Request) {
   }
 }
 
+async function getNews(query: string, request: Request) {
+  try {
+    const url = new URL(request.url);
+    const response = await fetch(`${url.origin}/api/news?q=${encodeURIComponent(query)}`);
+    
+    if (!response.ok) {
+      console.error('News fetch failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url
+      });
+      return null;
+    }
+    
+    const data = await response.json();
+    console.log('News data received:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching news:', error);
+    return null;
+  }
+}
+
+async function getWeather(city: string, request: Request) {
+  try {
+    const url = new URL(request.url);
+    const response = await fetch(`${url.origin}/api/weather?city=${encodeURIComponent(city)}`);
+    
+    if (!response.ok) {
+      console.error('Weather fetch failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url
+      });
+      return null;
+    }
+    
+    const data = await response.json();
+    console.log('Weather data received:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching weather:', error);
+    return null;
+  }
+}
+
+async function getExchangeRate(base: string, target: string, request: Request) {
+  try {
+    const url = new URL(request.url);
+    const response = await fetch(
+      `${url.origin}/api/exchange-rate?base=${encodeURIComponent(base)}&target=${encodeURIComponent(target)}`
+    );
+    
+    if (!response.ok) {
+      console.error('Exchange rate fetch failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url
+      });
+      return null;
+    }
+    
+    const data = await response.json();
+    console.log('Exchange rate data received:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching exchange rate:', error);
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     // Get IP address from headers
@@ -114,6 +213,91 @@ export async function POST(request: Request) {
     Respond while staying true to your character's unique voice and personality. Keep responses SHORT and snappy. Write like you're having a casual chat!
     Remember: Brief responses only. No emojis. Stay in character.`;
 
+    // Get bot settings
+    const botSettings = await prisma.botSettings.findUnique({
+      where: {
+        botId: persona.id,
+      },
+    });
+
+    // Default settings if none exist
+    const apiSettings = getAPISettings(botSettings?.apiSettings);
+
+    // Filter available functions based on settings
+    const availableFunctions = [];
+    
+    if (apiSettings.crypto) {
+      availableFunctions.push({
+        name: "getCryptoPrice",
+        description: "Get the current price, 24h change, and market cap for a cryptocurrency",
+        parameters: {
+          type: "object",
+          properties: {
+            coin: {
+              type: "string",
+              description: "The name or symbol of the cryptocurrency (e.g., bitcoin, ethereum, etc.)"
+            }
+          },
+          required: ["coin"]
+        }
+      });
+    }
+
+    if (apiSettings.news) {
+      availableFunctions.push({
+        name: "getNews",
+        description: "Get the latest news articles about a specific topic",
+        parameters: {
+          type: "object",
+          properties: {
+            query: {
+              type: "string",
+              description: "The topic to search news for (e.g., bitcoin, ethereum, technology, etc.)"
+            }
+          },
+          required: ["query"]
+        }
+      });
+    }
+
+    if (apiSettings.weather) {
+      availableFunctions.push({
+        name: "getWeather",
+        description: "Get the current weather for a city",
+        parameters: {
+          type: "object",
+          properties: {
+            city: {
+              type: "string",
+              description: "The name of the city to get weather for (e.g., London, New York, Tokyo)"
+            }
+          },
+          required: ["city"]
+        }
+      });
+    }
+
+    if (apiSettings.exchange) {
+      availableFunctions.push({
+        name: "getExchangeRate",
+        description: "Get the current exchange rate between two currencies",
+        parameters: {
+          type: "object",
+          properties: {
+            base: {
+              type: "string",
+              description: "The base currency code (e.g., USD, EUR, GBP)"
+            },
+            target: {
+              type: "string",
+              description: "The target currency code (e.g., EUR, JPY, GBP)"
+            }
+          },
+          required: ["base", "target"]
+        }
+      });
+    }
+
     // First completion with function calling
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -121,34 +305,50 @@ export async function POST(request: Request) {
         { role: "system", content: systemPrompt },
         ...messages
       ],
-      functions: [
-        {
-          name: "getCryptoPrice",
-          description: "Get the current price, 24h change, and market cap for a cryptocurrency",
-          parameters: {
-            type: "object",
-            properties: {
-              coin: {
-                type: "string",
-                description: "The name or symbol of the cryptocurrency (e.g., bitcoin, ethereum, etc.)"
-              }
-            },
-            required: ["coin"]
-          }
-        }
-      ],
+      functions: availableFunctions,
       function_call: "auto",
       max_tokens: 120,
     });
 
     const responseMessage = response.choices[0].message;
 
-    // Check if the model wants to call the function
+    // Check if the model wants to call a function
     if (responseMessage.function_call) {
-      const functionArgs = JSON.parse(responseMessage.function_call.arguments);
-      const cryptoData = await getCryptoPrice(functionArgs.coin, request);
+      // Verify the function is enabled
+      const functionName = responseMessage.function_call.name;
+      const settings = getAPISettings(apiSettings);
+      const isEnabled = (
+        (functionName === "getCryptoPrice" && settings.crypto) ||
+        (functionName === "getNews" && settings.news) ||
+        (functionName === "getWeather" && settings.weather) ||
+        (functionName === "getExchangeRate" && settings.exchange)
+      );
 
-      // Second completion with the crypto data
+      if (!isEnabled) {
+        return NextResponse.json({ 
+          response: "I apologize, but that functionality is currently disabled."
+        });
+      }
+
+      let functionData = null;
+      const functionArgs = JSON.parse(responseMessage.function_call.arguments);
+      
+      switch (functionName) {
+        case "getCryptoPrice":
+          functionData = await getCryptoPrice(functionArgs.coin, request);
+          break;
+        case "getNews":
+          functionData = await getNews(functionArgs.query, request);
+          break;
+        case "getWeather":
+          functionData = await getWeather(functionArgs.city, request);
+          break;
+        case "getExchangeRate":
+          functionData = await getExchangeRate(functionArgs.base, functionArgs.target, request);
+          break;
+      }
+
+      // Second completion with the function data
       const secondResponse = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -157,8 +357,8 @@ export async function POST(request: Request) {
           responseMessage,
           {
             role: "function",
-            name: "getCryptoPrice",
-            content: JSON.stringify(cryptoData)
+            name: functionName,
+            content: JSON.stringify(functionData)
           }
         ],
         max_tokens: 120,

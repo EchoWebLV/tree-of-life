@@ -1,10 +1,13 @@
 export interface Bot {
   id: string;
   name: string;
-  imageUrl: string;
   personality: string;
   background: string;
-  isPublic?: boolean;
+  imageUrl: string;
+  clientToken: string;
+  createdAt: string;
+  updatedAt: string;
+  isPublic: boolean;
   wallet?: {
     publicKey: string;
     privateKey: string;

@@ -17,9 +17,16 @@ export interface Persona {
   imageUrl?: string;
 }
 
-export interface Bot extends Persona {
+export interface Bot {
   id: string;
+  name: string;
   imageUrl: string;
+  personality: string;
+  background: string;
+  clientToken: string;
+  createdAt: string;
+  updatedAt: string;
+  isPublic: boolean;
 }
 
 interface Message {

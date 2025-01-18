@@ -6,21 +6,17 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import WindowManager from './WindowManager';
 import { DeployParams } from './DeployModal';
-interface Bot {
-  id: string;
-  name: string;
-  imageUrl: string;
-  personality: string;
-  background: string;
-}
-interface DesktopInterfaceProps {
+import APIManager from './APIManager';
+import { Bot } from './types';
+
+export interface DesktopInterfaceProps {
   bots: Bot[];
-  onBotDelete: (botId: string) => void;
+  onBotDelete: (id: string) => void;
   isLoading: boolean;
   onUploadClick: () => void;
-  setBots: (bots: Bot[]) => void;
+  setBots: (bots: Bot[] | ((prev: Bot[]) => Bot[])) => void;
   isCreating?: boolean;
-  editModalBot: Bot | null;
+  editModalBot: Bot | null | undefined;
   onEditModalClose: () => void;
 }
 // Comment out or remove this constant
@@ -74,13 +70,15 @@ const DeploymentModal = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] pointer-events-auto"
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]"
+        onClick={onClose}
       >
         <motion.div
           initial={{ scale: 0.95 }}
           animate={{ scale: 1 }}
           exit={{ scale: 0.95 }}
-          className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4"
+          className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4 pointer-events-auto"
+          onClick={e => e.stopPropagation()}
         >
           <h3 className="text-xl font-semibold mb-4 text-white">Token Deployed Successfully! 🎉</h3>
           <div className="space-y-4">
@@ -183,13 +181,15 @@ const EditBotModal = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] pointer-events-auto"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]"
+          onClick={onClose}
         >
           <motion.div
             initial={{ scale: 0.95 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0.95 }}
-            className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4"
+            className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4 pointer-events-auto"
+            onClick={e => e.stopPropagation()}
           >
             <h3 className="text-xl font-semibold mb-4 text-white">Edit Bot Settings</h3>
             <form
@@ -205,7 +205,7 @@ const EditBotModal = ({
                 };
                 onSubmit(updatedBot);
               }}
-              className="space-y-4"
+              className="space-y-4 pointer-events-auto"
             >
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
@@ -257,6 +257,9 @@ const EditBotModal = ({
                   className="w-full bg-gray-800 rounded p-2 text-white h-24"
                 />
               </div>
+
+              <APIManager botId={bot.id} />
+              
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"

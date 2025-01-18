@@ -22,6 +22,7 @@ model Bot {
   twitterSettings TwitterSettings?
   wallet      BotWallet?
   messages    Message[]
+  settings    BotSettings?
 }
 
 model LandingPage {
@@ -87,4 +88,13 @@ model ClientWallet {
   walletAddress String   @unique
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model BotSettings {
+  id          String   @id @default(cuid())
+  botId       String   @unique
+  apiSettings Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  bot         Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
 }
