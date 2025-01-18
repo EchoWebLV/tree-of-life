@@ -188,7 +188,7 @@ const EditBotModal = ({
             initial={{ scale: 0.95 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0.95 }}
-            className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4 pointer-events-auto"
+            className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4 pointer-events-auto max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-xl font-semibold mb-4 text-white">Edit Bot Settings</h3>
@@ -205,7 +205,7 @@ const EditBotModal = ({
                 };
                 onSubmit(updatedBot);
               }}
-              className="space-y-4 pointer-events-auto"
+              className="space-y-4 pointer-events-auto overflow-y-auto flex-1 pr-2"
             >
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
