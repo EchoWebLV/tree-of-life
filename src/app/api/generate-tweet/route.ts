@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     just tweet text nothing else.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: "Generate a tweet that expresses your thoughts or shares something about yourself, possibly referencing your recent conversations if relevant." }
