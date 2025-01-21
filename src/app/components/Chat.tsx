@@ -148,7 +148,15 @@ export default function Chat({ persona }: ChatProps) {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
+      if (!data.response) {
+        throw new Error('Invalid response format from server');
+      }
+
       const assistantMessage = { role: 'assistant' as const, content: data.response };
       
       // Store assistant message
@@ -157,6 +165,29 @@ export default function Chat({ persona }: ChatProps) {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error:', error);
+      let errorMessage = 'Sorry, I encountered an error. Please try again.';
+      
+      if (error instanceof Error) {
+        const errorText = error.message.toLowerCase();
+        if (errorText.includes('429')) {
+          errorMessage = 'Too many requests. Please wait a moment before trying again.';
+        } else if (errorText.includes('api key')) {
+          errorMessage = isUncensored 
+            ? 'The uncensored chat service is currently unavailable. Please try switching to natural mode.'
+            : 'The chat service is currently unavailable. Please try again later.';
+        } else if (errorText.includes('invalid response format')) {
+          errorMessage = 'Received an invalid response. Please try again.';
+        } else if (errorText.includes('500')) {
+          errorMessage = isUncensored
+            ? 'The uncensored chat service encountered an error. Please try switching to natural mode.'
+            : 'The chat service encountered an error. Please try again later.';
+        }
+      }
+      
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: errorMessage
+      }]);
     } finally {
       setIsLoading(false);
     }

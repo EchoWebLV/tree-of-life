@@ -172,6 +172,14 @@ async function getExchangeRate(base: string, target: string, request: Request) {
 
 export async function POST(request: Request) {
   try {
+    // Validate OpenAI API key
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OpenAI API key is not configured');
+      return NextResponse.json({ 
+        error: 'OpenAI API key is not configured' 
+      }, { status: 500 });
+    }
+
     // Get IP address from headers
     const forwardedFor = request.headers.get('x-forwarded-for');
     const ip = forwardedFor ? forwardedFor.split(',')[0] : 'unknown';
@@ -186,6 +194,24 @@ export async function POST(request: Request) {
 
     const { messages, persona } = await request.json();
     
+    // Get bot settings only if persona.id exists
+    let botSettings = null;
+    if (persona?.id) {
+      try {
+        botSettings = await prisma.botSettings.findUnique({
+          where: {
+            botId: persona.id,
+          },
+        });
+      } catch (error) {
+        console.warn('Failed to fetch bot settings:', error);
+        // Continue with default settings
+      }
+    }
+
+    // Default settings if none exist
+    const apiSettings = getAPISettings(botSettings?.apiSettings);
+
     const systemPrompt = `You are ${persona.name}. ${persona.personality} ${persona.background}
 
     IMPORTANT INSTRUCTIONS FOR SPEECH PATTERNS:
@@ -212,16 +238,6 @@ export async function POST(request: Request) {
     
     Respond while staying true to your character's unique voice and personality. Keep responses SHORT and snappy. Write like you're having a casual chat!
     Remember: Brief responses only. No emojis. Stay in character.`;
-
-    // Get bot settings
-    const botSettings = await prisma.botSettings.findUnique({
-      where: {
-        botId: persona.id,
-      },
-    });
-
-    // Default settings if none exist
-    const apiSettings = getAPISettings(botSettings?.apiSettings);
 
     // Filter available functions based on settings
     const availableFunctions = [];
@@ -374,7 +390,24 @@ export async function POST(request: Request) {
       response: responseMessage.content || 'No response generated'
     });
   } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Failed to generate response' }, { status: 500 });
+    console.error('Error in chat route:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      type: error instanceof Error ? error.constructor.name : typeof error
+    });
+
+    // Check for specific error types
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        return NextResponse.json({ error: 'OpenAI API key configuration error' }, { status: 500 });
+      }
+      if (error.message.includes('Rate limit')) {
+        return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+      }
+    }
+
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Failed to generate response'
+    }, { status: 500 });
   }
 }

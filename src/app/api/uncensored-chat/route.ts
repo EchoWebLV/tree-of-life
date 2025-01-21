@@ -5,6 +5,14 @@ const API_KEY = process.env.MODELSLAB_API_KEY;
 
 export async function POST(request: Request) {
   try {
+    // Validate ModelsLab API key
+    if (!API_KEY) {
+      console.error('ModelsLab API key is not configured');
+      return NextResponse.json({ 
+        error: 'ModelsLab API key is not configured' 
+      }, { status: 500 });
+    }
+
     const { messages, persona } = await request.json();
 
     // Limit to last 50 messages
@@ -52,12 +60,14 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify(apiRequest)
     });
-    console.log(response);
-
-    const data = await response.json();
 
     if (!response.ok) {
-      throw new Error('API request failed');
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data.message) {
+      throw new Error('Invalid response format from uncensored API');
     }
 
     const cleanResponse = data.message.replace(/^["'](.*)["']$/, '$1');
@@ -66,7 +76,24 @@ export async function POST(request: Request) {
       response: cleanResponse
     });
   } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Failed to generate response' }, { status: 500 });
+    console.error('Error in uncensored chat route:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      type: error instanceof Error ? error.constructor.name : typeof error
+    });
+
+    // Check for specific error types
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        return NextResponse.json({ error: 'API key configuration error' }, { status: 500 });
+      }
+      if (error.message.includes('Rate limit')) {
+        return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+      }
+    }
+
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Failed to generate response'
+    }, { status: 500 });
   }
 }
