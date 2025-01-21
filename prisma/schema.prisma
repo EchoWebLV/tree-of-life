@@ -23,6 +23,11 @@ model Bot {
   wallet      BotWallet?
   messages    Message[]
   settings    BotSettings?
+  tweetingEnabled Boolean @default(false)
+  tweetInterval   Int     @default(180) // minutes between tweets
+  lastTweetAt     DateTime?
+  twitterUsername String?  // Optional: if you want to track Twitter usernames
+  twitterUserId   String?  // Optional: store Twitter user ID
 }
 
 model LandingPage {
