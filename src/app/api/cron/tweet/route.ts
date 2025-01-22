@@ -2,16 +2,25 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { TwitterApi } from 'twitter-api-v2';
 
-// Add this header to ensure only Vercel cron can call this endpoint
-export const runtime = 'edge';
+// Use Node.js runtime
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    console.log('Starting cron job...');
+    
     // Verify the request is from Vercel Cron
     const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      console.log('Unauthorized request');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Get all public bots with Twitter settings and check their intervals
@@ -31,10 +40,25 @@ export async function GET(request: Request) {
           }
         ]
       },
-      include: {
-        twitterSettings: true
+      select: {
+        id: true,
+        name: true,
+        personality: true,
+        background: true,
+        tweetInterval: true,
+        lastTweetAt: true,
+        twitterSettings: {
+          select: {
+            appKey: true,
+            appSecret: true,
+            accessToken: true,
+            accessSecret: true
+          }
+        }
       }
     });
+
+    console.log(`Found ${bots.length} bots to process`);
 
     // Generate and post tweets for each eligible bot
     const results = await Promise.all(
@@ -45,26 +69,46 @@ export async function GET(request: Request) {
             ? Date.now() - bot.lastTweetAt.getTime() 
             : Infinity;
           
+          const minutesSinceLastTweet = Math.floor(timeSinceLastTweet / (60 * 1000));
+          console.log(`Bot ${bot.id}: ${minutesSinceLastTweet} minutes since last tweet (interval: ${bot.tweetInterval})`);
+          
           if (timeSinceLastTweet < bot.tweetInterval * 60 * 1000) {
+            console.log(`Bot ${bot.id}: Not time to tweet yet`);
             return {
               botId: bot.id,
               success: false,
-              error: 'Not time to tweet yet'
+              error: 'Not time to tweet yet',
+              nextTweetIn: bot.tweetInterval - minutesSinceLastTweet
             };
           }
 
+          console.log(`Bot ${bot.id}: Generating tweet...`);
+
           // Generate tweet using existing endpoint
-          const tweetResponse = await fetch(`/api/generate-tweet`, {
+          const tweetResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/generate-tweet`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ persona: bot })
           });
           
-          const { tweet } = await tweetResponse.json();
+          if (!tweetResponse.ok) {
+            throw new Error(`Failed to generate tweet: ${tweetResponse.statusText}`);
+          }
+
+          const data = await tweetResponse.json();
+          const tweet = data.tweet;
 
           if (!tweet) {
             throw new Error('No tweet generated');
           }
+
+          console.log(`Bot ${bot.id}: Generated tweet: ${tweet}`);
+
+          if (!bot.twitterSettings) {
+            throw new Error('Twitter settings not found');
+          }
+
+          console.log(`Bot ${bot.id}: Posting tweet...`);
 
           // Post tweet using bot's Twitter credentials
           const botTwitterClient = new TwitterApi({
@@ -75,12 +119,15 @@ export async function GET(request: Request) {
           });
           
           const tweetResult = await botTwitterClient.v2.tweet(tweet);
+          console.log(`Bot ${bot.id}: Tweet posted successfully`);
 
           // Update lastTweetAt
           await prisma.bot.update({
             where: { id: bot.id },
             data: { lastTweetAt: new Date() }
           });
+
+          console.log(`Bot ${bot.id}: Updated lastTweetAt`);
 
           return {
             botId: bot.id,
@@ -99,12 +146,37 @@ export async function GET(request: Request) {
       })
     );
 
-    return NextResponse.json({ results });
+    const response = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      botsProcessed: bots.length,
+      results
+    };
+
+    console.log('Cron job completed:', JSON.stringify(response, null, 2));
+
+    return new Response(
+      JSON.stringify(response),
+      { 
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   } catch (error) {
-    console.error('Cron job failed:', error);
-    return NextResponse.json(
-      { error: 'Failed to execute cron job' },
-      { status: 500 }
+    const errorResponse = {
+      error: 'Failed to execute cron job',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    };
+
+    console.error('Cron job failed:', JSON.stringify(errorResponse, null, 2));
+
+    return new Response(
+      JSON.stringify(errorResponse),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
   }
 } 

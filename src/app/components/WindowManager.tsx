@@ -942,7 +942,7 @@ export default function WindowManager({
             setTwitterSettingsModal({ isOpen: true, bot: tweetModalBot });
           }
         }}
-        persona={tweetModalBot || { name: '', personality: '', background: '' }}
+        persona={tweetModalBot || { id: '', name: '', personality: '', background: '' }}
       />
       {deployModalBot && (
         <DeployModal

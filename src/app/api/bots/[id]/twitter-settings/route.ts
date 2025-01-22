@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma';
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  { params }: any
 ) {
   try {
     const { 
@@ -15,6 +16,14 @@ export async function PUT(
       tweetInterval 
     } = await request.json();
 
+    const existingBot = await prisma.bot.findUnique({
+      where: { id: params.id }
+    });
+
+    if (!existingBot) {
+      return NextResponse.json({ error: 'Bot not found' }, { status: 404 });
+    }
+
     // Update bot settings
     const bot = await prisma.bot.update({
       where: { id: params.id },
@@ -24,7 +33,7 @@ export async function PUT(
         twitterSettings: {
           upsert: {
             create: {
-              clientToken: bot.clientToken,
+              clientToken: existingBot.clientToken,
               appKey,
               appSecret,
               accessToken,
@@ -61,7 +70,8 @@ export async function PUT(
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  { params }: any
 ) {
   try {
     const bot = await prisma.bot.findUnique({
@@ -72,9 +82,7 @@ export async function GET(
         lastTweetAt: true,
         twitterSettings: {
           select: {
-            id: true,
-            createdAt: true,
-            updatedAt: true
+            id: true
           }
         }
       }

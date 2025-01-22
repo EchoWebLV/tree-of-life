@@ -3,9 +3,14 @@ import { prisma } from '@/lib/prisma';
 import { TwitterApi } from 'twitter-api-v2';
 import { twitterClient } from '@/lib/twitter';
 
+// Use Node.js runtime and force dynamic
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  { params }: any
 ) {
   try {
     const bot = await prisma.bot.findUnique({
