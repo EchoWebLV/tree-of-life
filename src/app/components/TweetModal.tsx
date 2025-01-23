@@ -58,7 +58,15 @@ export default function TweetModal({
   const isMountedRef = useRef<boolean>(true);
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'single' | 'autonomous' | 'settings'>('single');
+  const [activeTab, setActiveTab] = useState<'single' | 'autonomous' | 'settings'>('settings');
+
+  // Helper function to check if settings are configured
+  const hasApiSettings = Boolean(
+    settings.appKey && 
+    settings.appSecret && 
+    settings.accessToken && 
+    settings.accessSecret
+  );
 
   // Fetch bot data when modal opens
   useEffect(() => {
@@ -76,7 +84,7 @@ export default function TweetModal({
     };
 
     fetchBotData();
-  }, [isOpen, persona.id]); // Only run when modal opens or persona changes
+  }, [isOpen, persona.id]);
 
   // Token balance check
   useEffect(() => {
@@ -96,7 +104,7 @@ export default function TweetModal({
     checkBalance();
   }, [wallet.publicKey]);
 
-  // Load Twitter settings
+  // Load Twitter settings and set initial active tab
   useEffect(() => {
     const loadSettings = async () => {
       if (!isOpen || !onLoadSettings || hasLoadedRef.current || isLoadingSettings) return;
@@ -114,6 +122,13 @@ export default function TweetModal({
           if (loadedSettings && isMountedRef.current) {
             setSettings(loadedSettings);
             hasLoadedRef.current = true;
+            // If settings exist, set tab to 'single', otherwise keep it on 'settings'
+            if (loadedSettings.appKey && 
+                loadedSettings.appSecret && 
+                loadedSettings.accessToken && 
+                loadedSettings.accessSecret) {
+              setActiveTab('single');
+            }
           }
         } catch (error) {
           console.error('Error loading Twitter settings:', error);
@@ -148,7 +163,7 @@ export default function TweetModal({
   useEffect(() => {
     if (!isOpen) {
       setPostedTweet(null);
-      setActiveTab('single');
+      setActiveTab('settings');
       setSettings({
         appKey: '',
         appSecret: '',
@@ -192,7 +207,7 @@ export default function TweetModal({
 
   const handleClose = () => {
     setPostedTweet(null);
-    setActiveTab('single');
+    setActiveTab('settings');
     onClose();
   };
 
@@ -257,7 +272,7 @@ export default function TweetModal({
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-900 rounded-lg p-6 w-[400px]">
           <Dialog.Title className="text-xl text-white mb-4 flex items-center gap-2">
-            <FaXTwitter /> {activeTab === 'settings' ? 'Twitter API Settings' : 'Post Tweet'}
+            <FaXTwitter /> {activeTab === 'settings' ? 'Settings' : 'Post Tweet'}
           </Dialog.Title>
           
           <div className="flex justify-between items-center mb-4">
@@ -267,9 +282,12 @@ export default function TweetModal({
                   className={`pb-1 ${
                     activeTab === 'single' 
                       ? 'text-white border-b-2 border-blue-500' 
-                      : 'text-gray-500'
+                      : hasApiSettings 
+                        ? 'text-gray-500 hover:text-gray-300' 
+                        : 'text-gray-700 cursor-not-allowed'
                   }`}
-                  onClick={() => setActiveTab('single')}
+                  onClick={() => hasApiSettings && setActiveTab('single')}
+                  disabled={!hasApiSettings}
                 >
                   Single Tweet
                 </button>
@@ -277,9 +295,12 @@ export default function TweetModal({
                   className={`pb-1 ${
                     activeTab === 'autonomous' 
                       ? 'text-white border-b-2 border-blue-500' 
-                      : 'text-gray-500'
+                      : hasApiSettings 
+                        ? 'text-gray-500 hover:text-gray-300' 
+                        : 'text-gray-700 cursor-not-allowed'
                   }`}
-                  onClick={() => setActiveTab('autonomous')}
+                  onClick={() => hasApiSettings && setActiveTab('autonomous')}
+                  disabled={!hasApiSettings}
                 >
                   Autonomous Life
                 </button>
@@ -287,11 +308,11 @@ export default function TweetModal({
                   className={`pb-1 ${
                     activeTab === 'settings' 
                       ? 'text-white border-b-2 border-blue-500' 
-                      : 'text-gray-500'
+                      : 'text-gray-500 hover:text-gray-300'
                   }`}
                   onClick={() => setActiveTab('settings')}
                 >
-                  API Settings
+                  Settings
                 </button>
               </div>
             </div>
