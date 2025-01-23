@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Snowfall from "react-snowfall";
 import AIImageAnalyzer from "../components/AIImageAnalyzer";
 import DesktopInterface from "../components/DesktopInterface";
-import type { Bot } from "../components/AIImageAnalyzer";
+import type { Bot } from "../components/types";
 import { getClientToken } from "../utils/clientToken";
 import ClientWalletProvider from "../components/WalletProvider";
 import WalletButton from "../components/WalletButton";

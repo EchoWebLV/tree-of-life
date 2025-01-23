@@ -6,6 +6,7 @@ import Button from './Button';
 import { getClientToken } from '../utils/clientToken';
 import { fetchEthereumNFT } from '../utils/ethereumNFTFetcher';
 import { fetchSolanaNFT } from '../utils/solanaNFTFetcher';
+import { Bot } from './types';
 
 type UploadType = 'IMAGE' | 'NFT';
 
@@ -15,18 +16,6 @@ export interface Persona {
   background: string;
   messages?: Message[];
   imageUrl?: string;
-}
-
-export interface Bot {
-  id: string;
-  name: string;
-  imageUrl: string;
-  personality: string;
-  background: string;
-  clientToken: string;
-  createdAt: string;
-  updatedAt: string;
-  isPublic: boolean;
 }
 
 interface Message {
@@ -335,6 +324,11 @@ export default function AIImageAnalyzer({
         body: JSON.stringify({
           ...nftPersona,
           clientToken: getClientToken(),
+          isAutonomous: false,
+          tweetFrequencyMinutes: 60,
+          lastTweetAt: null,
+          authToken: '',
+          isPublic: false
         }),
       });
 
@@ -407,6 +401,11 @@ export default function AIImageAnalyzer({
           personality: data.persona.personality,
           background: data.persona.background,
           clientToken: getClientToken(),
+          isAutonomous: false,
+          tweetFrequencyMinutes: 60,
+          lastTweetAt: null,
+          authToken: '',
+          isPublic: false
         }),
       });
       if (!botResponse.ok) {

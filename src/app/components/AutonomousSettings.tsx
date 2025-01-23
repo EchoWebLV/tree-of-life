@@ -8,7 +8,7 @@ interface AutonomousSettingsProps {
 
 export default function AutonomousSettings({ bot, onUpdate }: AutonomousSettingsProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [frequency, setFrequency] = useState(bot.tweetFrequencyMinutes / 60);
+  const [frequency, setFrequency] = useState(Math.max(1, bot.tweetFrequencyMinutes / 60));
   const [isAutonomous, setIsAutonomous] = useState(bot.isAutonomous);
 
   const handleSubmit = async () => {
@@ -21,7 +21,7 @@ export default function AutonomousSettings({ bot, onUpdate }: AutonomousSettings
         },
         body: JSON.stringify({
           isAutonomous,
-          tweetFrequencyMinutes: Math.round(frequency * 60), // Convert hours back to minutes
+          tweetFrequencyMinutes: Math.max(60, Math.round(frequency * 60)), // Ensure minimum 60 minutes
         }),
       });
 
@@ -60,11 +60,11 @@ export default function AutonomousSettings({ bot, onUpdate }: AutonomousSettings
         </label>
         <input
           type="number"
-          min="0.1"
+          min="1"
           max="24"
-          step="0.1"
+          step="0.5"
           value={frequency}
-          onChange={(e) => setFrequency(Number(e.target.value))}
+          onChange={(e) => setFrequency(Math.max(1, Number(e.target.value)))}
           className="w-full px-3 py-2 bg-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
           disabled={!isAutonomous}
         />

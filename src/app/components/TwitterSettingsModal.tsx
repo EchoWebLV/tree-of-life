@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { FaXTwitter } from "react-icons/fa6";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -40,15 +40,22 @@ export default function TwitterSettingsModal({
   });
   const [hasEnoughTokens, setHasEnoughTokens] = useState(false);
   const wallet = useWallet();
+  const hasLoadedRef = useRef(false);
+  const loadTimeoutRef = useRef<NodeJS.Timeout>();
+  const isMountedRef = useRef(true);
 
   // Add token balance check
   useEffect(() => {
     const checkBalance = async () => {
       if (wallet.publicKey) {
         const hasBalance = await checkTokenBalance(wallet.publicKey);
-        setHasEnoughTokens(hasBalance);
+        if (isMountedRef.current) {
+          setHasEnoughTokens(hasBalance);
+        }
       } else {
-        setHasEnoughTokens(false);
+        if (isMountedRef.current) {
+          setHasEnoughTokens(false);
+        }
       }
     };
     
@@ -58,23 +65,70 @@ export default function TwitterSettingsModal({
   // Keep existing useEffect for loading settings
   useEffect(() => {
     const loadSettings = async () => {
-      if (isOpen && onLoad) {
+      if (!isOpen || !onLoad || hasLoadedRef.current || isLoading) return;
+      
+      // Clear any existing timeout
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+
+      // Add a small delay to prevent rapid requests
+      loadTimeoutRef.current = setTimeout(async () => {
+        if (!isMountedRef.current) return;
+        
         setIsLoading(true);
         try {
           const loadedSettings = await onLoad();
-          if (loadedSettings) {
+          if (loadedSettings && isMountedRef.current) {
             setSettings(loadedSettings);
+            hasLoadedRef.current = true;
           }
         } catch (error) {
           console.error('Error loading Twitter settings:', error);
         } finally {
-          setIsLoading(false);
+          if (isMountedRef.current) {
+            setIsLoading(false);
+          }
         }
-      }
+      }, 100);
     };
 
     loadSettings();
-  }, [isOpen, onLoad]);
+
+    // Cleanup function
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, [isOpen, onLoad, isLoading]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSettings({
+        appKey: '',
+        appSecret: '',
+        accessToken: '',
+        accessSecret: '',
+      });
+      setShowSecrets({
+        appSecret: false,
+        accessSecret: false
+      });
+      hasLoadedRef.current = false;
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

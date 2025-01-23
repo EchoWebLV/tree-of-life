@@ -314,20 +314,27 @@ export default function WindowManager({
 
   // Update the Twitter settings click handler
   const handleTwitterSettingsClick = async (bot: Bot) => {
-    // First check if we have Twitter settings
-    const response = await fetch(`/api/twitter-settings?botId=${bot.id}`);
-    const data = await response.json();
-    
-    if (data.settings) {
-      // If we have settings, show tweet modal
-      setTweetModalBot(bot);
-    } else {
-      // If no settings, show settings modal with token check
-      checkTokensAndProceed(
-        'Twitter Integration',
-        20000,
-        () => setTwitterSettingsModal({ isOpen: true, bot })
-      );
+    // Prevent multiple rapid clicks
+    if (twitterSettingsModal?.isOpen || tweetModalBot) return;
+
+    try {
+      // First check if we have Twitter settings
+      const response = await fetch(`/api/twitter-settings?botId=${bot.id}`);
+      const data = await response.json();
+      
+      if (data.settings) {
+        // If we have settings, show tweet modal
+        setTweetModalBot(bot);
+      } else {
+        // If no settings, show settings modal with token check
+        checkTokensAndProceed(
+          'Twitter Integration',
+          20000,
+          () => setTwitterSettingsModal({ isOpen: true, bot })
+        );
+      }
+    } catch (error) {
+      console.error('Error checking Twitter settings:', error);
     }
   };
 
@@ -937,10 +944,14 @@ export default function WindowManager({
         onClose={() => setTweetModalBot(null)}
         onTweet={handleTweet}
         onEditSettings={() => {
+          // First set tweet modal to null
           setTweetModalBot(null);
-          if (tweetModalBot) {
-            setTwitterSettingsModal({ isOpen: true, bot: tweetModalBot });
-          }
+          // Small delay to ensure proper state transition
+          setTimeout(() => {
+            if (tweetModalBot) {
+              setTwitterSettingsModal({ isOpen: true, bot: tweetModalBot });
+            }
+          }, 100);
         }}
         persona={tweetModalBot || {
           id: '',

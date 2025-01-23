@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(
   request: Request,
-  context: { params: { id: string } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any
 ) {
   const { id } = await context.params;
   

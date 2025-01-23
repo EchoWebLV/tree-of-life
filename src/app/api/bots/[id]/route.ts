@@ -4,7 +4,8 @@ import { prisma } from '@/lib/prisma';
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any
 ) {
   const { id } = await context.params;
   
@@ -31,7 +32,8 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any
 ) {
   const { id } = await context.params;
   
@@ -49,7 +51,8 @@ export async function DELETE(
 
 export async function GET(
   request: Request,
-  context: { params: { id: string } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any
 ) {
   const { id } = await context.params;
   
