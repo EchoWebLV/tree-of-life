@@ -11,7 +11,6 @@ import Chat from './Chat';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Bot } from './types';
 import type { DeployParams } from './DeployModal';
-import TwitterSettingsModal from './TwitterSettingsModal';
 import TweetModal from './TweetModal';
 import DeployModal from './DeployModal';
 import { checkTokenBalance } from '../utils/tokenCheck';
