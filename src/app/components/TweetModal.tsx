@@ -77,7 +77,7 @@ export default function TweetModal({
   // Add new state
   const [botStatus, setBotStatus] = useState<BotStatus | null>(() => null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
-  const statusIntervalRef = useRef<NodeJS.Timeout>();
+  const statusIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch bot data when modal opens
   useEffect(() => {
