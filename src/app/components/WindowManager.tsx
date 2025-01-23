@@ -117,6 +117,7 @@ export default function WindowManager({
     checkBalance();
   }, [wallet.publicKey]);
 
+  // Fetch wallets once on mount
   useEffect(() => {
     const fetchWallets = async () => {
       for (const bot of windows) {
@@ -134,7 +135,7 @@ export default function WindowManager({
     };
 
     fetchWallets();
-  }, [windows]); // Run when windows array changes
+  }, []); // Only run once on mount
 
   const handleTweet = async (text: string) => {
     // No-op to bypass tweet posting
@@ -287,18 +288,9 @@ export default function WindowManager({
     onProceed();
   };
 
-  // Update the Twitter settings click handler
-  const handleTwitterSettingsClick = async (bot: Bot) => {
-    // Prevent multiple rapid clicks
-    if (tweetModalBot) return;
-
-    // Show tweet modal immediately with all features enabled
-    setTweetModalBot({
-      ...bot,
-      isAutonomous: false,
-      tweetFrequencyMinutes: 360,
-      tweetingEnabled: true,
-      tweetPrompt: bot.tweetPrompt || `You are ${bot.name}, ${bot.personality}
+  // Helper function for default tweet prompt
+  const defaultTweetPrompt = (bot: Bot) => {
+    return `You are ${bot.name}, ${bot.personality}
 
 Background: ${bot.background}
 
@@ -306,8 +298,41 @@ Generate a single tweet that aligns with your personality and background. The tw
 
 Keep the tweet under 280 characters and make it feel natural and spontaneous.
 
-Do not use hashtags unless they are genuinely relevant to the content.`
-    });
+Do not use hashtags unless they are genuinely relevant to the content.`;
+  };
+
+  // Update the Twitter settings click handler
+  const handleTwitterSettingsClick = async (bot: Bot) => {
+    // Prevent multiple rapid clicks
+    if (tweetModalBot) return;
+
+    try {
+      // Fetch bot data once when opening modal
+      const response = await fetch(`/api/bots/${bot.id}`);
+      const data = await response.json();
+      
+      // Create a complete bot object with fetched data
+      const completeBot = {
+        ...data.bot,
+        isAutonomous: data.bot.isAutonomous || false,
+        tweetFrequencyMinutes: data.bot.tweetFrequencyMinutes || 360,
+        tweetingEnabled: true,
+        tweetPrompt: data.bot.tweetPrompt || defaultTweetPrompt(bot)
+      };
+
+      // Set the complete bot object once
+      setTweetModalBot(completeBot);
+    } catch (error) {
+      console.error('Error fetching bot data:', error);
+      // Fallback to using the passed bot object if fetch fails
+      setTweetModalBot({
+        ...bot,
+        isAutonomous: false,
+        tweetFrequencyMinutes: 360,
+        tweetingEnabled: true,
+        tweetPrompt: bot.tweetPrompt || defaultTweetPrompt(bot)
+      });
+    }
   };
 
   // Update the deploy click handler
@@ -938,13 +963,7 @@ Do not use hashtags unless they are genuinely relevant to the content.`
           twitterUserId: null,
           tweetPrompt: ''
         }}
-        onBotUpdate={(updatedBot) => {
-          setTweetModalBot({
-            ...updatedBot,
-            tweetingEnabled: true,
-            tweetPrompt: tweetModalBot?.tweetPrompt || updatedBot.tweetPrompt
-          });
-        }}
+        onBotUpdate={undefined}
       />
       {deployModalBot && (
         <DeployModal
