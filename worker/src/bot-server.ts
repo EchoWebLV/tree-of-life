@@ -13,6 +13,13 @@ if (!process.env.OPENAI_API_KEY) {
   throw new Error('OPENAI_API_KEY is required');
 }
 
+interface APISettings {
+  crypto?: boolean;
+  news?: boolean;
+  weather?: boolean;
+  exchange?: boolean;
+}
+
 const prisma = new PrismaClient();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -32,29 +39,150 @@ app.post('/refresh-bot', async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
+    console.log(`Received refresh request for bot ${botId}`);
+    
     // Clear existing timeout
     const existingTimeout = botTimeouts.get(botId);
     if (existingTimeout) {
+      console.log(`Found existing timeout for bot ${botId}, clearing it...`);
       clearTimeout(existingTimeout);
       botTimeouts.delete(botId);
+      console.log(`Cleared existing timeout for bot ${botId}`);
+    } else {
+      console.log(`No existing timeout found for bot ${botId}`);
     }
 
-    // Start bot if it should be running
+    // Get latest bot status
     const bot = await prisma.bot.findUnique({
       where: { id: botId },
       include: { twitterSettings: true }
     });
 
-    if (bot?.isAutonomous) {
-      handleBot(botId);
+    if (!bot) {
+      console.log(`Bot ${botId} not found`);
+      res.status(404).json({ error: 'Bot not found' });
+      return;
     }
 
-    res.json({ success: true });
+    console.log(`Bot ${botId} status:`, {
+      isAutonomous: bot.isAutonomous,
+      hasTwitterSettings: !!bot.twitterSettings,
+      currentTimeouts: Array.from(botTimeouts.keys())
+    });
+
+    // Only start bot if it's autonomous and has Twitter settings
+    if (bot.isAutonomous && bot.twitterSettings) {
+      console.log(`Starting autonomous mode for bot ${botId}`);
+      handleBot(botId);
+      res.json({ success: true, status: 'started' });
+    } else {
+      console.log(`Stopping autonomous mode for bot ${botId} (isAutonomous: ${bot.isAutonomous}, hasTwitterSettings: ${!!bot.twitterSettings})`);
+      // Ensure the timeout is cleared when stopping
+      if (botTimeouts.has(botId)) {
+        console.log(`Clearing timeout for stopped bot ${botId}`);
+        clearTimeout(botTimeouts.get(botId));
+        botTimeouts.delete(botId);
+        console.log(`Timeout cleared for bot ${botId}`);
+      }
+      res.json({ success: true, status: 'stopped' });
+    }
   } catch (error) {
     console.error('Error refreshing bot:', error);
     res.status(500).json({ error: 'Failed to refresh bot' });
   }
 });
+
+// Add status endpoint
+app.get('/bot-status/:botId', async (req: Request, res: Response): Promise<void> => {
+  const { botId } = req.params;
+  
+  try {
+    const isRunning = botTimeouts.has(botId);
+    const bot = await prisma.bot.findUnique({
+      where: { id: botId },
+      select: { 
+        isAutonomous: true,
+        lastTweetAt: true,
+        tweetFrequencyMinutes: true
+      }
+    });
+
+    res.json({
+      isRunning,
+      isAutonomous: bot?.isAutonomous || false,
+      lastTweetAt: bot?.lastTweetAt,
+      nextTweetIn: isRunning ? 
+        Math.ceil((botTimeouts.get(botId)._idleStart + botTimeouts.get(botId)._idleTimeout - Date.now()) / 1000) : 
+        null
+    });
+  } catch (error) {
+    console.error('Error getting bot status:', error);
+    res.status(500).json({ error: 'Failed to get bot status' });
+  }
+});
+
+// API helper functions
+async function getCryptoPrice(coin: string) {
+  try {
+    const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data[coin] ? {
+      price_usd: data[coin].usd,
+      price_change_24h: data[coin].usd_24h_change,
+      market_cap: data[coin].usd_market_cap
+    } : null;
+  } catch (error) {
+    console.error('Error fetching crypto price:', error);
+    return null;
+  }
+}
+
+async function getNews(query: string) {
+  try {
+    const response = await fetch(`https://newsapi.org/v2/everything?q=${query}&sortBy=publishedAt&pageSize=5&apiKey=${process.env.NEWS_API_KEY}`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.articles?.[0] ? {
+      title: data.articles[0].title,
+      url: data.articles[0].url
+    } : null;
+  } catch (error) {
+    console.error('Error fetching news:', error);
+    return null;
+  }
+}
+
+async function getWeather(city: string) {
+  try {
+    const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return {
+      temp: data.main.temp,
+      description: data.weather[0].description,
+      city: data.name
+    };
+  } catch (error) {
+    console.error('Error fetching weather:', error);
+    return null;
+  }
+}
+
+async function getExchangeRate(base: string, target: string) {
+  try {
+    const response = await fetch(`https://open.er-api.com/v6/latest/${base}`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.rates?.[target] ? {
+      rate: data.rates[target],
+      last_updated: data.time_last_update_utc
+    } : null;
+  } catch (error) {
+    console.error('Error fetching exchange rate:', error);
+    return null;
+  }
+}
 
 async function generateTweet(bot: any) {
   // Fetch recent chat messages for context
@@ -70,18 +198,65 @@ async function generateTweet(bot: any) {
 
   const chatHistory = recentMessages.reverse();
 
+  // Fetch bot settings
+  const botSettings = await prisma.botSettings.findUnique({
+    where: { botId: bot.id },
+    select: {
+      apiSettings: true
+    }
+  });
+
+  // Parse API settings
+  const settings: APISettings = botSettings?.apiSettings ? 
+    (typeof botSettings.apiSettings === 'string' ? 
+      JSON.parse(botSettings.apiSettings) : 
+      botSettings.apiSettings) : 
+    { crypto: false, news: false, weather: false, exchange: false };
+
+  // Gather API data based on settings
+  const apiData: any = {};
+  
+  if (settings.crypto) {
+    apiData.solana = await getCryptoPrice('solana');
+    apiData.bitcoin = await getCryptoPrice('bitcoin');
+    apiData.ethereum = await getCryptoPrice('ethereum');
+  }
+
+  if (settings.news) {
+    apiData.cryptoNews = await getNews('cryptocurrency');
+  }
+
+  if (settings.weather) {
+    apiData.weather = await getWeather('New York'); // Default to New York
+  }
+
+  if (settings.exchange) {
+    apiData.usdEur = await getExchangeRate('USD', 'EUR');
+  }
+
   const systemPrompt = `You are ${bot.name}. ${bot.personality} ${bot.background}
 
   Here is your recent chat history for context (last ~12 conversations):
   ${chatHistory.map((msg: { role: string; content: string }) => `${msg.role}: ${msg.content}`).join('\n')}
 
-  Based on your personality and these recent conversations, generate 1 random tweet. Use this context to make your tweet more personal and connected to your recent interactions, but don't be too obvious about referencing specific conversations. be chaotic and natural.
+  Here is the latest market and world data:
+  ${apiData.solana ? `- Solana: $${apiData.solana.price_usd.toFixed(2)} (${apiData.solana.price_change_24h.toFixed(2)}% 24h)` : ''}
+  ${apiData.bitcoin ? `- Bitcoin: $${apiData.bitcoin.price_usd.toFixed(2)} (${apiData.bitcoin.price_change_24h.toFixed(2)}% 24h)` : ''}
+  ${apiData.ethereum ? `- Ethereum: $${apiData.ethereum.price_usd.toFixed(2)} (${apiData.ethereum.price_change_24h.toFixed(2)}% 24h)` : ''}
+  ${apiData.cryptoNews ? `- Latest Crypto News: ${apiData.cryptoNews.title}` : ''}
+  ${apiData.weather ? `- Weather in NYC: ${apiData.weather.temp}°C, ${apiData.weather.description}` : ''}
+  ${apiData.usdEur ? `- USD/EUR: ${apiData.usdEur.rate.toFixed(4)}` : ''}
+
+  Based on your personality and these recent conversations, generate 1 random tweet. Use this context to make your tweet more personal and connected to your recent interactions and the current market/world data provided above.
 
   ideas (pick ONE randomly):
+  - market commentary
+  - price prediction
+  - reaction to news
+  - weather-based mood
   - random thought
   - hot take
   - current mood
-  - food craving
   - shower thought
   - unpopular opinion
   - random story
@@ -89,7 +264,6 @@ async function generateTweet(bot: any) {
   - conspiracy theory
   - life update
   - random confession
-  - pet peeve
   - existential crisis
   - random observation
   
@@ -100,6 +274,7 @@ async function generateTweet(bot: any) {
   - no hashtags
   - dont mention AI
   - reference your recent conversations if relevant
+  - incorporate the market/world data naturally if relevant
   
   just tweet text nothing else.`;
 
@@ -107,7 +282,7 @@ async function generateTweet(bot: any) {
     model: "gpt-4",
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: "Generate a tweet that expresses your thoughts or shares something about yourself, possibly referencing your recent conversations if relevant." }
+      { role: "user", content: "Generate a tweet that expresses your thoughts or shares something about yourself, possibly referencing your recent conversations and the current market/world data if relevant." }
     ],
     max_tokens: 100,
     temperature: 0.9,
@@ -152,12 +327,20 @@ async function handleBot(botId: string) {
       data: { lastTweetAt: new Date() }
     });
 
-    // Use bot's custom frequency with some randomness (±5 minutes)
-    const baseDelay = bot.tweetFrequencyMinutes * 60 * 1000; // Convert minutes to milliseconds
-    const randomOffset = (Math.random() - 0.5) * 10 * 60 * 1000; // ±5 minutes
-    const delay = baseDelay + randomOffset;
+    // Calculate delay based on frequency
+    let delay: number;
+    if (bot.tweetFrequencyMinutes === 0) {
+      // If frequency is 0, add a small random delay (10-30 seconds) to avoid rate limits
+      delay = Math.floor(Math.random() * 20000) + 10000;
+      console.log(`Zero frequency mode - next tweet for ${bot.name} in ${(delay / 1000).toFixed(1)} seconds`);
+    } else {
+      // Use bot's custom frequency with some randomness (±5 minutes)
+      const baseDelay = bot.tweetFrequencyMinutes * 60 * 1000; // Convert minutes to milliseconds
+      const randomOffset = (Math.random() - 0.5) * 10 * 60 * 1000; // ±5 minutes
+      delay = baseDelay + randomOffset;
+      console.log(`Next tweet for ${bot.name} in ${(delay / (60 * 60 * 1000)).toFixed(2)} hours`);
+    }
     
-    console.log(`Next tweet for ${bot.name} in ${(delay / (60 * 60 * 1000)).toFixed(2)} hours`);
     const timeout = setTimeout(() => handleBot(botId), delay);
     botTimeouts.set(botId, timeout);
   } catch (error) {

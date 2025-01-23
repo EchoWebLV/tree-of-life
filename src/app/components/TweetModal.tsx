@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { FaXTwitter } from "react-icons/fa6";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaXTwitter, FaEye, FaEyeSlash, FaStop, FaPlay } from "react-icons/fa6";
 import { TbSettings } from "react-icons/tb";
 import LoadingDots from './LoadingDots';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -13,6 +12,13 @@ interface TwitterSettings {
   appSecret: string;
   accessToken: string;
   accessSecret: string;
+}
+
+interface BotStatus {
+  isRunning: boolean;
+  isAutonomous: boolean;
+  lastTweetAt: string | null;
+  nextTweetIn: number | null;
 }
 
 interface TweetModalProps {
@@ -68,6 +74,11 @@ export default function TweetModal({
     settings.accessSecret
   );
 
+  // Add new state
+  const [botStatus, setBotStatus] = useState<BotStatus | null>(() => null);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const statusIntervalRef = useRef<NodeJS.Timeout>();
+
   // Fetch bot data when modal opens
   useEffect(() => {
     const fetchBotData = async () => {
@@ -84,7 +95,7 @@ export default function TweetModal({
     };
 
     fetchBotData();
-  }, [isOpen, persona.id]);
+  }, [isOpen, persona.id, onBotUpdate]);
 
   // Token balance check
   useEffect(() => {
@@ -134,6 +145,44 @@ export default function TweetModal({
 
     loadSettings();
   }, [isOpen, onLoadSettings]);
+
+  // Add status checking effect
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (!isOpen || !persona.id) return;
+      
+      try {
+        setIsLoadingStatus(true);
+        const BOT_SERVER_URL = process.env.NEXT_PUBLIC_BOT_SERVER_URL || 'http://localhost:3001';
+        const url = BOT_SERVER_URL.includes('railway.app') ? 
+          `https://${BOT_SERVER_URL.split(':')[0]}` : 
+          BOT_SERVER_URL;
+
+        const response = await fetch(`${url}/bot-status/${persona.id}`);
+        if (!response.ok) throw new Error('Failed to fetch status');
+        
+        const status = await response.json();
+        setBotStatus(status);
+      } catch (error) {
+        console.error('Error fetching bot status:', error);
+      } finally {
+        setIsLoadingStatus(false);
+      }
+    };
+
+    // Check immediately when opened
+    if (isOpen && persona.id) {
+      checkStatus();
+      // Set up interval for regular checks
+      statusIntervalRef.current = setInterval(checkStatus, 5000);
+    }
+
+    return () => {
+      if (statusIntervalRef.current) {
+        clearInterval(statusIntervalRef.current);
+      }
+    };
+  }, [isOpen, persona.id]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -356,19 +405,39 @@ Do not use hashtags unless they are genuinely relevant to the content.`;
 
           {activeTab === 'autonomous' && (
             <div className="space-y-4 p-4 bg-gray-800 rounded-lg">
-              <h3 className="text-lg font-semibold mb-4">Autonomous Life Settings</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Autonomous Life Settings</h3>
+                {botStatus && (
+                  <div className="flex items-center gap-2 text-sm">
+                    {botStatus.isRunning ? (
+                      <>
+                        <span className="text-green-400">● Running</span>
+                        {botStatus.nextTweetIn && (
+                          <span className="text-gray-400">
+                            Next tweet in {Math.floor(botStatus.nextTweetIn / 60)}m {botStatus.nextTweetIn % 60}s
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-gray-400">● Stopped</span>
+                    )}
+                  </div>
+                )}
+              </div>
               
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={currentBot.isAutonomous}
-                  onChange={(e) => setCurrentBot(prev => ({ ...prev, isAutonomous: e.target.checked }))}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                  id="autonomous-toggle"
-                />
-                <label htmlFor="autonomous-toggle" className="text-sm">
-                  Enable Autonomous Mode
-                </label>
+              <div className="flex items-center justify-between space-x-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={currentBot.isAutonomous}
+                    onChange={(e) => setCurrentBot(prev => ({ ...prev, isAutonomous: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    id="autonomous-toggle"
+                  />
+                  <label htmlFor="autonomous-toggle" className="text-sm">
+                    Enable Autonomous Mode
+                  </label>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -379,17 +448,20 @@ Do not use hashtags unless they are genuinely relevant to the content.`;
                   type="number"
                   min="1"
                   max="24"
-                  step="0.5"
-                  value={Math.max(1, currentBot.tweetFrequencyMinutes / 60)}
-                  onChange={(e) => setCurrentBot(prev => ({ 
-                    ...prev, 
-                    tweetFrequencyMinutes: Math.max(60, Math.round(Number(e.target.value) * 60))
-                  }))}
+                  step="0.1"
+                  value={currentBot.tweetFrequencyMinutes / 60}
+                  onChange={(e) => {
+                    const hours = parseFloat(e.target.value);
+                    if (hours < 1) return; // Prevent values less than 1 hour
+                    setCurrentBot(prev => ({
+                      ...prev,
+                      tweetFrequencyMinutes: hours * 60
+                    }));
+                  }}
                   className="w-full px-3 py-2 bg-gray-700 rounded-md focus:ring-2 focus:ring-blue-500"
-                  disabled={!currentBot.isAutonomous}
                 />
                 <p className="text-xs text-gray-400">
-                  Bot will tweet every {(currentBot.tweetFrequencyMinutes / 60).toFixed(1)} hours ({currentBot.tweetFrequencyMinutes} minutes) ±5 minutes for natural behavior
+                  Minimum 1 hour between tweets to avoid rate limits
                 </p>
               </div>
 
@@ -427,12 +499,39 @@ Do not use hashtags unless they are genuinely relevant to the content.`;
                 </p>
               </div>
 
-              <button
-                onClick={handleAutonomousUpdate}
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Save Settings
-              </button>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    if (botStatus?.isRunning) {
+                      setCurrentBot(prev => ({ ...prev, isAutonomous: false }));
+                      handleAutonomousUpdate();
+                    } else {
+                      handleClose();
+                    }
+                  }}
+                  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                {botStatus?.isRunning ? (
+                  <button
+                    onClick={() => {
+                      setCurrentBot(prev => ({ ...prev, isAutonomous: false }));
+                      handleAutonomousUpdate();
+                    }}
+                    className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 flex items-center gap-2"
+                  >
+                    <FaStop size={12} /> Stop Now
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleAutonomousUpdate}
+                    className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <FaPlay size={12} /> Start
+                  </button>
+                )}
+              </div>
             </div>
           )}
 

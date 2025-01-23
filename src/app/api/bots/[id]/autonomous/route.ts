@@ -18,6 +18,7 @@ export async function POST(
   
   try {
     const { isAutonomous, tweetFrequencyMinutes, tweetPrompt } = await request.json();
+    console.log(`Autonomous update request for bot ${id}:`, { isAutonomous, tweetFrequencyMinutes });
     
     if (typeof isAutonomous !== 'boolean' || typeof tweetFrequencyMinutes !== 'number') {
       return NextResponse.json(
@@ -26,9 +27,9 @@ export async function POST(
       );
     }
 
-    if (tweetFrequencyMinutes < 6 || tweetFrequencyMinutes > 1440) { // 6 minutes to 24 hours
+    if (tweetFrequencyMinutes < 60) { // Minimum 1 hour
       return NextResponse.json(
-        { error: 'Tweet frequency must be between 6 minutes and 24 hours' },
+        { error: 'Tweet frequency must be at least 1 hour (60 minutes)' },
         { status: 400 }
       );
     }
@@ -43,10 +44,17 @@ export async function POST(
       },
     });
 
+    console.log(`Bot ${id} settings updated:`, { isAutonomous: bot.isAutonomous });
+
     // Notify bot server of settings change
     try {
       const BOT_SERVER_URL = process.env.BOT_SERVER_URL || 'http://localhost:3001';
-      const url = BOT_SERVER_URL.startsWith('http') ? BOT_SERVER_URL : `https://${BOT_SERVER_URL}`;
+      // For Railway deployment, we need to use https and the domain without port
+      const url = BOT_SERVER_URL.includes('railway.app') ? 
+        `https://${BOT_SERVER_URL.split(':')[0]}` : 
+        BOT_SERVER_URL;
+      
+      console.log('Attempting to connect to bot server at:', url);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
@@ -63,8 +71,13 @@ export async function POST(
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`Bot server responded with ${response.status}`);
+        const errorText = await response.text();
+        console.error('Bot server error:', errorText);
+        throw new Error(`Bot server responded with ${response.status}: ${errorText}`);
       }
+
+      const result = await response.json();
+      console.log('Bot server response:', result);
     } catch (error) {
       console.error('Failed to notify bot server:', error);
       // Continue anyway - the bot update was successful
