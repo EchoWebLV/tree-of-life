@@ -109,45 +109,31 @@ export default function TweetModal({
     const loadSettings = async () => {
       if (!isOpen || !onLoadSettings || hasLoadedRef.current || isLoadingSettings) return;
       
-      if (loadTimeoutRef.current) {
-        clearTimeout(loadTimeoutRef.current);
-      }
-
-      loadTimeoutRef.current = setTimeout(async () => {
-        if (!isMountedRef.current) return;
-        
-        setIsLoadingSettings(true);
-        try {
-          const loadedSettings = await onLoadSettings();
-          if (loadedSettings && isMountedRef.current) {
-            setSettings(loadedSettings);
-            hasLoadedRef.current = true;
-            // If settings exist, set tab to 'single', otherwise keep it on 'settings'
-            if (loadedSettings.appKey && 
-                loadedSettings.appSecret && 
-                loadedSettings.accessToken && 
-                loadedSettings.accessSecret) {
-              setActiveTab('single');
-            }
-          }
-        } catch (error) {
-          console.error('Error loading Twitter settings:', error);
-        } finally {
-          if (isMountedRef.current) {
-            setIsLoadingSettings(false);
+      setIsLoadingSettings(true);
+      try {
+        const loadedSettings = await onLoadSettings();
+        if (loadedSettings && isMountedRef.current) {
+          setSettings(loadedSettings);
+          hasLoadedRef.current = true;
+          // If settings exist, set tab to 'single', otherwise keep it on 'settings'
+          if (loadedSettings.appKey && 
+              loadedSettings.appSecret && 
+              loadedSettings.accessToken && 
+              loadedSettings.accessSecret) {
+            setActiveTab('single');
           }
         }
-      }, 100);
+      } catch (error) {
+        console.error('Error loading Twitter settings:', error);
+      } finally {
+        if (isMountedRef.current) {
+          setIsLoadingSettings(false);
+        }
+      }
     };
 
     loadSettings();
-
-    return () => {
-      if (loadTimeoutRef.current) {
-        clearTimeout(loadTimeoutRef.current);
-      }
-    };
-  }, [isOpen, onLoadSettings, isLoadingSettings]);
+  }, [isOpen, onLoadSettings]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -221,6 +207,7 @@ export default function TweetModal({
         body: JSON.stringify({
           isAutonomous: currentBot.isAutonomous,
           tweetFrequencyMinutes: currentBot.tweetFrequencyMinutes,
+          tweetPrompt: currentBot.tweetPrompt || defaultTweetPrompt(currentBot),
         }),
       });
 
@@ -235,6 +222,18 @@ export default function TweetModal({
     } catch (error) {
       console.error('Error updating autonomous settings:', error);
     }
+  };
+
+  const defaultTweetPrompt = (bot: Bot) => {
+    return `You are ${bot.name}, ${bot.personality}
+
+Background: ${bot.background}
+
+Generate a single tweet that aligns with your personality and background. The tweet should be engaging, authentic, and maintain your unique voice.
+
+Keep the tweet under 280 characters and make it feel natural and spontaneous.
+
+Do not use hashtags unless they are genuinely relevant to the content.`;
   };
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -391,6 +390,40 @@ export default function TweetModal({
                 />
                 <p className="text-xs text-gray-400">
                   Bot will tweet every {(currentBot.tweetFrequencyMinutes / 60).toFixed(1)} hours ({currentBot.tweetFrequencyMinutes} minutes) ±5 minutes for natural behavior
+                </p>
+              </div>
+
+              <div className="space-y-2 mt-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium">
+                    Tweet Generation Prompt
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentBot(prev => ({ 
+                      ...prev, 
+                      tweetPrompt: prev.tweetPrompt === undefined ? defaultTweetPrompt(prev) : undefined 
+                    }))}
+                    className="text-xs text-blue-400 hover:text-blue-300"
+                  >
+                    {currentBot.tweetPrompt === undefined ? 'Customize' : 'Reset to Default'}
+                  </button>
+                </div>
+                {currentBot.tweetPrompt === undefined ? (
+                  <div className="bg-gray-700 rounded-md p-3 text-sm text-gray-300 font-mono whitespace-pre-wrap">
+                    {defaultTweetPrompt(currentBot)}
+                  </div>
+                ) : (
+                  <textarea
+                    value={currentBot.tweetPrompt}
+                    onChange={(e) => setCurrentBot(prev => ({ ...prev, tweetPrompt: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 
+                             text-sm font-mono text-gray-300 h-48 resize-none"
+                    placeholder="Enter custom tweet generation prompt..."
+                  />
+                )}
+                <p className="text-xs text-gray-400">
+                  The prompt will be used to generate tweets. You can use variables like {'{name}'}, {'{personality}'}, and {'{background}'}.
                 </p>
               </div>
 

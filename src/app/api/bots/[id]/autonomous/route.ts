@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+interface APISettings {
+  crypto?: boolean;
+  news?: boolean;
+  weather?: boolean;
+  exchange?: boolean;
+  tweetPrompt?: string;
+}
+
 export async function POST(
   request: Request,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -9,7 +17,7 @@ export async function POST(
   const { id } = await context.params;
   
   try {
-    const { isAutonomous, tweetFrequencyMinutes } = await request.json();
+    const { isAutonomous, tweetFrequencyMinutes, tweetPrompt } = await request.json();
     
     if (typeof isAutonomous !== 'boolean' || typeof tweetFrequencyMinutes !== 'number') {
       return NextResponse.json(
@@ -25,11 +33,13 @@ export async function POST(
       );
     }
 
+    // Update bot settings
     const bot = await prisma.bot.update({
       where: { id },
       data: {
         isAutonomous,
         tweetFrequencyMinutes,
+        tweetPrompt: tweetPrompt || null,
       },
     });
 

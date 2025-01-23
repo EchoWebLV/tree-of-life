@@ -49,6 +49,14 @@ export async function DELETE(
   }
 }
 
+interface APISettings {
+  crypto?: boolean;
+  news?: boolean;
+  weather?: boolean;
+  exchange?: boolean;
+  tweetPrompt?: string;
+}
+
 export async function GET(
   request: Request,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,7 +66,7 @@ export async function GET(
   
   try {
     const bot = await prisma.bot.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!bot) {

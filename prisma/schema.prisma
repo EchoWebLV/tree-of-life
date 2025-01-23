@@ -20,6 +20,7 @@ model Bot {
   isAutonomous Boolean @default(false)
   lastTweetAt DateTime?
   tweetFrequencyMinutes Int @default(360)
+  tweetPrompt String? @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   twitterSettings TwitterSettings?
@@ -97,6 +98,7 @@ model BotSettings {
   id          String   @id @default(cuid())
   botId       String   @unique
   apiSettings Json
+  tweetPrompt String?  @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   bot         Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)

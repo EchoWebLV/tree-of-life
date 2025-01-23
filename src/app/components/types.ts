@@ -1,6 +1,6 @@
 import { Bot as PrismaBot } from '@prisma/client';
 
-export type Bot = {
+export interface Bot {
   id: string;
   name: string;
   imageUrl: string;
@@ -11,17 +11,18 @@ export type Bot = {
   isPublic: boolean;
   isAutonomous: boolean;
   tweetFrequencyMinutes: number;
-  lastTweetAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  lastTweetAt: Date | null;
+  tweetingEnabled: boolean;
+  tweetInterval: number;
+  twitterUsername: string | null;
+  twitterUserId: string | null;
   wallet?: {
     publicKey: string;
     privateKey: string;
   };
-  tweetingEnabled?: boolean;
-  tweetInterval?: number;
-  twitterUsername?: string | null;
-  twitterUserId?: string | null;
+  tweetPrompt?: string;
 }
 
 export interface DesktopInterfaceProps {
