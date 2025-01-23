@@ -9,9 +9,8 @@ import { HiMiniChevronRight } from 'react-icons/hi2';
 import LoadingDots from './LoadingDots';
 import Chat from './Chat';
 import { useWallet } from '@solana/wallet-adapter-react';
-import type { Bot } from './types';
+import { Bot } from './types';
 import type { DeployParams } from './DeployModal';
-import TwitterSettingsModal from './TwitterSettingsModal';
 import TweetModal from './TweetModal';
 import DeployModal from './DeployModal';
 import { checkTokenBalance } from '../utils/tokenCheck';
@@ -314,20 +313,27 @@ export default function WindowManager({
 
   // Update the Twitter settings click handler
   const handleTwitterSettingsClick = async (bot: Bot) => {
-    // First check if we have Twitter settings
-    const response = await fetch(`/api/twitter-settings?botId=${bot.id}`);
-    const data = await response.json();
-    
-    if (data.settings) {
-      // If we have settings, show tweet modal
-      setTweetModalBot(bot);
-    } else {
-      // If no settings, show settings modal with token check
-      checkTokensAndProceed(
-        'Twitter Integration',
-        20000,
-        () => setTwitterSettingsModal({ isOpen: true, bot })
-      );
+    // Prevent multiple rapid clicks
+    if (twitterSettingsModal?.isOpen || tweetModalBot) return;
+
+    try {
+      // First check if we have Twitter settings
+      const response = await fetch(`/api/twitter-settings?botId=${bot.id}`);
+      const data = await response.json();
+      
+      if (data.settings) {
+        // If we have settings, show tweet modal
+        setTweetModalBot(bot);
+      } else {
+        // If no settings, show settings modal with token check
+        checkTokensAndProceed(
+          'Twitter Integration',
+          20000,
+          () => setTwitterSettingsModal({ isOpen: true, bot })
+        );
+      }
+    } catch (error) {
+      console.error('Error checking Twitter settings:', error);
     }
   };
 
@@ -893,13 +899,14 @@ export default function WindowManager({
           </Rnd>
         );
       })}
-      <TwitterSettingsModal 
-        key="twitter-settings-modal"
-        isOpen={twitterSettingsModal?.isOpen || false}
-        onClose={() => setTwitterSettingsModal({ isOpen: false })}
-        onSave={async (settings) => {
+      <TweetModal
+        key="tweet-modal"
+        isOpen={!!tweetModalBot}
+        onClose={() => setTweetModalBot(null)}
+        onTweet={handleTweet}
+        onSaveSettings={async (settings) => {
           const clientToken = localStorage.getItem('clientToken') || '';
-          const botId = twitterSettingsModal.bot?.id;
+          const botId = tweetModalBot?.id;
           if (!botId) return;
 
           await fetch('/api/twitter-settings', {
@@ -917,32 +924,40 @@ export default function WindowManager({
             ...prev,
             [botId]: true
           }));
-          setTwitterSettingsModal({ isOpen: false });
         }}
-        initialSettings={twitterSettingsModal.bot ? {
-          appKey: '',
-          appSecret: '',
-          accessToken: '',
-          accessSecret: ''
-        } : undefined}
-        onLoad={twitterSettingsModal.bot ? async () => {
-          const response = await fetch(`/api/twitter-settings?botId=${twitterSettingsModal.bot?.id}`);
+        onLoadSettings={tweetModalBot ? async () => {
+          const response = await fetch(`/api/twitter-settings?botId=${tweetModalBot.id}`);
           const data = await response.json();
           return data.settings;
         } : undefined}
-      />
-      <TweetModal
-        key="tweet-modal"
-        isOpen={!!tweetModalBot}
-        onClose={() => setTweetModalBot(null)}
-        onTweet={handleTweet}
-        onEditSettings={() => {
-          setTweetModalBot(null);
-          if (tweetModalBot) {
-            setTwitterSettingsModal({ isOpen: true, bot: tweetModalBot });
-          }
+        persona={tweetModalBot || {
+          id: '',
+          name: '',
+          imageUrl: '',
+          personality: '',
+          background: '',
+          authToken: '',
+          clientToken: '',
+          isPublic: false,
+          isAutonomous: false,
+          tweetFrequencyMinutes: 360,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastTweetAt: null,
+          tweetingEnabled: false,
+          tweetInterval: 360,
+          twitterUsername: null,
+          twitterUserId: null
         }}
-        persona={tweetModalBot || { name: '', personality: '', background: '' }}
+        onBotUpdate={(updatedBot) => {
+          // Update the bot in the windows array
+          const index = windows.findIndex(b => b.id === updatedBot.id);
+          if (index !== -1) {
+            windows[index] = updatedBot;
+          }
+          // Update the tweetModalBot state
+          setTweetModalBot(updatedBot);
+        }}
       />
       {deployModalBot && (
         <DeployModal
