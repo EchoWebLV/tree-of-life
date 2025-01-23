@@ -900,13 +900,14 @@ export default function WindowManager({
           </Rnd>
         );
       })}
-      <TwitterSettingsModal 
-        key="twitter-settings-modal"
-        isOpen={twitterSettingsModal?.isOpen || false}
-        onClose={() => setTwitterSettingsModal({ isOpen: false })}
-        onSave={async (settings) => {
+      <TweetModal
+        key="tweet-modal"
+        isOpen={!!tweetModalBot}
+        onClose={() => setTweetModalBot(null)}
+        onTweet={handleTweet}
+        onSaveSettings={async (settings) => {
           const clientToken = localStorage.getItem('clientToken') || '';
-          const botId = twitterSettingsModal.bot?.id;
+          const botId = tweetModalBot?.id;
           if (!botId) return;
 
           await fetch('/api/twitter-settings', {
@@ -924,35 +925,12 @@ export default function WindowManager({
             ...prev,
             [botId]: true
           }));
-          setTwitterSettingsModal({ isOpen: false });
         }}
-        initialSettings={twitterSettingsModal.bot ? {
-          appKey: '',
-          appSecret: '',
-          accessToken: '',
-          accessSecret: ''
-        } : undefined}
-        onLoad={twitterSettingsModal.bot ? async () => {
-          const response = await fetch(`/api/twitter-settings?botId=${twitterSettingsModal.bot?.id}`);
+        onLoadSettings={tweetModalBot ? async () => {
+          const response = await fetch(`/api/twitter-settings?botId=${tweetModalBot.id}`);
           const data = await response.json();
           return data.settings;
         } : undefined}
-      />
-      <TweetModal
-        key="tweet-modal"
-        isOpen={!!tweetModalBot}
-        onClose={() => setTweetModalBot(null)}
-        onTweet={handleTweet}
-        onEditSettings={() => {
-          // First set tweet modal to null
-          setTweetModalBot(null);
-          // Small delay to ensure proper state transition
-          setTimeout(() => {
-            if (tweetModalBot) {
-              setTwitterSettingsModal({ isOpen: true, bot: tweetModalBot });
-            }
-          }, 100);
-        }}
         persona={tweetModalBot || {
           id: '',
           name: '',
