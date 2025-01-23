@@ -9,7 +9,7 @@ import { HiMiniChevronRight } from 'react-icons/hi2';
 import LoadingDots from './LoadingDots';
 import Chat from './Chat';
 import { useWallet } from '@solana/wallet-adapter-react';
-import type { Bot } from './types';
+import { Bot } from './types';
 import type { DeployParams } from './DeployModal';
 import TwitterSettingsModal from './TwitterSettingsModal';
 import TweetModal from './TweetModal';
@@ -942,7 +942,34 @@ export default function WindowManager({
             setTwitterSettingsModal({ isOpen: true, bot: tweetModalBot });
           }
         }}
-        persona={tweetModalBot || { name: '', personality: '', background: '' }}
+        persona={tweetModalBot || {
+          id: '',
+          name: '',
+          imageUrl: '',
+          personality: '',
+          background: '',
+          authToken: '',
+          clientToken: '',
+          isPublic: false,
+          isAutonomous: false,
+          tweetFrequencyMinutes: 360,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastTweetAt: null,
+          tweetingEnabled: false,
+          tweetInterval: 360,
+          twitterUsername: null,
+          twitterUserId: null
+        }}
+        onBotUpdate={(updatedBot) => {
+          // Update the bot in the windows array
+          const index = windows.findIndex(b => b.id === updatedBot.id);
+          if (index !== -1) {
+            windows[index] = updatedBot;
+          }
+          // Update the tweetModalBot state
+          setTweetModalBot(updatedBot);
+        }}
       />
       {deployModalBot && (
         <DeployModal

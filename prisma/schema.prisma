@@ -17,6 +17,9 @@ model Bot {
   authToken   String   @default(uuid())
   clientToken String
   isPublic    Boolean  @default(false)
+  isAutonomous Boolean @default(false)
+  lastTweetAt DateTime?
+  tweetFrequencyMinutes Int @default(360)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   twitterSettings TwitterSettings?
