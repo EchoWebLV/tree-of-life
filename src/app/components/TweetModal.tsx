@@ -256,9 +256,6 @@ Do not use hashtags unless they are genuinely relevant to the content.`;
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
           <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-900 rounded-lg p-6 w-[400px]">
-            <Dialog.Title className="text-xl text-white mb-4">
-              Loading Settings...
-            </Dialog.Title>
             <div className="flex items-center justify-center h-32">
               <LoadingDots />
             </div>

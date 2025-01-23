@@ -4,5 +4,11 @@
         "memory": 3008,
         "maxDuration": 300
       }
+    },
+    "ignoreCommand": "git diff --quiet HEAD^ HEAD ./worker/",
+    "git": {
+      "deploymentEnabled": {
+        "worker": false
+      }
     }
-  }
+}
