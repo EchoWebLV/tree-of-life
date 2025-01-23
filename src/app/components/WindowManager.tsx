@@ -103,18 +103,6 @@ export default function WindowManager({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Check if bot has Twitter settings
-  useEffect(() => {
-    windows.forEach(async (bot) => {
-      const response = await fetch(`/api/twitter-settings?botId=${bot.id}`);
-      const data = await response.json();
-      setHasTwitterSettings(prev => ({
-        ...prev,
-        [bot.id]: !!data.settings
-      }));
-    });
-  }, [windows]);
-
   // Check token balance when wallet connects
   useEffect(() => {
     const checkBalance = async () => {
@@ -149,20 +137,8 @@ export default function WindowManager({
   }, [windows]); // Run when windows array changes
 
   const handleTweet = async (text: string) => {
-    if (!tweetModalBot) return;
-    
-    const response = await fetch('/api/post-tweet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text,
-        botId: tweetModalBot.id
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to post tweet');
-    }
+    // No-op to bypass tweet posting
+    console.log('Tweet would be:', text);
   };
 
   const getDeployTooltipContent = (bot: Bot) => {
@@ -314,27 +290,24 @@ export default function WindowManager({
   // Update the Twitter settings click handler
   const handleTwitterSettingsClick = async (bot: Bot) => {
     // Prevent multiple rapid clicks
-    if (twitterSettingsModal?.isOpen || tweetModalBot) return;
+    if (tweetModalBot) return;
 
-    try {
-      // First check if we have Twitter settings
-      const response = await fetch(`/api/twitter-settings?botId=${bot.id}`);
-      const data = await response.json();
-      
-      if (data.settings) {
-        // If we have settings, show tweet modal
-        setTweetModalBot(bot);
-      } else {
-        // If no settings, show settings modal with token check
-        checkTokensAndProceed(
-          'Twitter Integration',
-          20000,
-          () => setTwitterSettingsModal({ isOpen: true, bot })
-        );
-      }
-    } catch (error) {
-      console.error('Error checking Twitter settings:', error);
-    }
+    // Show tweet modal immediately with all features enabled
+    setTweetModalBot({
+      ...bot,
+      isAutonomous: false,
+      tweetFrequencyMinutes: 360,
+      tweetingEnabled: true,
+      tweetPrompt: bot.tweetPrompt || `You are ${bot.name}, ${bot.personality}
+
+Background: ${bot.background}
+
+Generate a single tweet that aligns with your personality and background. The tweet should be engaging, authentic, and maintain your unique voice.
+
+Keep the tweet under 280 characters and make it feel natural and spontaneous.
+
+Do not use hashtags unless they are genuinely relevant to the content.`
+    });
   };
 
   // Update the deploy click handler
@@ -909,27 +882,42 @@ export default function WindowManager({
           const botId = tweetModalBot?.id;
           if (!botId) return;
 
-          await fetch('/api/twitter-settings', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ...settings,
-              clientToken,
-              botId,
-            }),
-          });
-          setHasTwitterSettings(prev => ({
-            ...prev,
-            [botId]: true
-          }));
+          try {
+            await fetch('/api/twitter-settings', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ...settings,
+                clientToken,
+                botId,
+              }),
+            });
+            setHasTwitterSettings(prev => ({
+              ...prev,
+              [botId]: true
+            }));
+          } catch (error) {
+            console.error('Error saving settings:', error);
+          }
         }}
-        onLoadSettings={tweetModalBot ? async () => {
-          const response = await fetch(`/api/twitter-settings?botId=${tweetModalBot.id}`);
-          const data = await response.json();
-          return data.settings;
-        } : undefined}
+        onLoadSettings={async () => {
+          try {
+            if (!tweetModalBot?.id) return null;
+            const response = await fetch(`/api/twitter-settings?botId=${tweetModalBot.id}`);
+            const data = await response.json();
+            return data.settings || {
+              appKey: '',
+              appSecret: '',
+              accessToken: '',
+              accessSecret: ''
+            };
+          } catch (error) {
+            console.error('Error loading settings:', error);
+            return null;
+          }
+        }}
         persona={tweetModalBot || {
           id: '',
           name: '',
@@ -944,19 +932,18 @@ export default function WindowManager({
           createdAt: new Date(),
           updatedAt: new Date(),
           lastTweetAt: null,
-          tweetingEnabled: false,
+          tweetingEnabled: true,
           tweetInterval: 360,
           twitterUsername: null,
-          twitterUserId: null
+          twitterUserId: null,
+          tweetPrompt: ''
         }}
         onBotUpdate={(updatedBot) => {
-          // Update the bot in the windows array
-          const index = windows.findIndex(b => b.id === updatedBot.id);
-          if (index !== -1) {
-            windows[index] = updatedBot;
-          }
-          // Update the tweetModalBot state
-          setTweetModalBot(updatedBot);
+          setTweetModalBot({
+            ...updatedBot,
+            tweetingEnabled: true,
+            tweetPrompt: tweetModalBot?.tweetPrompt || updatedBot.tweetPrompt
+          });
         }}
       />
       {deployModalBot && (
