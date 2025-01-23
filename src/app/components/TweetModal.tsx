@@ -79,16 +79,23 @@ export default function TweetModal({
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const statusIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Update currentBot when persona changes
+  useEffect(() => {
+    setCurrentBot(persona);
+  }, [persona]);
+
   // Fetch bot data when modal opens
   useEffect(() => {
     const fetchBotData = async () => {
-      if (!isOpen || !persona.id) return;
+      if (!isOpen || !persona.id || !isMountedRef.current) return;
       
       try {
         const response = await fetch(`/api/bots/${persona.id}`);
         const data = await response.json();
-        setCurrentBot(data.bot);
-        onBotUpdate?.(data.bot);
+        if (isMountedRef.current) {
+          setCurrentBot(data.bot);
+          onBotUpdate?.(data.bot);
+        }
       } catch (error) {
         console.error('Error fetching bot data:', error);
       }
