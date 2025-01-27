@@ -30,10 +30,6 @@ function getAPISettings(settings: unknown): APISettings {
   };
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 // Rate limiting configuration
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
 const MAX_REQUESTS_PER_WINDOW = 20; // 20 requests per minute
@@ -169,6 +165,10 @@ async function getExchangeRate(base: string, target: string, request: Request) {
     return null;
   }
 }
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(request: Request) {
   try {
@@ -323,6 +323,7 @@ export async function POST(request: Request) {
       ],
       functions: availableFunctions,
       function_call: "auto",
+      temperature: 0.7,
       max_tokens: 120,
     });
 
@@ -377,6 +378,7 @@ export async function POST(request: Request) {
             content: JSON.stringify(functionData)
           }
         ],
+        temperature: 0.7,
         max_tokens: 120,
       });
 
@@ -389,6 +391,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       response: responseMessage.content || 'No response generated'
     });
+
   } catch (error) {
     console.error('Error in chat route:', {
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -396,7 +399,6 @@ export async function POST(request: Request) {
       type: error instanceof Error ? error.constructor.name : typeof error
     });
 
-    // Check for specific error types
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
         return NextResponse.json({ error: 'OpenAI API key configuration error' }, { status: 500 });

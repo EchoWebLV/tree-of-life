@@ -27,13 +27,28 @@ export default function Chat({ persona }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isUncensored, setIsUncensored] = useState(() => {
-    const uncensoredBots = JSON.parse(localStorage.getItem(UNCENSORED_STORAGE_KEY) || '{}');
-    return persona.id ? uncensoredBots[persona.id] || false : false;
-  });
+  const [isUncensored, setIsUncensored] = useState(false);
+  const [mode, setMode] = useState<'natural' | 'uncensored' | 'deepseek'>('natural');
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [hasEnoughTokens, setHasEnoughTokens] = useState(false);
   const wallet = useWallet();
+
+  // Load uncensored state from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && persona.id) {
+      const uncensoredBots = JSON.parse(localStorage.getItem(UNCENSORED_STORAGE_KEY) || '{}');
+      setIsUncensored(uncensoredBots[persona.id] || false);
+    }
+  }, [persona.id]);
+
+  // Save uncensored state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && persona.id) {
+      const uncensoredBots = JSON.parse(localStorage.getItem(UNCENSORED_STORAGE_KEY) || '{}');
+      uncensoredBots[persona.id] = isUncensored;
+      localStorage.setItem(UNCENSORED_STORAGE_KEY, JSON.stringify(uncensoredBots));
+    }
+  }, [isUncensored, persona.id]);
 
   // Load previous messages
   useEffect(() => {
@@ -91,14 +106,6 @@ export default function Chat({ persona }: ChatProps) {
     checkBalance();
   }, [wallet.publicKey, isUncensored]);
 
-  useEffect(() => {
-    if (!persona.id) return;
-    
-    const uncensoredBots = JSON.parse(localStorage.getItem(UNCENSORED_STORAGE_KEY) || '{}');
-    uncensoredBots[persona.id] = isUncensored;
-    localStorage.setItem(UNCENSORED_STORAGE_KEY, JSON.stringify(uncensoredBots));
-  }, [isUncensored, persona.id]);
-
   const storeMessage = async (message: Message) => {
     if (!persona.id) return;
 
@@ -132,8 +139,10 @@ export default function Chat({ persona }: ChatProps) {
       await storeMessage(userMessage);
 
       let endpoint = '/api/chat';
-      if (isUncensored) {
+      if (mode === 'uncensored') {
         endpoint = '/api/uncensored-chat';
+      } else if (mode === 'deepseek') {
+        endpoint = '/api/deepseek';
       }
 
       const response = await fetch(endpoint, {
@@ -172,15 +181,19 @@ export default function Chat({ persona }: ChatProps) {
         if (errorText.includes('429')) {
           errorMessage = 'Too many requests. Please wait a moment before trying again.';
         } else if (errorText.includes('api key')) {
-          errorMessage = isUncensored 
+          errorMessage = mode === 'uncensored' 
             ? 'The uncensored chat service is currently unavailable. Please try switching to natural mode.'
-            : 'The chat service is currently unavailable. Please try again later.';
+            : mode === 'deepseek'
+              ? 'The DeepSeek service is currently unavailable. Please try another mode.'
+              : 'The chat service is currently unavailable. Please try again later.';
         } else if (errorText.includes('invalid response format')) {
           errorMessage = 'Received an invalid response. Please try again.';
         } else if (errorText.includes('500')) {
-          errorMessage = isUncensored
+          errorMessage = mode === 'uncensored'
             ? 'The uncensored chat service encountered an error. Please try switching to natural mode.'
-            : 'The chat service encountered an error. Please try again later.';
+            : mode === 'deepseek'
+              ? 'The DeepSeek service encountered an error. Please try another mode.'
+              : 'The chat service encountered an error. Please try again later.';
         }
       }
       
@@ -198,24 +211,28 @@ export default function Chat({ persona }: ChatProps) {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
           <span className="text-white">Mode:</span>
-          <button
-            onClick={() => {
-              if (!isUncensored && !hasEnoughTokens) {
+          <select
+            value={mode}
+            onChange={(e) => {
+              const newMode = e.target.value as 'natural' | 'uncensored' | 'deepseek';
+              if (newMode === 'uncensored' && !hasEnoughTokens) {
                 alert('You need at least 20,000 DRU tokens to use uncensored mode');
                 return;
               }
-              setIsUncensored(!isUncensored);
+              setMode(newMode);
             }}
             className={`px-3 py-1 rounded-xl transition-colors duration-200 text-xs
-              ${isUncensored 
-                ? 'bg-red-500 text-white hover:bg-red-600' 
-                : hasEnoughTokens 
-                  ? 'bg-green-500 text-white hover:bg-green-600'
-                  : 'bg-gray-500 text-white cursor-not-allowed'
-            }`}
+              ${mode === 'uncensored' 
+                ? 'bg-red-500 text-white' 
+                : mode === 'deepseek'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-green-500 text-white'
+              }`}
           >
-            {isUncensored ? 'Uncensored' : 'Natural'}
-          </button>
+            <option value="natural">Natural</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="uncensored" disabled={!hasEnoughTokens}>Uncensored</option>
+          </select>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white">
