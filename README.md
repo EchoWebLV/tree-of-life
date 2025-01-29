@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Druid AI
 
-## Getting Started
+Druid AI is a sophisticated Next.js-based platform that creates AI-powered digital companions from images and NFTs, featuring a unique desktop-style interface and blockchain integration.
 
-First, run the development server:
+## 🌟 Features
 
+- **AI Personality Generation**: Create unique AI personas from uploaded images or NFTs
+- **Multi-Model Chat System**: 
+  - OpenAI GPT-4
+  - Deepseek Chat
+  - X.AI's Grok
+  - Uncensored chat capabilities via ModelsLab
+- **NFT Integration**: 
+  - Support for Ethereum and Solana NFTs
+  - NFT-based personality generation
+  - Token deployment capabilities
+- **Real-Time Data Integration**:
+  - Cryptocurrency price tracking
+  - News updates
+  - Weather information
+  - Exchange rate conversion
+- **Social Features**:
+  - Autonomous tweet generation
+  - Public bot sharing
+  - Personality customization
+- **Desktop-Style Interface**: Modern UI with window management and desktop icons
+- **Security Features**:
+  - Token-based authentication
+  - Rate limiting
+  - Environment variable protection
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 16.x or higher
+- npm or yarn package manager
+- A modern web browser
+- Required API Keys:
+  - OpenAI API key
+  - OpenRouter API key (for Deepseek)
+  - X.AI API key
+  - ModelsLab API key (for uncensored chat)
+- (Optional) Solana wallet for token features
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/druid-ai.git
+cd druid-ai
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Set up environment variables:
+Create a `.env.local` file with the following:
+```env
+OPENAI_API_KEY=your_openai_key
+OPENROUTER_API_KEY=your_openrouter_key
+XAI_API_KEY=your_xai_key
+MODELSLAB_API_KEY=your_modelslab_key
+```
+
+4. Start the development server:
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) to view the application
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Technology Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Frontend**: Next.js 13+, React, TypeScript
+- **AI Integration**: 
+  - OpenAI GPT-4
+  - Deepseek Chat
+  - X.AI Grok
+  - ModelsLab
+- **Blockchain**: 
+  - Solana Web3.js
+  - Ethereum integration
+- **Database**: Prisma ORM
+- **API**: Next.js API routes with rate limiting
+- **Styling**: Modern UI with responsive design
 
-## Learn More
+## 🔐 Security
 
-To learn more about Next.js, take a look at the following resources:
+- Rate limiting implementation
+- Secure API key management
+- Environment variable protection
+- Blockchain wallet integration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🤝 Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
 
-## Deploy on Vercel
+## 📧 Contact
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+[Add your contact information here]
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+Built with 🌿 by [Your Team Name]
