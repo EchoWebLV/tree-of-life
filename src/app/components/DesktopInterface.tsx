@@ -23,28 +23,28 @@ export interface DesktopInterfaceProps {
 // const REQUIRED_TOKEN_AMOUNT = 50000;
 // const DRUID_TOKEN_ADDRESS = new PublicKey('MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump');
 // New component for static desktop icons
-const StaticDesktopIcon = ({ 
-  src, 
-  alt, 
-  href, 
-  onClick 
-}: { 
-  src: string; 
-  alt: string; 
-  href: string; 
-  onClick?: () => void 
+const StaticDesktopIcon = ({
+  src,
+  alt,
+  href,
+  onClick
+}: {
+  src: string;
+  alt: string;
+  href: string;
+  onClick?: () => void
 }) => (
-  <motion.div 
-    className="flex flex-col items-center relative group" 
+  <motion.div
+    className="flex flex-col items-center relative group"
     whileHover={{ scale: 1.5 }}
     onClick={onClick || (() => window.open(href, '_blank'))}
   >
     <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
-      <Image 
-        src={src} 
-        alt={alt} 
-        fill 
-        className="object-cover transition-all duration-200" 
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className="object-cover transition-all duration-200"
       />
     </div>
     <span className="mt-2 text-xs text-white text-center max-w-full truncate">
@@ -53,15 +53,15 @@ const StaticDesktopIcon = ({
   </motion.div>
 );
 // New component for the deployment modal
-const DeploymentModal = ({ 
-  isOpen, 
-  tokenAddress, 
-  landingPageUrl, 
-  onClose 
-}: { 
-  isOpen: boolean; 
-  tokenAddress?: string; 
-  landingPageUrl?: string; 
+const DeploymentModal = ({
+  isOpen,
+  tokenAddress,
+  landingPageUrl,
+  onClose
+}: {
+  isOpen: boolean;
+  tokenAddress?: string;
+  landingPageUrl?: string;
   onClose: () => void;
 }) => (
   <AnimatePresence>
@@ -114,14 +114,14 @@ const DeploymentModal = ({
   </AnimatePresence>
 );
 // New component for the edit modal
-const EditBotModal = ({ 
-  isOpen, 
-  bot, 
-  onClose, 
-  onSubmit 
-}: { 
-  isOpen: boolean; 
-  bot?: Bot; 
+const EditBotModal = ({
+  isOpen,
+  bot,
+  onClose,
+  onSubmit
+}: {
+  isOpen: boolean;
+  bot?: Bot;
   onClose: () => void;
   onSubmit: (bot: Bot) => void;
 }) => {
@@ -131,7 +131,7 @@ const EditBotModal = ({
 
   const generatePersonality = async () => {
     if (!aiPrompt.trim()) return;
-    
+
     setIsGenerating(true);
     try {
       const response = await fetch('/api/generate-personality', {
@@ -149,7 +149,7 @@ const EditBotModal = ({
       }
 
       const result = await response.json();
-      
+
       if (result.error) {
         throw new Error(result.error);
       }
@@ -157,7 +157,7 @@ const EditBotModal = ({
       if (formRef.current) {
         const personalityInput = formRef.current.elements.namedItem('personality') as HTMLTextAreaElement;
         const backgroundInput = formRef.current.elements.namedItem('background') as HTMLTextAreaElement;
-        
+
         if (personalityInput && result.personality) {
           personalityInput.value = result.personality;
         }
@@ -259,7 +259,7 @@ const EditBotModal = ({
               </div>
 
               <APIManager botId={bot.id} />
-              
+
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
@@ -283,10 +283,10 @@ const EditBotModal = ({
   );
 };
 
-export default function DesktopInterface({ 
-  bots, 
-  onBotDelete, 
-  isLoading, 
+export default function DesktopInterface({
+  bots,
+  onBotDelete,
+  isLoading,
   onUploadClick,
   setBots,
   isCreating = false,
@@ -336,7 +336,7 @@ export default function DesktopInterface({
     let txSignature: string | null = null;
     try {
       setIsDeploying(bot.id);
-      
+
       // Create connection
       const connection = new Connection(
         "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/",
@@ -359,7 +359,7 @@ export default function DesktopInterface({
       transaction.feePayer = wallet.publicKey;
       // Request signature from user
       const signed = await wallet.signTransaction(transaction);
-      
+
       // Send transaction and store signature
       txSignature = await connection.sendRawTransaction(signed.serialize(), {
         skipPreflight: false,
@@ -379,8 +379,8 @@ export default function DesktopInterface({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          bot, 
+        body: JSON.stringify({
+          bot,
           clientToken,
           description: deployParams?.description,
           ticker: deployParams?.ticker,
@@ -407,7 +407,7 @@ export default function DesktopInterface({
       }
     } catch (error) {
       console.error('Error:', error);
-      
+
       // Show a more user-friendly message for timeout errors
       if (error instanceof Error && error.message?.includes('TransactionExpiredTimeoutError')) {
         alert('Transaction is taking longer than expected. Please check your wallet or try again with a better connection.');
@@ -418,7 +418,7 @@ export default function DesktopInterface({
             const connection = new Connection(
               "https://aged-capable-uranium.solana-mainnet.quiknode.pro/27f8770e7a18869a2edf701c418b572d5214da01/"
             );
-            
+
             // Create refund transaction
             const { blockhash } = await connection.getLatestBlockhash();
             const refundTx = new Transaction().add(
@@ -433,7 +433,7 @@ export default function DesktopInterface({
             // Send refund transaction
             const refundSignature = await connection.sendTransaction(refundTx, []);
             await connection.confirmTransaction(refundSignature);
-            
+
             alert('Token deployment failed. Your payment has been refunded.');
           } catch (refundError) {
             console.error('Refund failed:', refundError);
@@ -468,7 +468,7 @@ export default function DesktopInterface({
       const response = await fetch(`/api/bots/${botId}`, {
         method: 'DELETE',
       });
-      
+
       if (response.ok) {
         closeWindow(botId);
         onBotDelete(botId);
@@ -495,17 +495,17 @@ export default function DesktopInterface({
       }
       // Update local state
       setBots(bots.map(bot => bot.id === updatedBot.id ? updatedBot : bot));
-      
+
       // Update windows state to reflect changes immediately
-      setWindows(windows.map(window => 
+      setWindows(windows.map(window =>
         window.id === updatedBot.id ? updatedBot : window
       ));
-      
+
       // Update selected bot if it's the one being edited
       if (selectedBot?.id === updatedBot.id) {
         setSelectedBot(updatedBot);
       }
-      
+
       setEditModal({ isOpen: false });
       onEditModalClose();
     } catch (error) {
@@ -519,21 +519,24 @@ export default function DesktopInterface({
       <div className="fixed left-4 top-4 grid auto-cols-[96px] gap-6 pointer-events-auto
                     grid-flow-col grid-rows-[repeat(auto-fill,96px)] max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)]">
         {/* Static icons using new component */}
-        <StaticDesktopIcon 
-          src="/twitter.png" 
-          alt="Twitter" 
-          href="https://x.com/DruidAi_APP" 
+        <StaticDesktopIcon
+          src="/twitter.png"
+          alt="Twitter"
+          href="https://x.com/DruidAi_APP"
         />
-        <StaticDesktopIcon 
-          src="/dex.png" 
-          alt="Dex" 
-          href="https://dexscreener.com/solana/MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump" 
+        <StaticDesktopIcon
+          src="/dex.png"
+          alt="Dex"
+          href="https://dexscreener.com/solana/MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump"
         />
-        <StaticDesktopIcon 
-          src="/doc.png" 
-          alt="Docs" 
-          href="https://druid-ai-docs.gitbook.io/start" 
+        <StaticDesktopIcon
+          src="/doc.png"
+          alt="Docs"
+          href="https://druid-ai-docs.gitbook.io/start"
         />
+        <StaticDesktopIcon src="/vanity.png" alt="Vanity" href="https://vanity.druidai.app" />
+        <StaticDesktopIcon src="/mechroot.png" alt="Mechroot" href="https://mechroot.druidai.app" />
+
         {/* Create icon with original structure */}
         <motion.div
           className="flex flex-col items-center relative group"
@@ -556,10 +559,10 @@ export default function DesktopInterface({
             whileHover={{ scale: 1.05 }}
           >
             <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer bg-white/50 flex items-center justify-center">
-              <Image 
-                src="/loading.gif" 
-                alt="Loading" 
-                fill 
+              <Image
+                src="/loading.gif"
+                alt="Loading"
+                fill
                 className="object-cover"
               />
             </div>
@@ -567,31 +570,31 @@ export default function DesktopInterface({
               Loading
             </span>
           </motion.div>
-        ) : ( 
+        ) : (
           [...bots].reverse().map((bot) => (
             <div key={bot.id} className="relative">
               <motion.div
                 className="flex flex-col items-center relative group"
                 whileHover={{ scale: 1.5 }}
               >
-                <div 
+                <div
                   className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer"
                   onClick={() => openWindow(bot)}
                 >
                   {bot.imageUrl ? (
-                    <Image 
-                      src={bot.imageUrl} 
-                      alt={bot.name} 
-                      fill 
-                      className="object-cover transition-all duration-200" 
+                    <Image
+                      src={bot.imageUrl}
+                      alt={bot.name}
+                      fill
+                      className="object-cover transition-all duration-200"
                     />
                   ) : (
                     <div className="w-full h-full bg-white/10">
-                      <Image 
-                        src="/loading.gif" 
-                        alt="Loading" 
-                        fill 
-                        className="object-contain p-2" 
+                      <Image
+                        src="/loading.gif"
+                        alt="Loading"
+                        fill
+                        className="object-contain p-2"
                       />
                     </div>
                   )}
@@ -604,7 +607,7 @@ export default function DesktopInterface({
                 <span className="mt-2 text-xs text-white text-center max-w-full truncate">
                   {bot.name}
                 </span>
-                
+
                 {/* Delete button */}
                 <button
                   onClick={() => setShowDeleteConfirm(bot.id)}
@@ -645,10 +648,10 @@ export default function DesktopInterface({
             whileHover={{ scale: 1.05 }}
           >
             <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer bg-white/10 flex items-center justify-center">
-              <Image 
-                src="/loading.gif" 
-                alt="Creating" 
-                fill 
+              <Image
+                src="/loading.gif"
+                alt="Creating"
+                fill
                 className="object-cover"
               />
             </div>
@@ -672,14 +675,14 @@ export default function DesktopInterface({
         twitterSettingsModal={twitterSettingsModal}
       />
 
-      <DeploymentModal 
+      <DeploymentModal
         isOpen={deploymentModal.isOpen}
         tokenAddress={deploymentModal.tokenAddress}
         landingPageUrl={deploymentModal.landingPageUrl}
         onClose={() => setDeploymentModal({ isOpen: false })}
       />
 
-      <EditBotModal 
+      <EditBotModal
         isOpen={editModal.isOpen}
         bot={editModal.bot}
         onClose={() => {

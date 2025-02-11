@@ -26,12 +26,14 @@ const StaticDesktopIcon = ({
     whileHover={{ scale: 1.5 }}
     onClick={() => window.open(href, '_blank')}
   >
-    <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer">
+    <div className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer bg-white/10">
       <Image 
         src={src} 
         alt={alt} 
         fill 
-        className="object-cover transition-all duration-200" 
+        className="object-cover transition-all duration-200"
+        onError={(e) => console.error(`Error loading ${alt} image:`, e)}
+        onLoad={() => console.log(`Successfully loaded ${alt} image`)}
       />
     </div>
     <span className="mt-2 text-xs text-white text-center max-w-full truncate">
@@ -82,8 +84,7 @@ export default function DesktopIcons({
                     grid-flow-col grid-rows-[repeat(auto-fill,96px)] max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)]">
       {/* Static icons */}
       <StaticDesktopIcon src="/twitter.png" alt="Twitter" href="https://x.com/DruidAi_APP" />
-      <StaticDesktopIcon src="/dex.png" alt="Dex" href="https://dexscreener.com/solana/MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump" />
-      <StaticDesktopIcon src="/doc.png" alt="Docs" href="https://druid-ai-docs.gitbook.io/start" />
+      <StaticDesktopIcon src="/loading.gif" alt="Mechroot" href="https://mechroot.xyz" />
 
       {/* Create icon */}
       <motion.div
