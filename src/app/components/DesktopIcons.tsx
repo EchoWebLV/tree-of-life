@@ -84,7 +84,9 @@ export default function DesktopIcons({
                     grid-flow-col grid-rows-[repeat(auto-fill,96px)] max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)]">
       {/* Static icons */}
       <StaticDesktopIcon src="/twitter.png" alt="Twitter" href="https://x.com/DruidAi_APP" />
-      <StaticDesktopIcon src="/loading.gif" alt="Mechroot" href="https://mechroot.xyz" />
+      <StaticDesktopIcon src="/dex.png" alt="Dex" href="https://dexscreener.com/solana/MLoYxeB1Xm4BZyuWLaM3K69LvMSm4TSPXWedF9Epump" />
+      <StaticDesktopIcon src="/doc.png" alt="Docs" href="https://druid-ai-docs.gitbook.io/start" />
+      <StaticDesktopIcon src="/mechroot.png" alt="Mechroot" href="https://mechroot.xyz" />
 
       {/* Create icon */}
       <motion.div

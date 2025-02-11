@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { prisma } from '@/lib/prisma';
 
 interface APISettings {
@@ -7,6 +7,29 @@ interface APISettings {
   news: boolean;
   weather: boolean;
   exchange: boolean;
+}
+
+// Add these interfaces at the top of the file after the APISettings interface
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface GeminiPart {
+  text: string;
+}
+
+interface GeminiMessage {
+  role: 'user' | 'model';
+  parts: GeminiPart[];
+}
+
+interface FunctionArgs {
+  coin?: string;
+  query?: string;
+  city?: string;
+  base?: string;
+  target?: string;
 }
 
 function getAPISettings(settings: unknown): APISettings {
@@ -166,17 +189,15 @@ async function getExchangeRate(base: string, target: string, request: Request) {
   }
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: Request) {
   try {
-    // Validate OpenAI API key
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OpenAI API key is not configured');
+    // Validate Gemini API key
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('Gemini API key is not configured');
       return NextResponse.json({ 
-        error: 'OpenAI API key is not configured' 
+        error: 'Gemini API key is not configured' 
       }, { status: 500 });
     }
 
@@ -239,100 +260,124 @@ export async function POST(request: Request) {
     Respond while staying true to your character's unique voice and personality. Keep responses SHORT and snappy. Write like you're having a casual chat!
     Remember: Brief responses only. No emojis. Stay in character.`;
 
+    // Initialize the chat model
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const chat = model.startChat({
+      history: [
+        {
+          role: "user",
+          parts: [{ text: systemPrompt }],
+        },
+        {
+          role: "model",
+          parts: [{ text: "I understand and will embody the character as specified." }],
+        },
+      ],
+      generationConfig: {
+        maxOutputTokens: 120,
+        temperature: 0.7,
+      },
+    });
+
     // Filter available functions based on settings
-    const availableFunctions = [];
+    const tools = [];
     
     if (apiSettings.crypto) {
-      availableFunctions.push({
-        name: "getCryptoPrice",
-        description: "Get the current price, 24h change, and market cap for a cryptocurrency",
-        parameters: {
-          type: "object",
-          properties: {
-            coin: {
-              type: "string",
-              description: "The name or symbol of the cryptocurrency (e.g., bitcoin, ethereum, etc.)"
-            }
-          },
-          required: ["coin"]
-        }
+      tools.push({
+        functionDeclarations: [{
+          name: "getCryptoPrice",
+          description: "Get the current price, 24h change, and market cap for a cryptocurrency",
+          parameters: {
+            type: "OBJECT",
+            properties: {
+              coin: {
+                type: "STRING",
+                description: "The name or symbol of the cryptocurrency (e.g., bitcoin, ethereum, etc.)"
+              }
+            },
+            required: ["coin"]
+          }
+        }]
       });
     }
 
     if (apiSettings.news) {
-      availableFunctions.push({
-        name: "getNews",
-        description: "Get the latest news articles about a specific topic",
-        parameters: {
-          type: "object",
-          properties: {
-            query: {
-              type: "string",
-              description: "The topic to search news for (e.g., bitcoin, ethereum, technology, etc.)"
-            }
-          },
-          required: ["query"]
-        }
+      tools.push({
+        functionDeclarations: [{
+          name: "getNews",
+          description: "Get the latest news articles about a specific topic",
+          parameters: {
+            type: "OBJECT",
+            properties: {
+              query: {
+                type: "STRING",
+                description: "The topic to search news for (e.g., bitcoin, ethereum, technology, etc.)"
+              }
+            },
+            required: ["query"]
+          }
+        }]
       });
     }
 
     if (apiSettings.weather) {
-      availableFunctions.push({
-        name: "getWeather",
-        description: "Get the current weather for a city",
-        parameters: {
-          type: "object",
-          properties: {
-            city: {
-              type: "string",
-              description: "The name of the city to get weather for (e.g., London, New York, Tokyo)"
-            }
-          },
-          required: ["city"]
-        }
+      tools.push({
+        functionDeclarations: [{
+          name: "getWeather",
+          description: "Get the current weather for a city",
+          parameters: {
+            type: "OBJECT",
+            properties: {
+              city: {
+                type: "STRING",
+                description: "The name of the city to get weather for (e.g., London, New York, Tokyo)"
+              }
+            },
+            required: ["city"]
+          }
+        }]
       });
     }
 
     if (apiSettings.exchange) {
-      availableFunctions.push({
-        name: "getExchangeRate",
-        description: "Get the current exchange rate between two currencies",
-        parameters: {
-          type: "object",
-          properties: {
-            base: {
-              type: "string",
-              description: "The base currency code (e.g., USD, EUR, GBP)"
+      tools.push({
+        functionDeclarations: [{
+          name: "getExchangeRate",
+          description: "Get the current exchange rate between two currencies",
+          parameters: {
+            type: "OBJECT",
+            properties: {
+              base: {
+                type: "STRING",
+                description: "The base currency code (e.g., USD, EUR, GBP)"
+              },
+              target: {
+                type: "STRING",
+                description: "The target currency code (e.g., EUR, JPY, GBP)"
+              }
             },
-            target: {
-              type: "string",
-              description: "The target currency code (e.g., EUR, JPY, GBP)"
-            }
-          },
-          required: ["base", "target"]
-        }
+            required: ["base", "target"]
+          }
+        }]
       });
     }
 
-    // First completion with function calling
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages
-      ],
-      functions: availableFunctions,
-      function_call: "auto",
-      temperature: 0.7,
-      max_tokens: 120,
-    });
+    // Convert messages to Gemini format
+    const geminiMessages = messages.map((msg: Message): GeminiMessage => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
 
-    const responseMessage = response.choices[0].message;
-
+    // Send the chat message
+    const result = await chat.sendMessage([{ text: geminiMessages[geminiMessages.length - 1].parts[0].text }]);
+    const response = await result.response;
+    
     // Check if the model wants to call a function
-    if (responseMessage.function_call) {
+    const functionCall = response.candidates?.[0]?.content?.parts?.[0]?.functionCall;
+
+    if (functionCall) {
       // Verify the function is enabled
-      const functionName = responseMessage.function_call.name;
+      const functionName = functionCall.name;
       const settings = getAPISettings(apiSettings);
       const isEnabled = (
         (functionName === "getCryptoPrice" && settings.crypto) ||
@@ -348,48 +393,35 @@ export async function POST(request: Request) {
       }
 
       let functionData = null;
-      const functionArgs = JSON.parse(responseMessage.function_call.arguments);
+      const functionArgs = functionCall.args as FunctionArgs;
       
       switch (functionName) {
         case "getCryptoPrice":
-          functionData = await getCryptoPrice(functionArgs.coin, request);
+          functionData = await getCryptoPrice(functionArgs.coin!, request);
           break;
         case "getNews":
-          functionData = await getNews(functionArgs.query, request);
+          functionData = await getNews(functionArgs.query!, request);
           break;
         case "getWeather":
-          functionData = await getWeather(functionArgs.city, request);
+          functionData = await getWeather(functionArgs.city!, request);
           break;
         case "getExchangeRate":
-          functionData = await getExchangeRate(functionArgs.base, functionArgs.target, request);
+          functionData = await getExchangeRate(functionArgs.base!, functionArgs.target!, request);
           break;
       }
 
-      // Second completion with the function data
-      const secondResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-          responseMessage,
-          {
-            role: "function",
-            name: functionName,
-            content: JSON.stringify(functionData)
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 120,
-      });
+      // Send the function result back to the model
+      const secondResult = await chat.sendMessage([{ text: JSON.stringify(functionData) }]);
+      const secondResponse = await secondResult.response;
 
       return NextResponse.json({ 
-        response: secondResponse.choices[0]?.message?.content || 'No response generated'
+        response: secondResponse.text() || 'No response generated'
       });
     }
 
     // If no function was called, return the original response
     return NextResponse.json({ 
-      response: responseMessage.content || 'No response generated'
+      response: response.text() || 'No response generated'
     });
 
   } catch (error) {
@@ -401,7 +433,7 @@ export async function POST(request: Request) {
 
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
-        return NextResponse.json({ error: 'OpenAI API key configuration error' }, { status: 500 });
+        return NextResponse.json({ error: 'Gemini API key configuration error' }, { status: 500 });
       }
       if (error.message.includes('Rate limit')) {
         return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
