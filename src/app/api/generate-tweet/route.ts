@@ -1,18 +1,28 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { prisma } from '@/lib/prisma';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: Request) {
   try {
-    const { persona } = await request.json();
+    const { botId } = await request.json();
+
+    // Fetch the bot to get its personality and settings
+    const bot = await prisma.bot.findUnique({
+      where: { id: botId },
+      include: {
+        settings: true,
+      },
+    });
+
+    if (!bot) {
+      return NextResponse.json({ error: 'Bot not found' }, { status: 404 });
+    }
 
     // Fetch recent chat messages for context
     const recentMessages = await prisma.message.findMany({
-      where: { botId: persona.id },
+      where: { botId: bot.id },
       orderBy: { createdAt: 'desc' },
       take: 25, // Get last 25 messages (about 12-13 conversation turns) for richer context
       select: {
@@ -24,7 +34,8 @@ export async function POST(request: Request) {
     // Reverse messages to get chronological order
     const chatHistory = recentMessages.reverse();
 
-    const systemPrompt = `You are ${persona.name}. ${persona.personality} ${persona.background}
+    // Use custom tweet prompt if available, otherwise use default
+    const tweetPrompt = bot.tweetPrompt || `You are ${bot.name}. ${bot.personality} ${bot.background}
 
     Here is your recent chat history for context (last ~12 conversations):
     ${chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')}
@@ -57,17 +68,52 @@ export async function POST(request: Request) {
     
     just tweet text nothing else.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: "Generate a tweet that expresses your thoughts or shares something about yourself, possibly referencing your recent conversations if relevant." }
-      ],
-      max_tokens: 100,
-      temperature: 0.9,
+    // Initialize the chat model
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: {
+        maxOutputTokens: 180,
+        temperature: 0.9,
+      }
     });
 
-    const tweet = response.choices[0]?.message?.content?.trim() || '';
+    const chat = model.startChat({
+      history: [
+        {
+          role: "user",
+          parts: [{ text: tweetPrompt }]
+        },
+        {
+          role: "model",
+          parts: [{ text: "I understand and will generate a tweet in character." }]
+        }
+      ],
+    });
+
+    // Generate the tweet
+    const result = await chat.sendMessage([{
+      text: "Generate a tweet that expresses your thoughts or shares something about yourself, possibly referencing your recent conversations if relevant."
+    }]);
+    const response = await result.response;
+
+    const tweet = response.text().trim();
+
+    // Validate tweet length (Twitter's limit is 280 characters)
+    if (tweet.length > 280) {
+      // Try to generate again with a stronger emphasis on length
+      const retryResult = await chat.sendMessage([{
+        text: "That tweet was too long. Please generate a shorter tweet, under 180 characters."
+      }]);
+      const retryResponse = await retryResult.response;
+      const retryTweet = retryResponse.text().trim();
+
+      if (retryTweet.length <= 280) {
+        return NextResponse.json({ tweet: retryTweet });
+      } else {
+        // If still too long, truncate with ellipsis
+        return NextResponse.json({ tweet: tweet.slice(0, 277) + '...' });
+      }
+    }
 
     return NextResponse.json({ tweet });
   } catch (error) {

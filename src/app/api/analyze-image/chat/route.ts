@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 export async function POST(request: Request) {
   try {
@@ -20,17 +23,42 @@ export async function POST(request: Request) {
     
     Respond to the user's messages in character, maintaining this sarcastic tone while staying consistent with your personality and background.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages
-      ],
-      max_tokens: 500,
+    // Initialize the chat model
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: {
+        maxOutputTokens: 500,
+        temperature: 0.7,
+      }
     });
 
+    const chat = model.startChat({
+      history: [
+        {
+          role: "user",
+          parts: [{ text: systemPrompt }]
+        },
+        {
+          role: "model",
+          parts: [{ text: "I understand and will embody the character as specified." }]
+        }
+      ],
+    });
+
+    // Convert messages to Gemini format
+    const geminiMessages = messages.map((msg: Message) => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
+
+    // Send the last message to get a response
+    const result = await chat.sendMessage([{
+      text: geminiMessages[geminiMessages.length - 1].parts[0].text
+    }]);
+    const response = await result.response;
+
     return NextResponse.json({ 
-      response: response.choices[0]?.message?.content || 'No response generated'
+      response: response.text() || 'No response generated'
     });
   } catch (error) {
     console.error('Error:', error);

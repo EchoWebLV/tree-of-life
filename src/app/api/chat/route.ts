@@ -261,7 +261,13 @@ export async function POST(request: Request) {
     Remember: Brief responses only. No emojis. Stay in character.`;
 
     // Initialize the chat model
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: {
+        maxOutputTokens: 120,
+        temperature: 0.7,
+      }
+    });
     const chat = model.startChat({
       history: [
         {
@@ -273,10 +279,6 @@ export async function POST(request: Request) {
           parts: [{ text: "I understand and will embody the character as specified." }],
         },
       ],
-      generationConfig: {
-        maxOutputTokens: 120,
-        temperature: 0.7,
-      },
     });
 
     // Filter available functions based on settings
