@@ -41,6 +41,7 @@ export default function Home() {
   const itemsPerPage = 10;
   
   const slides = [
+    { src: '/bitcour.png', alt: 'BitCourier', href: 'https://bitcourier.co.uk/news/druid-ai-interview' },
     { src: '/coingeko.png', alt: 'CoinGeko', href: 'https://www.coingecko.com/en/coins/druid-ai' },
     { src: '/memecoin.png', alt: 'Memecoin', href: 'https://memecoinseason.net/p/druid-ai' },
     { src: '/dextools.svg', alt: 'Dext', href: 'https://www.dextools.io/app/en/token/druidai?t=1736240680806' },
